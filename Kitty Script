@@ -55,7 +55,6 @@ _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 -- การรวมไว้ใน Table เดียวกันแบบนี้ จะช่วยป้องกัน Error "index nil" ได้แน่นอน
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" }),
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
@@ -84,6 +83,8 @@ do
 
     Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
 end
+
+local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" }),
 
 -- [[ 2. เพิ่ม Paragraph (ใช้ pcall กันเหนียว ถ้าชื่อคำสั่งผิด Tab จะได้ไม่หาย) ]]
 pcall(function()
