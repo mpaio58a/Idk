@@ -55,7 +55,6 @@ _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 -- การรวมไว้ใน Table เดียวกันแบบนี้ จะช่วยป้องกัน Error "index nil" ได้แน่นอน
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- อยู่ใต้ Main เป๊ะๆ
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
@@ -66,55 +65,6 @@ local Tabs = {
 local function SendTransform(mode)
     pcall(function()
         game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer(mode)
-    end)
-end
-
--- [[ 3. ใส่ข้อมูลใน Gamemode Tab ]]
-do
-    local G = Tabs.Gamemode
-    
-    G:AddParagraph({
-        Title = "Hide And Seek Mode",
-        Content = "โหมดซ่อนแอบ: Transform / unTransform / Clone"
-    })
-
-    -- --- Transform ---
-    G:AddButton({
-        Title = "Transform",
-        Callback = function() SendTransform("Untransformed") end
-    })
-    local TSpam = G:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
-    task.spawn(function()
-        while true do
-            if TSpam.Value then SendTransform("Untransformed") end
-            task.wait(0.1)
-        end
-    end)
-
-    -- --- unTransform ---
-    G:AddButton({
-        Title = "unTransform",
-        Callback = function() SendTransform("WasTransformed") end
-    })
-    local UTSpam = G:AddToggle("UTSpam", {Title = "Spam unTransform", Default = false})
-    task.spawn(function()
-        while true do
-            if UTSpam.Value then SendTransform("WasTransformed") end
-            task.wait(0.1)
-        end
-    end)
-
-    -- --- Clone ---
-    G:AddButton({
-        Title = "Clone",
-        Callback = function() SendTransform("Clone") end
-    })
-    local CSpam = G:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
-    task.spawn(function()
-        while true do
-            if CSpam.Value then SendTransform("Clone") end
-            task.wait(0.1)
-        end
     end)
 end
 
@@ -133,6 +83,66 @@ do
 
     Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
 end
+
+-- [[ 1. สร้าง Tab Gamemode ]]
+local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" })
+
+-- [[ 2. เพิ่ม Paragraph (ใช้ pcall กันเหนียว ถ้าชื่อคำสั่งผิด Tab จะได้ไม่หาย) ]]
+pcall(function()
+    GTab:AddParagraph({
+        Title = "Hide And Seek Mode",
+        Content = "โหมดซ่อนแอบ: Transform / unTransform / Clone"
+    })
+end)
+
+-- [[ 3. ฟังก์ชันรันคำสั่ง Remote ]]
+local function RunHNS(mode)
+    pcall(function()
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer(mode)
+    end)
+end
+
+-- --- SECTION 1: Transform ---
+GTab:AddButton({
+    Title = "Transform",
+    Callback = function() RunHNS("Untransformed") end
+})
+
+local TSpam = GTab:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
+task.spawn(function()
+    while true do
+        if TSpam.Value then RunHNS("Untransformed") end
+        task.wait(0.1)
+    end
+end)
+
+-- --- SECTION 2: unTransform ---
+GTab:AddButton({
+    Title = "unTransform",
+    Callback = function() RunHNS("WasTransformed") end
+})
+
+local UTSpam = GTab:AddToggle("UTSpam", {Title = "Spam unTransform", Default = false})
+task.spawn(function()
+    while true do
+        if UTSpam.Value then RunHNS("WasTransformed") end
+        task.wait(0.1)
+    end
+end)
+
+-- --- SECTION 3: Clone ---
+GTab:AddButton({
+    Title = "Clone",
+    Callback = function() RunHNS("Clone") end
+})
+
+local CSpam = GTab:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
+task.spawn(function()
+    while true do
+        if CSpam.Value then RunHNS("Clone") end
+        task.wait(0.1)
+    end
+end)
 
 -- [[ 2. VISUAL TAB (ESP Functions) ]]
 -- (Player, Item, Trap ESP Logic)
