@@ -115,9 +115,9 @@ local function applyItemESP(obj)
     -- สร้าง Highlight
     local hl = Instance.new("Highlight")
     hl.Name = "I_HL"
-    hl.FillColor = Color3.fromRGB(0, 0, 0)
+    hl.FillColor = Color3.fromRGB(255, 255, 255)
     hl.FillTransparency = 0.5
-    hl.OutlineColor = Color3.fromRGB(0, 0, 0)
+    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
     hl.Parent = obj
 
     -- ค้นหาจุดวางป้ายชื่อ (หาจุดที่เหมาะสมที่สุดในโมเดลที่ซ้อนอยู่)
