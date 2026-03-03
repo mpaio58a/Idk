@@ -58,6 +58,7 @@ local Tabs = {
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
+    Update = Window:AddTab({ Title = "Update", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
@@ -99,6 +100,9 @@ local function RunHNS(mode)
         game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer(mode)
     end)
 end
+
+-- [[ 1. สร้าง Tab Gamemode ]]
+local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" })
 
 -- --- SECTION 1: Transform ---
 GTab:AddButton({
