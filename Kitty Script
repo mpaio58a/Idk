@@ -115,7 +115,7 @@ local function applyItemESP(obj)
     -- สร้าง Highlight
     local hl = Instance.new("Highlight")
     hl.Name = "I_HL"
-    hl.FillColor = Color3.fromRGB(255, 255, 255)
+    hl.FillColor = Color3.fromRGB(0, 0, 0)
     hl.FillTransparency = 0.5
     hl.OutlineColor = Color3.fromRGB(0, 0, 0)
     hl.Parent = obj
@@ -139,6 +139,36 @@ local function applyItemESP(obj)
         l.TextSize = 14
         l.TextStrokeTransparency = 0
         l.Parent = b
+    end
+end
+
+local function applyTrapESP(model)
+    if not model or not model:IsA("Model") then return end
+    local yellowColor = Color3.fromRGB(255, 255, 0)
+    local hl = model:FindFirstChild("T_HL") or Instance.new("Highlight")
+    hl.Name = "T_HL"
+    hl.Parent = model
+    hl.FillColor = yellowColor
+    hl.OutlineColor = Color3.new(1, 1, 1)
+    hl.FillTransparency = 0.5
+    local target = model.PrimaryPart or model:FindFirstChildOfClass("BasePart")
+    if target then
+        local b = target:FindFirstChild("T_B") or Instance.new("BillboardGui")
+        b.Name = "T_B"
+        b.Parent = target
+        b.Size = UDim2.new(0, 100, 0, 40)
+        b.AlwaysOnTop = true
+        b.ExtentsOffset = Vector3.new(0, 2, 0)
+        local l = b:FindFirstChild("L") or Instance.new("TextLabel")
+        l.Name = "L"
+        l.Parent = b
+        l.Size = UDim2.new(1, 0, 1, 0)
+        l.BackgroundTransparency = 1
+        l.Text = "Trap"
+        l.TextColor3 = yellowColor
+        l.Font = Enum.Font.SourceSansBold
+        l.TextSize = 18
+        l.TextStrokeTransparency = 0
     end
 end
 
