@@ -1,0 +1,197 @@
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))() local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))() local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+local Window = Fluent:CreateWindow({ Title = "Kitty Gui Advanced (Fluent)", SubTitle = "by Unknown", TabWidth = 160, Size = UDim2.fromOffset(580, 460), Acrylic = true, Theme = "Dark", MinimizeKey = Enum.KeyCode.F })
+
+-- [[ Toggle Button System (Key: K) ]] local ScreenGui = Instance.new("ScreenGui") local ToggleButton = Instance.new("TextButton") local UICorner = Instance.new("UICorner")
+
+ScreenGui.Name = "FluentToggleButton" ScreenGui.Parent = game:GetService("CoreGui")
+
+ToggleButton.Name = "ToggleButton" ToggleButton.Parent = ScreenGui ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30) ToggleButton.Position = UDim2.new(0.12, 0, 0.15, 0) ToggleButton.Size = UDim2.new(0, 50, 0, 50) ToggleButton.Font = Enum.Font.SourceSansBold ToggleButton.Text = "K" ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255) ToggleButton.TextSize = 24 ToggleButton.Draggable = true
+
+UICorner.CornerRadius = UDim.new(0, 10) UICorner.Parent = ToggleButton
+
+ToggleButton.MouseButton1Click:Connect(function() Window:Minimize()
+
+-- [[ จุดที่ต้องลบทิ้ง เพื่อไม่ให้ปุ่ม K หาย ]] -- task.spawn(function() while task.wait(0.5) do if not (Window and Window.Root and Window.Root.Parent) then ScreenGui:Destroy() -- <--- ลบเฉพาะบรรทัดนี้ออก!! break end end end) end)
+
+-- [[ Global Variable for Anti Trap ]] _G.HiddenCenterParts = _G.HiddenCenterParts or {}
+
+-- [[ Create Tabs ]] local Tabs = { Main = Window:AddTab({ Title = "Main", Icon = "home" }), GameMode = Window:AddTab({ Title = "GameMode", Icon = "map" }), Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }), Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }), Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }), Update = Window:AddTab({ Title = "Update", Icon = "info" }), Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }) }
+
+-- [[ 1. MAIN TAB ]] do Tabs.Main:AddSlider("WalkSpeed", { Title = "WalkSpeed", Default = 16, Min = 16, Max = 100, Rounding = 0, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end) end }) Tabs.Main:AddInput("WSInput", { Title = "WalkSpeed TextBox", Numeric = true, Finished = true, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = tonumber(v) end) end })
+
+Tabs.Main:AddSlider("JumpPower", { Title = "JumpPower", Default = 50, Min = 50, Max = 250, Rounding = 0, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = v end) end })
+Tabs.Main:AddInput("JPInput", { Title = "JumpPower TextBox", Numeric = true, Finished = true, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = tonumber(v) end) end })
+
+local InfJumpToggle = Tabs.Main:AddToggle("InfJump", {Title = "Infinite Jump", Default = false })
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if InfJumpToggle.Value then pcall(function() game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping") end) end
+end)
+
+Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
+end
+
+-- [[ 2. VISUAL TAB (ESP Functions) ]] -- (Player, Item, Trap ESP Logic) local function createPlayerESP(char, name, color) if not char then return end local hl = char:FindFirstChild("P_HL") or Instance.new("Highlight") hl.Name = "P_HL" hl.Parent = char hl.FillColor = color hl.FillTransparency = 0.5 hl.OutlineColor = Color3.new(1, 1, 1) local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head") if root then local b = root:FindFirstChild("P_B") or Instance.new("BillboardGui") b.Name = "P_B" b.Parent = root b.Size = UDim2.new(0, 100, 0, 30) b.AlwaysOnTop = true b.ExtentsOffset = Vector3.new(0, 3, 0) local l = b:FindFirstChild("L") or Instance.new("TextLabel") l.Name = "L" l.Parent = b l.Size = UDim2.new(1, 0, 1, 0) l.BackgroundTransparency = 1 l.Text = name l.TextColor3 = color l.Font = Enum.Font.SourceSansBold l.TextSize = 14 l.TextStrokeTransparency = 0 end end
+
+local function applyItemESP(obj) if not obj or not obj:IsDescendantOf(workspace) then return end local hl = obj:FindFirstChild("I_HL") or Instance.new("Highlight") hl.Name = "I_HL" hl.Parent = obj hl.FillColor = Color3.new(1, 1, 1) hl.FillTransparency = 0.5 local target = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("BasePart", true) if target then local b = target:FindFirstChild("I_B") or Instance.new("BillboardGui") b.Name = "I_B" b.Parent = target b.Size = UDim2.new(0, 150, 0, 50) b.AlwaysOnTop = true b.ExtentsOffset = Vector3.new(0, 1.5, 0) local l = b:FindFirstChild("L") or Instance.new("TextLabel") l.Name = "L" l.Parent = b l.Size = UDim2.new(1, 0, 1, 0) l.BackgroundTransparency = 1 l.Text = obj.Name l.TextColor3 = Color3.new(1, 1, 1) l.Font = Enum.Font.SourceSansBold l.TextSize = 14 l.TextStrokeTransparency = 0 end end
+
+local function applyTrapESP(model) if not model or not model:IsA("Model") then return end local yellowColor = Color3.fromRGB(255, 255, 0) local hl = model:FindFirstChild("T_HL") or Instance.new("Highlight") hl.Name = "T_HL" hl.Parent = model hl.FillColor = yellowColor hl.OutlineColor = Color3.new(1, 1, 1) hl.FillTransparency = 0.5 local target = model.PrimaryPart or model:FindFirstChildOfClass("BasePart") if target then local b = target:FindFirstChild("T_B") or Instance.new("BillboardGui") b.Name = "T_B" b.Parent = target b.Size = UDim2.new(0, 100, 0, 40) b.AlwaysOnTop = true b.ExtentsOffset = Vector3.new(0, 2, 0) local l = b:FindFirstChild("L") or Instance.new("TextLabel") l.Name = "L" l.Parent = b l.Size = UDim2.new(1, 0, 1, 0) l.BackgroundTransparency = 1 l.Text = "Trap" l.TextColor3 = yellowColor l.Font = Enum.Font.SourceSansBold l.TextSize = 18 l.TextStrokeTransparency = 0 end end
+
+do local PlayerToggle = Tabs.Visual:AddToggle("PlayerEsp", {Title = "Player & Bot Esp", Default = false }) local ItemToggle = Tabs.Visual:AddToggle("ItemEsp", {Title = "Items Esp", Default = false }) local TrapToggle = Tabs.Visual:AddToggle("TrapEsp", {Title = "Trap Esp", Default = false })
+
+PlayerToggle:OnChanged(function()
+    _G.PlayerEspEnabled = PlayerToggle.Value
+    if not _G.PlayerEspEnabled then
+        for _, v in pairs(workspace:GetDescendants()) do if v.Name == "P_HL" or v.Name == "P_B" then v:Destroy() end end
+    end
+end)
+
+ItemToggle:OnChanged(function()
+    _G.ItemEspEnabled = ItemToggle.Value
+    if not _G.ItemEspEnabled then
+        for _, v in pairs(workspace:GetDescendants()) do if v.Name == "I_HL" or v.Name == "I_B" then v:Destroy() end end
+    end
+end)
+
+TrapToggle:OnChanged(function()
+    _G.TrapEspEnabled = TrapToggle.Value
+    if not _G.TrapEspEnabled then
+        for _, v in pairs(workspace:GetDescendants()) do if v.Name == "T_HL" or v.Name == "T_B" then v:Destroy() end end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if _G.PlayerEspEnabled then
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("Humanoid") then
+                    local char = v.Parent
+                    if char and char:IsA("Model") and char ~= game.Players.LocalPlayer.Character then
+                        local isKiller = char:FindFirstChild("Weapon", true)
+                        createPlayerESP(char, char.Name, isKiller and Color3.new(1, 0, 0) or Color3.new(0, 1, 0))
+                    end
+                end
+            end
+        end
+        task.wait(1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if _G.ItemEspEnabled then
+            pcall(function()
+                for _, v in pairs(workspace:GetDescendants()) do
+                    local isItem = v:IsA("Model") and (v.Name:lower():find("item") or v:FindFirstChild("Handle") or (v.Parent and v.Parent.Name == "Tools")) or v:IsA("Tool")
+                    if isItem and not v:FindFirstChild("I_HL") then applyItemESP(v) end
+                end
+            end)
+        end
+        task.wait(3)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if _G.TrapEspEnabled then
+            pcall(function()
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("Model") and obj.Name:lower():find("trap") then
+                        if not obj:FindFirstChild("T_HL") then applyTrapESP(obj) end
+                    end
+                end
+            end)
+        end
+        task.wait(0.5)
+    end
+end)
+end
+
+-- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]] local attackGui = nil do Tabs.Misc:AddButton({ Title = "Revive", Callback = function() game:GetService("ReplicatedStorage").Events.Leave:FireServer() game:GetService("ReplicatedStorage").Events.Join:FireServer() end }) Tabs.Misc:AddButton({ Title = "Leave", Callback = function() game:GetService("ReplicatedStorage").Events.Leave:FireServer() end }) Tabs.Misc:AddButton({ Title = "God Mode", Callback = function() game:GetService("ReplicatedStorage").Events.Join:FireServer() task.wait(0.1) game:GetService("ReplicatedStorage").Events.Leave:FireServer() end })
+
+-- Anti Trap Toggle (Updated with Hide/Restore Logic)
+local AntiTrapToggle = Tabs.Misc:AddToggle("AntiTrap", {
+    Title = "Anti Trap", 
+    Description = "Walking into traps will have no effect while this script is enabled.", 
+    Default = false 
+})
+
+AntiTrapToggle:OnChanged(function()
+    if AntiTrapToggle.Value then
+        -- [ ON: Remove all 'Center' parts ]
+        pcall(function()
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and obj.Name == "Center" then
+                    table.insert(_G.HiddenCenterParts, {
+                        parent = obj.Parent,
+                        part = obj
+                    })
+                    obj.Parent = nil
+                end
+            end
+        end)
+        print("Anti Trap: Enabled")
+    else
+        -- [ OFF: Restore all 'Center' parts ]
+        pcall(function()
+            if _G.HiddenCenterParts and #_G.HiddenCenterParts > 0 then
+                for _, data in pairs(_G.HiddenCenterParts) do
+                    if data.part and data.parent then
+                        data.part.Parent = data.parent
+                    end
+                end
+                _G.HiddenCenterParts = {} -- ล้างตารางหลังจากคืนค่า
+            end
+        end)
+        print("Anti Trap: Disabled")
+    end
+end)
+
+local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Show Custom Attack Button", Default = false })
+AttackToggle:OnChanged(function()
+    if AttackToggle.Value then
+        if not attackGui then
+            attackGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+            local btn = Instance.new("TextButton", attackGui)
+            local c = Instance.new("UICorner", btn)
+            btn.Size = UDim2.new(0, 120, 0, 50)
+            btn.Position = UDim2.new(0.5, -60, 0.8, 0)
+            btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            btn.Text = "ATTACK"
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.Font = Enum.Font.SourceSansBold
+            btn.TextSize = 20
+            btn.Draggable = true
+            c.CornerRadius = UDim.new(0, 12)
+            btn.MouseButton1Click:Connect(function() game:GetService("ReplicatedStorage").Events.Attack:FireServer() end)
+        end
+        attackGui.Enabled = true
+    else
+        if attackGui then attackGui.Enabled = false end
+    end
+end)
+end
+
+-- [[ 4. GAMEMODE TAB ]] do Tabs.GameMode:AddParagraph({ Title = "Game Mode Settings", Content = "Gameplay and mode configurations." }) end
+
+-- [[ 5. SKINS TAB ]] do local Skins = { {"Great Hair Mouse", "SW3R8f7s"}, {"Red Eye Mouse", "WyaBLU8N"}, {"PenGuin", "W9gzPLvT"}, {"Comboy Event Mouse", "qf2gU6mU"}, {"Invisible 100% Mouse", "ta5DZqU5"}, {"Gab Studio", "UgSci3YS"}, {"BlockHead", "WuTpzeee"}, {"Hat Mouse", "VmjC8LTg"}, {"Glasses Black Mouse", "wuMe64nC"}, {"Rainbow Neon + Epic Face", "mnCrCcuv"}, {"Wheel Mouse", "nNapjRTc"}, {"Yellow Cat Mouse", "uRtwXd6b"}, {"Snow Mouse", "Tyw7jkCU"}, {"Glasses Mouse", "Z2KUf83c"}, {"Pink Mouse", "K4tUrEUU"}, {"Evil Mouse", "KAAXHi1h"} } for _, s in pairs(Skins) do Tabs.Skins:AddButton({ Title = s[1], Callback = function() loadstring(game:HttpGet("https://pastebin.com/raw/"..s[2]))() end }) end end
+
+-- [[ 6. UPDATE TAB ]] do Tabs.Update:AddParagraph({ Title = "Update Log v3.0", Content = "--- New UI Redesign\n--- Removed unnecessary menus\n--- Improved Main Tab layout\n--- Added Visual menu (Player, Item, Trap ESP)\n--- Anti Trap with Hide/Restore logic" }) end
+
+-- [[ 7. SETTINGS ]] SaveManager:SetLibrary(Fluent) InterfaceManager:SetLibrary(Fluent) InterfaceManager:BuildInterfaceSection(Tabs.Settings) SaveManager:BuildConfigSection(Tabs.Settings)
+
+Window:SelectTab(1)
+
+-- Cleanup on Close task.spawn(function() while task.wait(0.5) do if not Window or not Window.Root or not Window.Root.Parent then if attackGui then attackGui:Destroy() end _G.PlayerEspEnabled = false _G.ItemEspEnabled = false _G.TrapEspEnabled = false
+
+        -- คืนค่าพาร์ท Center ถ้าปิด UI ไปดื้อๆ
+        if _G.HiddenCenterParts and #_G.HiddenCenterParts > 0 then
+            for _, data in pairs(_G.HiddenCenterParts) do
+                if data.part and data.parent then data.part.Parent = data.parent end
+            end
+            _G.HiddenCenterParts = {}
+        end
+        break
+    end
+end
+end)
