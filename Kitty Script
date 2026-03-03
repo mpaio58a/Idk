@@ -80,14 +80,13 @@ end
 
 -- [[ แก้ไขส่วน Gamemode แบบสร้างใหม่ทั้งหมด ]] 
 
--- 2. เพิ่มเนื้อหาลงใน GTab ทันที
-GTab:AddParagraph({
+-- 2. เพิ่มเนื้อหาลงใน Gamemode ทันที
+Gamemode:AddParagraph({
     Title = "Hide And Seek Mode",
-    Content = "โหมดซ่อนแอบ: Transform / unTransform / Clone"
 })
 
 -- ปุ่ม Transform + Spam
-GTab:AddButton({
+Gamemode:AddButton({
     Title = "Transform",
     Callback = function()
         pcall(function()
@@ -96,7 +95,7 @@ GTab:AddButton({
     end
 })
 
-local TSpam = GTab:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
+local TSpam = Gamemode:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
 task.spawn(function()
     while true do
         if TSpam.Value then
@@ -106,10 +105,10 @@ task.spawn(function()
     end
 end)
 
-GTab:AddSeparator()
+Gamemode:AddSeparator()
 
 -- ปุ่ม unTransform + Spam
-GTab:AddButton({
+Gamemode:AddButton({
     Title = "unTransform",
     Callback = function()
         pcall(function()
@@ -128,10 +127,10 @@ task.spawn(function()
     end
 end)
 
-GTab:AddSeparator()
+Gamemode:AddSeparator()
 
 -- ปุ่ม Clone + Spam
-GTab:AddButton({
+Gamemode:AddButton({
     Title = "Clone",
     Callback = function()
         pcall(function()
@@ -140,7 +139,7 @@ GTab:AddButton({
     end
 })
 
-local CSpam = GTab:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
+local CSpam = Gamemode:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
 task.spawn(function()
     while true do
         if CSpam.Value then
