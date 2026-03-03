@@ -54,6 +54,7 @@ _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 -- [[ Create Tabs ]]
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
+    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }),
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }), 
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
@@ -77,10 +78,7 @@ do
     Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
 end
 
--- [[ แก้ไขส่วน Gamemode แบบสร้างใหม่ทั้งหมด ]] --
-
--- 1. สร้าง Tab (เปลี่ยนชื่อตัวแปรให้ไม่ซ้ำกับของเดิม)
-local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" }) 
+-- [[ แก้ไขส่วน Gamemode แบบสร้างใหม่ทั้งหมด ]] 
 
 -- 2. เพิ่มเนื้อหาลงใน GTab ทันที
 GTab:AddParagraph({
