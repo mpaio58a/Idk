@@ -51,90 +51,68 @@ end)
 -- [[ Global Variable for Anti Trap ]]
 _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 
--- [[ 1. สร้าง Tabs ทั้งหมด (เรียงลำดับที่นี่ เพื่อให้เมนูเรียงตามนี้) ]]
+-- [[ 1. สร้าง Tabs ทั้งหมดพร้อมกันที่นี่ (ห้ามแยกบรรทัดไปที่อื่น) ]]
+-- การรวมไว้ใน Table เดียวกันแบบนี้ จะช่วยป้องกัน Error "index nil" ได้แน่นอน
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- อยู่ใต้ Main ทันที
+    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- อยู่ใต้ Main เป๊ะๆ
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
--- [[ 2. ใส่ข้อมูลเมนู Gamemode (มัดรวมเพื่อป้องกัน Nil Error) ]]
--- ใช้ do ... end เพื่อแยกส่วนโค้ดให้สะอาด
-do
-    local G = Tabs.Gamemode -- เรียกใช้ Tab ที่เราเพิ่งสร้างด้านบน
+-- [[ 2. ฟังก์ชันช่วยรัน Remote (เพื่อลดความซ้ำซ้อนของโค้ด) ]]
+local function SendTransform(mode)
+    pcall(function()
+        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer(mode)
+    end)
+end
 
-    -- เพิ่มโน้ต (Paragraph)
+-- [[ 3. ใส่ข้อมูลใน Gamemode Tab ]]
+do
+    local G = Tabs.Gamemode
+    
     G:AddParagraph({
         Title = "Hide And Seek Mode",
-        Content = "ใช้สำหรับการเล่นในโหมดซ่อนแอบเท่านั้น"
+        Content = "โหมดซ่อนแอบ: Transform / unTransform / Clone"
     })
 
-    -- ปุ่ม Transform
+    -- --- Transform ---
     G:AddButton({
         Title = "Transform",
-        Callback = function()
-            pcall(function()
-                game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Untransformed")
-            end)
-        end
+        Callback = function() SendTransform("Untransformed") end
     })
-
-    -- Toggle Spam Transform
-    local SpamT = G:AddToggle("SpamT", {Title = "Spam Transform", Default = false})
+    local TSpam = G:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
     task.spawn(function()
         while true do
-            if SpamT.Value then
-                pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Untransformed") end)
-            end
+            if TSpam.Value then SendTransform("Untransformed") end
             task.wait(0.1)
         end
     end)
 
-    G:AddSeparator()
-
-    -- ปุ่ม unTransform
+    -- --- unTransform ---
     G:AddButton({
         Title = "unTransform",
-        Callback = function()
-            pcall(function()
-                game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("WasTransformed")
-            end)
-        end
+        Callback = function() SendTransform("WasTransformed") end
     })
-
-    -- Toggle Spam unTransform
-    local SpamUT = G:AddToggle("SpamUT", {Title = "Spam unTransform", Default = false})
+    local UTSpam = G:AddToggle("UTSpam", {Title = "Spam unTransform", Default = false})
     task.spawn(function()
         while true do
-            if SpamUT.Value then
-                pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("WasTransformed") end)
-            end
+            if UTSpam.Value then SendTransform("WasTransformed") end
             task.wait(0.1)
         end
     end)
 
-    G:AddSeparator()
-
-    -- ปุ่ม Clone
+    -- --- Clone ---
     G:AddButton({
         Title = "Clone",
-        Callback = function()
-            pcall(function()
-                game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Clone")
-            end)
-        end
+        Callback = function() SendTransform("Clone") end
     })
-
-    -- Toggle Spam Clone
-    local SpamC = G:AddToggle("SpamC", {Title = "Spam Clone", Default = false})
+    local CSpam = G:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
     task.spawn(function()
         while true do
-            if SpamC.Value then
-                pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Clone") end)
-            end
+            if CSpam.Value then SendTransform("Clone") end
             task.wait(0.1)
         end
     end)
