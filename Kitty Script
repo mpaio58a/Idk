@@ -54,7 +54,6 @@ _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 -- [[ Create Tabs ]]
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-    GameMode = Window:AddTab({ Title = "GameMode", Icon = "map" }),
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }), 
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
@@ -77,6 +76,81 @@ do
 
     Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
 end
+
+-- [[ แก้ไขส่วน Gamemode แบบสร้างใหม่ทั้งหมด ]] --
+
+-- 1. สร้าง Tab (เปลี่ยนชื่อตัวแปรให้ไม่ซ้ำกับของเดิม)
+local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" }) 
+
+-- 2. เพิ่มเนื้อหาลงใน GTab ทันที
+GTab:AddParagraph({
+    Title = "Hide And Seek Mode",
+    Content = "โหมดซ่อนแอบ: Transform / unTransform / Clone"
+})
+
+-- ปุ่ม Transform + Spam
+GTab:AddButton({
+    Title = "Transform",
+    Callback = function()
+        pcall(function()
+            game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Untransformed")
+        end)
+    end
+})
+
+local TSpam = GTab:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
+task.spawn(function()
+    while true do
+        if TSpam.Value then
+            pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Untransformed") end)
+        end
+        task.wait(0.1)
+    end
+end)
+
+GTab:AddSeparator()
+
+-- ปุ่ม unTransform + Spam
+GTab:AddButton({
+    Title = "unTransform",
+    Callback = function()
+        pcall(function()
+            game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("WasTransformed")
+        end)
+    end
+})
+
+local UTSpam = GTab:AddToggle("UTSpam", {Title = "Spam unTransform", Default = false})
+task.spawn(function()
+    while true do
+        if UTSpam.Value then
+            pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("WasTransformed") end)
+        end
+        task.wait(0.1)
+    end
+end)
+
+GTab:AddSeparator()
+
+-- ปุ่ม Clone + Spam
+GTab:AddButton({
+    Title = "Clone",
+    Callback = function()
+        pcall(function()
+            game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Clone")
+        end)
+    end
+})
+
+local CSpam = GTab:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
+task.spawn(function()
+    while true do
+        if CSpam.Value then
+            pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Clone") end)
+        end
+        task.wait(0.1)
+    end
+end)
 
 -- [[ 2. VISUAL TAB (ESP Functions) ]]
 -- (Player, Item, Trap ESP Logic)
@@ -415,75 +489,4 @@ task.spawn(function()
             break
         end
     end
-
--- [[ แก้ไขส่วน Gamemode ]] --
-local targetTab = Tabs and Tabs.Gamemode or GamemodeTab -- เลือกใช้ตัวแปรที่ตรงกับของคุณ
-
-if targetTab then
-    -- เพิ่มโน้ต
-    targetTab:AddParagraph({
-        Title = "Hide And Seek Mode",
-        Content = "ใช้สำหรับการเล่นในโหมดซ่อนแอบเท่านั้น"
-    })
-
-    -- Transform
-    targetTab:AddButton({
-        Title = "Transform",
-        Callback = function()
-            game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Untransformed")
-        end
-    })
-
-    local SpamTransform = targetTab:AddToggle("SpamTransform", {Title = "Spam Transform", Default = false})
-    task.spawn(function()
-        while true do
-            if SpamTransform.Value then
-                pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Untransformed") end)
-            end
-            task.wait(0.1)
-        end
-    end)
-
-    targetTab:AddSeparator()
-
-    -- unTransform
-    targetTab:AddButton({
-        Title = "unTransform",
-        Callback = function()
-            game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("WasTransformed")
-        end
-    })
-
-    local SpamUnTransform = targetTab:AddToggle("SpamUnTransform", {Title = "Spam unTransform", Default = false})
-    task.spawn(function()
-        while true do
-            if SpamUnTransform.Value then
-                pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("WasTransformed") end)
-            end
-            task.wait(0.1)
-        end
-    end)
-
-    targetTab:AddSeparator()
-
-    -- Clone
-    targetTab:AddButton({
-        Title = "Clone",
-        Callback = function()
-            game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Clone")
-        end
-    })
-
-    local SpamClone = targetTab:AddToggle("SpamClone", {Title = "Spam Clone", Default = false})
-    task.spawn(function()
-        while true do
-            if SpamClone.Value then
-                pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Clone") end)
-            end
-            task.wait(0.1)
-        end
-    end)
-else
-    warn("หา Tab Gamemode ไม่เจอ! กรุณาเช็คชื่อตัวแปร Tab ของคุณ")
-  end
-end)
+ end)
