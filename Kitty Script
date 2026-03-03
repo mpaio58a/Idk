@@ -51,37 +51,42 @@ end)
 -- [[ Global Variable for Anti Trap ]]
 _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 
--- [[ 1. สร้าง Tabs ให้ครบก่อน (เรียงลำดับตามนี้เพื่อให้ Gamemode อยู่ใต้ Main) ]]
+-- [[ 1. สร้าง Tabs ทั้งหมด (เรียงลำดับที่นี่ เพื่อให้เมนูเรียงตามนี้) ]]
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- อยู่ตรงนี้เลย!
+    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- อยู่ใต้ Main ทันที
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
--- [[ 2. ใส่ข้อมูลเมนู Gamemode (วางไว้ตรงไหนก็ได้หลังจากสร้าง Tabs เสร็จ) ]]
+-- [[ 2. ใส่ข้อมูลเมนู Gamemode (มัดรวมเพื่อป้องกัน Nil Error) ]]
+-- ใช้ do ... end เพื่อแยกส่วนโค้ดให้สะอาด
 do
-    local G = Tabs.Gamemode -- ดึงตัวแปรที่เพิ่งสร้างมาใช้
+    local G = Tabs.Gamemode -- เรียกใช้ Tab ที่เราเพิ่งสร้างด้านบน
 
+    -- เพิ่มโน้ต (Paragraph)
     G:AddParagraph({
         Title = "Hide And Seek Mode",
-        Content = "โหมดซ่อนแอบ: Transform / unTransform / Clone"
+        Content = "ใช้สำหรับการเล่นในโหมดซ่อนแอบเท่านั้น"
     })
 
     -- ปุ่ม Transform
     G:AddButton({
         Title = "Transform",
         Callback = function()
-            pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Untransformed") end)
+            pcall(function()
+                game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Untransformed")
+            end)
         end
     })
 
-    local TSpam = G:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
+    -- Toggle Spam Transform
+    local SpamT = G:AddToggle("SpamT", {Title = "Spam Transform", Default = false})
     task.spawn(function()
         while true do
-            if TSpam.Value then
+            if SpamT.Value then
                 pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Untransformed") end)
             end
             task.wait(0.1)
@@ -94,14 +99,17 @@ do
     G:AddButton({
         Title = "unTransform",
         Callback = function()
-            pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("WasTransformed") end)
+            pcall(function()
+                game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("WasTransformed")
+            end)
         end
     })
 
-    local UTSpam = G:AddToggle("UTSpam", {Title = "Spam unTransform", Default = false})
+    -- Toggle Spam unTransform
+    local SpamUT = G:AddToggle("SpamUT", {Title = "Spam unTransform", Default = false})
     task.spawn(function()
         while true do
-            if UTSpam.Value then
+            if SpamUT.Value then
                 pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("WasTransformed") end)
             end
             task.wait(0.1)
@@ -114,14 +122,17 @@ do
     G:AddButton({
         Title = "Clone",
         Callback = function()
-            pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Clone") end)
+            pcall(function()
+                game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Clone")
+            end)
         end
     })
 
-    local CSpam = G:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
+    -- Toggle Spam Clone
+    local SpamC = G:AddToggle("SpamC", {Title = "Spam Clone", Default = false})
     task.spawn(function()
         while true do
-            if CSpam.Value then
+            if SpamC.Value then
                 pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Clone") end)
             end
             task.wait(0.1)
