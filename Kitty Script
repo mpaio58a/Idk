@@ -110,23 +110,27 @@ local function createPlayerESP(char, name, color)
 end
 
 local function applyItemESP(obj)
-    if not obj or not obj:IsDescendantOf(workspace) then return end
-    local hl = obj:FindFirstChild("I_HL") or Instance.new("Highlight")
+    if not obj or obj:FindFirstChild("I_HL") then return end
+    
+    -- สร้าง Highlight
+    local hl = Instance.new("Highlight")
     hl.Name = "I_HL"
-    hl.Parent = obj
-    hl.FillColor = Color3.new(1, 1, 1)
+    hl.FillColor = Color3.fromRGB(255, 255, 255)
     hl.FillTransparency = 0.5
+    hl.OutlineColor = Color3.fromRGB(0, 0, 0)
+    hl.Parent = obj
+
+    -- ค้นหาจุดวางป้ายชื่อ (หาจุดที่เหมาะสมที่สุดในโมเดลที่ซ้อนอยู่)
     local target = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("BasePart", true)
     if target then
-        local b = target:FindFirstChild("I_B") or Instance.new("BillboardGui")
+        local b = Instance.new("BillboardGui")
         b.Name = "I_B"
-        b.Parent = target
-        b.Size = UDim2.new(0, 150, 0, 50)
+        b.Size = UDim2.new(0, 100, 0, 40)
         b.AlwaysOnTop = true
         b.ExtentsOffset = Vector3.new(0, 1.5, 0)
-        local l = b:FindFirstChild("L") or Instance.new("TextLabel")
-        l.Name = "L"
-        l.Parent = b
+        b.Parent = target
+
+        local l = Instance.new("TextLabel")
         l.Size = UDim2.new(1, 0, 1, 0)
         l.BackgroundTransparency = 1
         l.Text = obj.Name
@@ -134,36 +138,7 @@ local function applyItemESP(obj)
         l.Font = Enum.Font.SourceSansBold
         l.TextSize = 14
         l.TextStrokeTransparency = 0
-    end
-end
-
-local function applyTrapESP(model)
-    if not model or not model:IsA("Model") then return end
-    local yellowColor = Color3.fromRGB(255, 255, 0)
-    local hl = model:FindFirstChild("T_HL") or Instance.new("Highlight")
-    hl.Name = "T_HL"
-    hl.Parent = model
-    hl.FillColor = yellowColor
-    hl.OutlineColor = Color3.new(1, 1, 1)
-    hl.FillTransparency = 0.5
-    local target = model.PrimaryPart or model:FindFirstChildOfClass("BasePart")
-    if target then
-        local b = target:FindFirstChild("T_B") or Instance.new("BillboardGui")
-        b.Name = "T_B"
-        b.Parent = target
-        b.Size = UDim2.new(0, 100, 0, 40)
-        b.AlwaysOnTop = true
-        b.ExtentsOffset = Vector3.new(0, 2, 0)
-        local l = b:FindFirstChild("L") or Instance.new("TextLabel")
-        l.Name = "L"
         l.Parent = b
-        l.Size = UDim2.new(1, 0, 1, 0)
-        l.BackgroundTransparency = 1
-        l.Text = "Trap"
-        l.TextColor3 = yellowColor
-        l.Font = Enum.Font.SourceSansBold
-        l.TextSize = 18
-        l.TextStrokeTransparency = 0
     end
 end
 
@@ -211,18 +186,30 @@ do
     end)
 
     task.spawn(function()
-        while true do
-            if _G.ItemEspEnabled then
-                pcall(function()
-                    for _, v in pairs(workspace:GetDescendants()) do
-                        local isItem = v:IsA("Model") and (v.Name:lower():find("item") or v:FindFirstChild("Handle") or (v.Parent and v.Parent.Name == "Tools")) or v:IsA("Tool")
-                        if isItem and not v:FindFirstChild("I_HL") then applyItemESP(v) end
+    while true do
+        if _G.ItemEspEnabled then
+            pcall(function()
+                -- 'true' ตรงนี้สำคัญมาก! คือการสั่งให้หาโฟลเดอร์ Tools ไม่ว่าจะซ่อนอยู่ลึกกี่ชั้นก็ตาม
+                local targetFolder = workspace:FindFirstChild("Tools", true) 
+                                  or workspace:FindFirstChild("Items", true)
+
+                if targetFolder then
+                    -- เมื่อเจอโฟลเดอร์แล้ว ให้กวาดหาของข้างในทั้งหมด (GetDescendants)
+                    for _, v in pairs(targetFolder:GetDescendants()) do
+                        -- เช็คว่าเป็น Model หรือ Tool และต้องมีชื่อ (เพื่อไม่ให้เอา Part เล็กๆ มาทำ ESP)
+                        if (v:IsA("Model") or v:IsA("Tool")) and not v:FindFirstChild("I_HL") then
+                            -- ตรวจสอบว่ามันไม่ใช่ตัวโฟลเดอร์เอง
+                            if v.Name ~= "Tools" and v.Name ~= "Items" then
+                                applyItemESP(v)
+                            end
+                        end
                     end
-                end)
-            end
-            task.wait(3)
+                end
+            end)
         end
-    end)
+        task.wait(2)
+    end
+end)
 
     task.spawn(function()
         while true do
