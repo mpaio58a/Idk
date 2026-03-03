@@ -55,6 +55,7 @@ _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 -- การรวมไว้ใน Table เดียวกันแบบนี้ จะช่วยป้องกัน Error "index nil" ได้แน่นอน
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
+local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" }),
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
@@ -84,14 +85,10 @@ do
     Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
 end
 
--- [[ 1. สร้าง Tab Gamemode ]]
-local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" })
-
 -- [[ 2. เพิ่ม Paragraph (ใช้ pcall กันเหนียว ถ้าชื่อคำสั่งผิด Tab จะได้ไม่หาย) ]]
 pcall(function()
     GTab:AddParagraph({
         Title = "Hide And Seek Mode",
-        Content = "โหมดซ่อนแอบ: Transform / unTransform / Clone"
     })
 end)
 
@@ -403,82 +400,6 @@ AntiTrapToggle:OnChanged(function()
         end
     end)
 end
-
--- [[ 🟢 โค้ดที่แก้แล้ว: สร้าง Tab และใส่ปุ่มทันทีเพื่อป้องกัน Nil Error ]] --
-
--- 1. สร้าง Tab และเก็บใส่ตัวแปรชื่อ GMode (ป้องกันชื่อซ้ำกับตัวแปรอื่น)
-local GMode = Window:AddTab({ Title = "Gamemode", Icon = "gamepad-2" }) 
-
--- 2. เพิ่ม Paragraph ทันที (บรรทัดที่เคย Error จะหายไปเพราะ GMode มีตัวตนแล้ว)
-GMode:AddParagraph({
-    Title = "Hide And Seek Mode",
-    Content = "โหมดซ่อนแอบ: Transform / unTransform / Clone"
-})
-
--- 3. เพิ่มปุ่ม Transform + Spam
-GMode:AddButton({
-    Title = "Transform",
-    Callback = function()
-        pcall(function()
-            game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Untransformed")
-        end)
-    end
-})
-
-local TSpam = GMode:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
-task.spawn(function()
-    while true do
-        if TSpam.Value then
-            pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Untransformed") end)
-        end
-        task.wait(0.1)
-    end
-end)
-
-GMode:AddSeparator()
-
--- 4. เพิ่มปุ่ม unTransform + Spam
-GMode:AddButton({
-    Title = "unTransform",
-    Callback = function()
-        pcall(function()
-            game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("WasTransformed")
-        end)
-    end
-})
-
-local UTSpam = GMode:AddToggle("UTSpam", {Title = "Spam unTransform", Default = false})
-task.spawn(function()
-    while true do
-        if UTSpam.Value then
-            pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("WasTransformed") end)
-        end
-        task.wait(0.1)
-    end
-end)
-
-GMode:AddSeparator()
-
--- 5. เพิ่มปุ่ม Clone + Spam
-GMode:AddButton({
-    Title = "Clone",
-    Callback = function()
-        pcall(function()
-            game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Clone")
-        end)
-    end
-})
-
-local CSpam = GMode:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
-task.spawn(function()
-    while true do
-        if CSpam.Value then
-            pcall(function() game:GetService("ReplicatedStorage").Events.HASTransform:InvokeServer("Clone") end)
-        end
-        task.wait(0.1)
-    end
-end)
-
 
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
 do
