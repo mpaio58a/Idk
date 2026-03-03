@@ -103,6 +103,8 @@ task.spawn(function()
         task.wait(0.1)
     end
 
+G:AddSeparator()
+
 -- --- ส่วนที่ 2: unTransform ---
 G:AddButton({
     Title = "unTransform",
