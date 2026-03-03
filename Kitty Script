@@ -85,7 +85,8 @@ do
     Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
 end
 
-local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" }),
+-- [[ 1. สร้าง Tab Gamemode ]]
+local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" })
 
 -- [[ 2. เพิ่ม Paragraph (ใช้ pcall กันเหนียว ถ้าชื่อคำสั่งผิด Tab จะได้ไม่หาย) ]]
 pcall(function()
