@@ -338,9 +338,6 @@ AntiTrapToggle:OnChanged(function()
     end)
 end
 
--- [[ 4. GAMEMODE TAB ]]
-do
-    Tabs.GameMode:AddParagraph
 -- [[ เพิ่มในเมนู Gamemode ที่คุณมีอยู่แล้ว ]]
 
 -- 1. เพิ่มโน้ตแจ้งเตือน
@@ -417,7 +414,6 @@ task.spawn(function()
         task.wait(0.1)
     end
 end)
-end
 
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
 do
