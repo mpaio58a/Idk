@@ -77,7 +77,6 @@ do
     pcall(function()
         G:AddParagraph({
             Title = "Hide And Seek Mode",
-            Content = "โหมดซ่อนแอบ: Transform / unTransform / Clone"
         })
     end)
 
