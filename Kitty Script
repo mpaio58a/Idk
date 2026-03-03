@@ -261,35 +261,39 @@ do
         Default = false 
     })
 
-    AntiTrapToggle:OnChanged(function()
-        if AntiTrapToggle.Value then
-            -- [ ON: Remove all 'Center' parts ]
-            pcall(function()
-                for _, obj in pairs(workspace:GetDescendants()) do
-                    if obj:IsA("BasePart") and obj.Name == "Center" then
-                        table.insert(_G.HiddenCenterParts, {
-                            parent = obj.Parent,
-                            part = obj
-                        })
-                        obj.Parent = nil
-                    end
-                end
-            end)
-            print("Anti Trap: Enabled")
-        else
-            -- [ OFF: Restore all 'Center' parts ]
-            pcall(function()
-                if _G.HiddenCenterParts and #_G.HiddenCenterParts > 0 then
-                    for _, data in pairs(_G.HiddenCenterParts) do
-                        if data.part and data.parent then
-                            data.part.Parent = data.parent
-                        end
-                    end
-                    _G.HiddenCenterParts = {} -- ล้างตารางหลังจากคืนค่า
-                end
-            end)
-            print("Anti Trap: Disabled")
+local AntiTrapConnection -- ประกาศไว้ข้างบน OnChanged
+
+AntiTrapToggle:OnChanged(function()
+    if AntiTrapToggle.Value then
+        -- 1. จัดการของเก่าที่มีอยู่แล้ว
+        local function DisableTrap(obj)
+            if obj:IsA("BasePart") and obj.Name == "Center" and obj.Parent and obj.Parent.Name:lower():find("trap") then
+                obj.CanTouch = false
+                obj.Transparency = 0.5 
+            end
         end
+
+        for _, v in pairs(workspace:GetDescendants()) do
+            DisableTrap(v)
+        end
+
+        -- 2. ดักจับของใหม่ที่เกิดมาระหว่างเกม (วางแทนที่อันเก่าได้เลย)
+        AntiTrapConnection = workspace.DescendantAdded:Connect(function(descendant)
+            if AntiTrapToggle.Value then
+                task.wait(0.2) -- รอให้โมเดลโหลดเสร็จ
+                DisableTrap(descendant)
+            end
+        end)
+    else
+        -- 3. คืนค่าเมื่อปิดปุ่ม
+        if AntiTrapConnection then AntiTrapConnection:Disconnect() end
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and v.Name == "Center" and v.Parent and v.Parent.Name:lower():find("trap") then
+                v.CanTouch = true
+                v.Transparency = 0 
+            end
+        end
+    end
     end)
 
     local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Show Custom Attack Button", Default = false })
@@ -322,17 +326,45 @@ do
     Tabs.GameMode:AddParagraph({ Title = "Game Mode Settings", Content = "Gameplay and mode configurations." })
 end
 
--- [[ 5. SKINS TAB ]]
+-- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
 do
-    local Skins = {
-        {"Great Hair Mouse", "SW3R8f7s"}, {"Red Eye Mouse", "WyaBLU8N"}, {"PenGuin", "W9gzPLvT"},
-        {"Comboy Event Mouse", "qf2gU6mU"}, {"Invisible 100% Mouse", "ta5DZqU5"}, {"Gab Studio", "UgSci3YS"},
-        {"BlockHead", "WuTpzeee"}, {"Hat Mouse", "VmjC8LTg"}, {"Glasses Black Mouse", "wuMe64nC"},
-        {"Rainbow Neon + Epic Face", "mnCrCcuv"}, {"Wheel Mouse", "nNapjRTc"}, {"Yellow Cat Mouse", "uRtwXd6b"},
-        {"Snow Mouse", "Tyw7jkCU"}, {"Glasses Mouse", "Z2KUf83c"}, {"Pink Mouse", "K4tUrEUU"},
-        {"Evil Mouse", "KAAXHi1h"}
+    -- ตารางข้อมูลใหม่: {ชื่อที่โชว์บนปุ่ม, คำอธิบาย (Official Name + Cheese), ID Pastebin}
+    local SkinsData = {
+        {"Great Hair Mouse", "Official Name: Mouse Manirdudes1234 | Cheese: x35000", "SW3R8f7s"},
+        {"Red Eye Mouse", "Official Name: Bad Mouse | Cheese: x0", "WyaBLU8N"},
+        {"Mouse Penguin", "Official Name: Mouse Penguin | Cheese: x25", "W9gzPLvT"},
+        {"Cowboy Event Mouse (Special Sound)", "Official Name: Vaquero | Cheese: x500", "qf2gU6mU"},
+        {"Invisible 100%", "Official Name: ... | Cheese: x0", "ta5DZqU5"},
+        {"Gabstudio Mouse", "Official Name: Gabstudio | Cheese: x-1", "UgSci3YS"},
+        {"BlockHead Mouse", "Official Name: dummy | Cheese: x666", "WuTpzeee"},
+        {"Hat Mouse", "Official Name: eresrodrigo16 | Cheese: x666", "VmjC8LTg"},
+        {"Glasses Black Mouse", "Official Name: Tempre | Cheese: x0", "wuMe64nC"},
+        {"Rainbow Neon + Epic Face", "Official Name: Memo | Cheese: x500", "mnCrCcuv"},
+        {"Wheel Mouse", "Official Name: ASD | Cheese: x696969", "nNapjRTc"},
+        {"Yellow Cat Mouse", "Official Name: Corgi Cabbage | Cheese: x0", "uRtwXd6b"},
+        {"Snow Mouse", "Official Name: Daniel_1452 | Cheese: x1500", "Tyw7jkCU"},
+        {"Glasses Mouse", "Official Name: Limon | Cheese: x150000", "Z2KUf83c"},
+        {"Pink Mouse", "Official Name: IMemo | Cheese: x15000", "K4tUrEUU"},
+        {"Demon Mouse", "Official Name: Kimba | Cheese: x150000", "KAAXHi1h"}
     }
-    for _, s in pairs(Skins) do Tabs.Skins:AddButton({ Title = s[1], Callback = function() loadstring(game:HttpGet("https://pastebin.com/raw/"..s[2]))() end }) end
+
+    for _, s in pairs(SkinsData) do 
+        Tabs.Skins:AddButton({ 
+            Title = s[1], 
+            Description = s[2], 
+            Callback = function() 
+                -- รันสคริปต์เปลี่ยนสกิน
+                loadstring(game:HttpGet("https://pastebin.com/raw/"..s[3]))() 
+                
+                -- แจ้งเตือนสถานะ
+                Fluent:Notify({
+                    Title = "Skin Selected",
+                    Content = "Applied: " .. s[1],
+                    Duration = 2
+                })
+            end 
+        }) 
+    end
 end
 
 -- [[ 6. UPDATE TAB ]]
