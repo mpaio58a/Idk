@@ -51,10 +51,10 @@ end)
 -- [[ Global Variable for Anti Trap ]]
 _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 
--- [[ 1. สร้าง Tabs ทั้งหมดพร้อมกันที่นี่ (ห้ามแยกบรรทัดไปที่อื่น) ]]
--- การรวมไว้ใน Table เดียวกันแบบนี้ จะช่วยป้องกัน Error "index nil" ได้แน่นอน
+-- [[ 1. จัดลำดับ Tab ใหม่ (เรียงตามนี้ Gamemode จะอยู่ใต้ Main ทันที) ]]
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
+    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- ย้ายมาไว้ตรงนี้
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
@@ -62,10 +62,65 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
--- [[ 2. ฟังก์ชันช่วยรัน Remote (เพื่อลดความซ้ำซ้อนของโค้ด) ]]
-local function SendTransform(mode)
+-- [[ 2. ฟังก์ชันช่วยรัน Remote (ลดความเสี่ยงสคริปต์หยุดทำงาน) ]]
+local function RunHNS(mode)
     pcall(function()
         game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer(mode)
+    end)
+end
+
+-- [[ 3. ใส่ข้อมูลเมนู Gamemode ]]
+do
+    local G = Tabs.Gamemode
+
+    -- ใช้ pcall คลุม Paragraph เพราะในรูปฟ้องว่า Nil (ถ้า Error จะได้ไม่พา Tab อื่นหาย)
+    pcall(function()
+        G:AddParagraph({
+            Title = "Hide And Seek Mode",
+            Content = "โหมดซ่อนแอบ: Transform / unTransform / Clone"
+        })
+    end)
+
+    -- --- Transform ---
+    G:AddButton({
+        Title = "Transform",
+        Callback = function() RunHNS("Untransformed") end
+    })
+
+    local TSpam = G:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
+    task.spawn(function()
+        while true do
+            if TSpam.Value then RunHNS("Untransformed") end
+            task.wait(0.1)
+        end
+    end)
+
+    -- --- unTransform ---
+    G:AddButton({
+        Title = "unTransform",
+        Callback = function() RunHNS("WasTransformed") end
+    })
+
+    local UTSpam = G:AddToggle("UTSpam", {Title = "Spam unTransform", Default = false})
+    task.spawn(function()
+        while true do
+            if UTSpam.Value then RunHNS("WasTransformed") end
+            task.wait(0.1)
+        end
+    end)
+
+    -- --- Clone ---
+    G:AddButton({
+        Title = "Clone",
+        Callback = function() RunHNS("Clone") end
+    })
+
+    local CSpam = G:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
+    task.spawn(function()
+        while true do
+            if CSpam.Value then RunHNS("Clone") end
+            task.wait(0.1)
+        end
     end)
 end
 
@@ -84,68 +139,6 @@ do
 
     Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
 end
-
--- [[ 1. สร้าง Tab Gamemode ]]
-local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" })
-
--- [[ 2. เพิ่ม Paragraph (ใช้ pcall กันเหนียว ถ้าชื่อคำสั่งผิด Tab จะได้ไม่หาย) ]]
-pcall(function()
-    GTab:AddParagraph({
-        Title = "Hide And Seek Mode",
-    })
-end)
-
--- [[ 3. ฟังก์ชันรันคำสั่ง Remote ]]
-local function RunHNS(mode)
-    pcall(function()
-        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer(mode)
-    end)
-end
-
--- [[ 1. สร้าง Tab Gamemode ]]
-local GTab = Window:AddTab({ Title = "Gamemode", Icon = "map" })
-
--- --- SECTION 1: Transform ---
-GTab:AddButton({
-    Title = "Transform",
-    Callback = function() RunHNS("Untransformed") end
-})
-
-local TSpam = GTab:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
-task.spawn(function()
-    while true do
-        if TSpam.Value then RunHNS("Untransformed") end
-        task.wait(0.1)
-    end
-end)
-
--- --- SECTION 2: unTransform ---
-GTab:AddButton({
-    Title = "unTransform",
-    Callback = function() RunHNS("WasTransformed") end
-})
-
-local UTSpam = GTab:AddToggle("UTSpam", {Title = "Spam unTransform", Default = false})
-task.spawn(function()
-    while true do
-        if UTSpam.Value then RunHNS("WasTransformed") end
-        task.wait(0.1)
-    end
-end)
-
--- --- SECTION 3: Clone ---
-GTab:AddButton({
-    Title = "Clone",
-    Callback = function() RunHNS("Clone") end
-})
-
-local CSpam = GTab:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
-task.spawn(function()
-    while true do
-        if CSpam.Value then RunHNS("Clone") end
-        task.wait(0.1)
-    end
-end)
 
 -- [[ 2. VISUAL TAB (ESP Functions) ]]
 -- (Player, Item, Trap ESP Logic)
