@@ -83,7 +83,7 @@ local G = Tabs.Gamemode
 -- โน้ตแจ้งเตือน
 G:AddParagraph({
     Title = "Hide And Seek Mode",
-})
+ end
 
 -- --- ส่วนที่ 1: Transform ---
 G:AddButton({
@@ -93,7 +93,6 @@ G:AddButton({
             game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Untransformed")
         end)
     end
-})
 
 local TSpam = G:AddToggle("TSpam", {Title = "Spam Transform", Default = false})
 task.spawn(function()
@@ -103,7 +102,7 @@ task.spawn(function()
         end
         task.wait(0.1)
     end
-end)
+end
 
 G:AddSeparator()
 
@@ -115,7 +114,6 @@ G:AddButton({
             game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("WasTransformed")
         end)
     end
-})
 
 local UTSpam = G:AddToggle("UTSpam", {Title = "Spam unTransform", Default = false})
 task.spawn(function()
@@ -137,7 +135,6 @@ G:AddButton({
             game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("HASTransform"):InvokeServer("Clone")
         end)
     end
-})
 
 local CSpam = G:AddToggle("CSpam", {Title = "Spam Clone", Default = false})
 task.spawn(function()
