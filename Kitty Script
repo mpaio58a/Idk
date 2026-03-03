@@ -415,7 +415,6 @@ task.spawn(function()
             break
         end
     end
-end)
 
 -- [[ เพิ่มในเมนู Gamemode ที่คุณมีอยู่แล้ว ]]
 
