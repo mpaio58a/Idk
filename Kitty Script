@@ -286,7 +286,7 @@ AntiTrapToggle:OnChanged(function()
         local function DisableTrap(obj)
             if obj:IsA("BasePart") and obj.Name == "Center" and obj.Parent and obj.Parent.Name:lower():find("trap") then
                 obj.CanTouch = false
-                obj.Transparency = 0.5 
+                obj.Transparency = 1 
             end
         end
 
@@ -307,7 +307,7 @@ AntiTrapToggle:OnChanged(function()
         for _, v in pairs(workspace:GetDescendants()) do
             if v:IsA("BasePart") and v.Name == "Center" and v.Parent and v.Parent.Name:lower():find("trap") then
                 v.CanTouch = true
-                v.Transparency = 0 
+                v.Transparency = 1 
             end
         end
     end
