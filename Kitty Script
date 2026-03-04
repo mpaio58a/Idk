@@ -324,8 +324,8 @@ do
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
     end })
 
--- [[ 1. สร้างปุ่ม Toggle ในหน้า Main ]]
-local AutoSpamToggle = Tabs.Main:AddToggle("AutoSpam", {
+-- [[ 1. สร้างปุ่ม Toggle ในหน้า Misc ]]
+local AutoSpamToggle = Tabs.Misc:AddToggle("AutoSpam", {
     Title = "Spam Interact Door Everything", 
     Default = false
 })
