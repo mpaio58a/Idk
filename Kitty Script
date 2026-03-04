@@ -100,12 +100,6 @@ do
         Callback = function() RunHNS("WasTransformed") end
     })
 
-    local UTSpam = G:AddToggle("UTSpam", {Title = "Spam unTransform", Default = false})
-    task.spawn(function()
-        while true do
-            if UTSpam.Value then RunHNS("WasTransformed") end
-            task.wait(0.1)
-        end
     end)
 
     -- --- Clone ---
