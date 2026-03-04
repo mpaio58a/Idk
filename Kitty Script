@@ -324,24 +324,31 @@ do
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
     end })
 
-    local AutoSpamToggle = Tabs.Misc:AddToggle("AutoSpam", {
-        Title = "Auto Spam (Interact Everything)",
-        Default = false 
-    })
+-- [[ 1. สร้างปุ่ม Toggle ในหน้า Main ]]
+local AutoSpamToggle = Tabs.Main:AddToggle("AutoSpam", {
+    Title = "Spam Interact Door Everything", 
+    Default = false
+})
 
--- [[ 2. ตัว Logic การทำงาน (ทำงานเบื้องหลังเมื่อกดเปิด) ]]
+-- [[ 2. ตัวระบบทำงาน (Logic) ]]
 task.spawn(function()
-    local interactRemote = game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Interact")
+    -- ดึง Remote มาเก็บไว้ก่อน
+    local success, interactRemote = pcall(function()
+        return game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Interact")
+    end)
     
     while true do
-        if AutoSpamToggle.Value then
+        -- เช็คทั้งตัวแปร success และค่า Toggle
+        if success and AutoSpamToggle.Value then
             pcall(function()
                 local map = workspace:FindFirstChild("Map")
                 if map then
+                    -- วนหา Interacts ทุกห้อง
                     for _, room in pairs(map:GetChildren()) do
                         local interacts = room:FindFirstChild("Interacts")
                         if interacts then
                             for _, obj in pairs(interacts:GetChildren()) do
+                                -- ถ้ากดปิดปุ่ม ให้หยุดวนลูปทันที
                                 if not AutoSpamToggle.Value then break end
                                 interactRemote:FireServer(obj)
                             end
@@ -350,7 +357,7 @@ task.spawn(function()
                 end
             end)
         end
-        task.wait(0.5) -- ความเร็วในการสแปมตามต้นแบบ
+        task.wait(0.5) -- ความเร็วมาตรฐาน ไม่ทำให้เครื่องค้าง
     end
 end)
 
