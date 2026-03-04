@@ -324,7 +324,9 @@ do
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
     end })
 
-local ISpam = G:AddToggle("ISpam", {Title = "Auto Spam Interact", Default = false
+    local AntiTrapToggle = Tabs.Misc:AddToggle("AutoSpam", {
+        Title = "Auto Spam (Interact Everything)",
+        Default = false 
     })
 
 task.spawn(function()
