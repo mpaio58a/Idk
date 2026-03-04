@@ -97,9 +97,8 @@ do
     -- --- unTransform ---
     G:AddButton({
         Title = "unTransform",
-        Callback = function() RunHNS("WasTransformed")
-        end
-    end)
+        Callback = function() RunHNS("WasTransform") end
+    })
 
     -- --- Clone ---
     G:AddButton({
