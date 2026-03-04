@@ -362,8 +362,8 @@ task.spawn(function()
         end
         task.wait(SPAM_DELAY)
        end
-     end
-     end)
+    end
+    end)
 
     -- Anti Trap Toggle (Updated with Hide/Restore Logic)
     local AntiTrapToggle = Tabs.Misc:AddToggle("AntiTrap", {
