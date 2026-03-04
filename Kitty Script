@@ -332,16 +332,34 @@ do
 task.spawn(function()
     while true do
         if ISpam.Value then
-            -- ใช้ pcall กัน Error จน Tab หาย
             pcall(function()
-                -- ยิง Remote Interact โดยตรง (ไม่ต้องจำลองกด E)
-                game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Interact"):InvokeServer()
+                -- 1. อ้างอิง Remote
+                local interactRemote = game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Interact")
+                
+                -- 2. หาโฟลเดอร์ Map ใน Workspace
+                local mapFolder = workspace:FindFirstChild("Map")
+                if mapFolder then
+                    -- 3. วนหาแมพที่กำลังเล่นอยู่ (เช่น House, Club)
+                    for _, currentMap in pairs(mapFolder:GetChildren()) do
+                        -- 4. เข้าไปที่โฟลเดอร์ Interacts ของแมพนั้น
+                        local interacts = currentMap:FindFirstChild("Interacts")
+                        if interacts then
+                            -- 5. สแกนของทุกชิ้น (ประตู, สวิตช์) แล้วยิง Remote ทันที
+                            for _, obj in pairs(interacts:GetChildren()) do
+                                -- เช็คอีกรอบว่ายังเปิด Toggle อยู่ไหม (กันค้าง)
+                                if not ISpam.Value then break end
+                                interactRemote:FireServer(obj)
+                            end
+                        end
+                    end
+                end
             end)
         end
-        -- ความเร็วสแปม (0.1 คือมาตรฐาน)
-        task.wait(0.1)
+        -- ความเร็วในการวนลูปสแกนใหม่ (0.5 ตามสคริปต์ต้นฉบับของคุณ)
+        task.wait(0.5) 
     end
-    end)
+end)
+
 
 
     -- Anti Trap Toggle (Updated with Hide/Restore Logic)
