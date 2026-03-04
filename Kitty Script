@@ -329,38 +329,38 @@ do
         Default = false 
     })
 
-task.spawn(function()
-    while true do
-        if ISpam.Value then
-            pcall(function()
-                -- 1. อ้างอิง Remote
-                local interactRemote = game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Interact")
-                
-                -- 2. หาโฟลเดอร์ Map ใน Workspace
-                local mapFolder = workspace:FindFirstChild("Map")
-                if mapFolder then
-                    -- 3. วนหาแมพที่กำลังเล่นอยู่ (เช่น House, Club)
-                    for _, currentMap in pairs(mapFolder:GetChildren()) do
-                        -- 4. เข้าไปที่โฟลเดอร์ Interacts ของแมพนั้น
-                        local interacts = currentMap:FindFirstChild("Interacts")
-                        if interacts then
-                            -- 5. สแกนของทุกชิ้น (ประตู, สวิตช์) แล้วยิง Remote ทันที
-                            for _, obj in pairs(interacts:GetChildren()) do
-                                -- เช็คอีกรอบว่ายังเปิด Toggle อยู่ไหม (กันค้าง)
-                                if not ISpam.Value then break end
-                                interactRemote:FireServer(obj)
+    -- [[ CORE LOGIC: แก้ไขให้หา Map เจอแน่นอน ]]
+    task.spawn(function()
+        -- รอจนกว่า Remote จะพร้อม
+        local replicatedStorage = game:GetService("ReplicatedStorage")
+        local interactRemote = replicatedStorage:WaitForChild("Events"):WaitForChild("Interact")
+        
+        while true do
+            if AutoSpamToggle.Value then
+                pcall(function()
+                    -- เช็ค Workspace ว่ามี Map หรือยัง
+                    local mapFolder = workspace:FindFirstChild("Map")
+                    if mapFolder then
+                        -- วนลูปหา Interacts ในทุกๆ Sub-folder (House, Club, etc.)
+                        for _, room in pairs(mapFolder:GetChildren()) do
+                            local interacts = room:FindFirstChild("Interacts")
+                            if interacts then
+                                for _, obj in pairs(interacts:GetChildren()) do
+                                    -- ถ้ากดปิดระหว่างรัน ให้หยุดทันที
+                                    if not AutoSpamToggle.Value then break end
+                                    
+                                    -- ยิง Remote
+                                    interactRemote:FireServer(obj)
+                                end
                             end
                         end
                     end
-                end
-            end)
+                end)
+            end
+            task.wait(SPAM_DELAY) -- พักตามเวลาที่ตั้งไว้
         end
-        -- ความเร็วในการวนลูปสแกนใหม่ (0.5 ตามสคริปต์ต้นฉบับของคุณ)
-        task.wait(0.5) 
-    end
-end)
-
-
+    end)
+end
 
     -- Anti Trap Toggle (Updated with Hide/Restore Logic)
     local AntiTrapToggle = Tabs.Misc:AddToggle("AntiTrap", {
