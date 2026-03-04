@@ -324,6 +324,38 @@ do
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
     end })
 
+  -- [[ 📍 เพิ่มปุ่ม Auto Spam ไว้ตรงนี้ ]]
+    local AutoSpamToggle = M:AddToggle("AutoSpam", {
+        Title = "Auto Spam (Interact Everything)", 
+        Default = false
+    })
+
+    -- ระบบการทำงานของ Auto Spam
+    task.spawn(function()
+        local interactRemote = game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Interact")
+        
+        while true do
+            if AutoSpamToggle.Value then -- ทำงานเมื่อกดเปิด Toggle
+                pcall(function()
+                    local mapFolder = workspace:FindFirstChild("Map")
+                    if mapFolder then
+                        for _, currentMap in pairs(mapFolder:GetChildren()) do
+                            local interacts = currentMap:FindFirstChild("Interacts")
+                            if interacts then
+                                for _, obj in pairs(interacts:GetChildren()) do
+                                    if not AutoSpamToggle.Value then break end
+                                    interactRemote:FireServer(obj)
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+            task.wait(SPAM_DELAY)
+        end
+    end)
+end
+
     -- Anti Trap Toggle (Updated with Hide/Restore Logic)
     local AntiTrapToggle = Tabs.Misc:AddToggle("AntiTrap", {
         Title = "Anti Trap", 
