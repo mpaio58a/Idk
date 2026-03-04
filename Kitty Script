@@ -326,7 +326,8 @@ do
 
 -- [[ 1. สร้างปุ่ม Toggle ในหน้า Misc ]]
 local AutoSpamToggle = Tabs.Misc:AddToggle("AutoSpam", {
-    Title = "Spam Interact Door Everything", 
+    Title = "Spam Interact Door Everything",
+Description = "Troll Spam Door", 
     Default = false
 })
 
