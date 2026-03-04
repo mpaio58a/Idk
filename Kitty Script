@@ -324,42 +324,45 @@ do
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
     end })
 
-    local AntiTrapToggle = Tabs.Misc:AddToggle("AutoSpam", {
+    local AutoSpamToggle = Tabs.Misc:AddToggle("AutoSpam", {
         Title = "Auto Spam (Interact Everything)",
         Default = false 
     })
 
-    -- [[ CORE LOGIC: แก้ไขให้หา Map เจอแน่นอน ]]
-    task.spawn(function()
-        -- รอจนกว่า Remote จะพร้อม
-        local replicatedStorage = game:GetService("ReplicatedStorage")
-        local interactRemote = replicatedStorage:WaitForChild("Events"):WaitForChild("Interact")
-        
-        while true do
-            if AutoSpamToggle.Value then
-                pcall(function()
-                    -- เช็ค Workspace ว่ามี Map หรือยัง
-                    local mapFolder = workspace:FindFirstChild("Map")
-                    if mapFolder then
-                        -- วนลูปหา Interacts ในทุกๆ Sub-folder (House, Club, etc.)
-                        for _, room in pairs(mapFolder:GetChildren()) do
-                            local interacts = room:FindFirstChild("Interacts")
-                            if interacts then
-                                for _, obj in pairs(interacts:GetChildren()) do
-                                    -- ถ้ากดปิดระหว่างรัน ให้หยุดทันที
-                                    if not AutoSpamToggle.Value then break end
-                                    
-                                    -- ยิง Remote
-                                    interactRemote:FireServer(obj)
-                                end
+local SPAM_DELAY = 0.5 -- ความเร็วในการสแปม (วินาที)
+
+-- ค้นหา Remote
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local interactRemote = replicatedStorage:WaitForChild("Events"):WaitForChild("Interact")
+
+-- [[ CORE LOGIC ]]
+task.spawn(function()
+    print("Auto Spam Script Started")
+    
+    while true do
+        if _G.AutoSpamEnabled then
+            pcall(function()
+                -- 1. หาโฟลเดอร์ Map
+                local mapFolder = workspace:FindFirstChild("Map")
+                if mapFolder then
+                    -- 2. วนหาทุกอย่างใน Map (เช่น House, Club, Room)
+                    for _, currentMap in pairs(mapFolder:GetChildren()) do
+                        -- 3. เข้าไปที่โฟลเดอร์ Interacts
+                        local interacts = currentMap:FindFirstChild("Interacts")
+                        if interacts then
+                            -- 4. สแปมส่งค่าทุกชิ้น (Door, Switch, Drawer) ไปที่ Remote
+                            for _, obj in pairs(interacts:GetChildren()) do
+                                if not _G.AutoSpamEnabled then break end
+                                interactRemote:FireServer(obj)
                             end
                         end
                     end
-                end)
-            end
-            task.wait(SPAM_DELAY) -- พักตามเวลาที่ตั้งไว้
+                end
+            end)
         end
-    end)
+        task.wait(SPAM_DELAY)
+    end
+ end)
 end
 
     -- Anti Trap Toggle (Updated with Hide/Restore Logic)
