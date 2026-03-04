@@ -324,8 +324,8 @@ do
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
     end })
 
--- --- SECTION 4: Spam Interact (Remote) ---
-local ISpam = G:AddToggle("ISpam", {Title = "Auto Spam Interact", Default = false})
+local ISpam = G:AddToggle("ISpam", {Title = "Auto Spam Interact", Default = false
+    })
 
 task.spawn(function()
     while true do
@@ -339,7 +339,7 @@ task.spawn(function()
         -- ความเร็วสแปม (0.1 คือมาตรฐาน)
         task.wait(0.1)
     end
-end)
+    end)
 
 
     -- Anti Trap Toggle (Updated with Hide/Restore Logic)
