@@ -329,30 +329,20 @@ do
         Default = false 
     })
 
-local SPAM_DELAY = 0.5 -- ความเร็วในการสแปม (วินาที)
-
--- ค้นหา Remote
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local interactRemote = replicatedStorage:WaitForChild("Events"):WaitForChild("Interact")
-
--- [[ CORE LOGIC ]]
+-- [[ 2. ตัว Logic การทำงาน (ทำงานเบื้องหลังเมื่อกดเปิด) ]]
 task.spawn(function()
-    print("Auto Spam Script Started")
+    local interactRemote = game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Interact")
     
     while true do
-        if _G.AutoSpamEnabled then
+        if AutoSpamToggle.Value then
             pcall(function()
-                -- 1. หาโฟลเดอร์ Map
-                local mapFolder = workspace:FindFirstChild("Map")
-                if mapFolder then
-                    -- 2. วนหาทุกอย่างใน Map (เช่น House, Club, Room)
-                    for _, currentMap in pairs(mapFolder:GetChildren()) do
-                        -- 3. เข้าไปที่โฟลเดอร์ Interacts
-                        local interacts = currentMap:FindFirstChild("Interacts")
+                local map = workspace:FindFirstChild("Map")
+                if map then
+                    for _, room in pairs(map:GetChildren()) do
+                        local interacts = room:FindFirstChild("Interacts")
                         if interacts then
-                            -- 4. สแปมส่งค่าทุกชิ้น (Door, Switch, Drawer) ไปที่ Remote
                             for _, obj in pairs(interacts:GetChildren()) do
-                                if not _G.AutoSpamEnabled then break end
+                                if not AutoSpamToggle.Value then break end
                                 interactRemote:FireServer(obj)
                             end
                         end
@@ -360,10 +350,9 @@ task.spawn(function()
                 end
             end)
         end
-        task.wait(SPAM_DELAY)
-       end
+        task.wait(0.5) -- ความเร็วในการสแปมตามต้นแบบ
     end
-    end)
+end)
 
     -- Anti Trap Toggle (Updated with Hide/Restore Logic)
     local AntiTrapToggle = Tabs.Misc:AddToggle("AntiTrap", {
