@@ -361,7 +361,7 @@ Misc:AddButton({
 
 Misc:AddButton({
     Title = "Teleport to Item",
-    Description = "Error Try Refresh Items and Try Again", 
+    Description = "Error Try Refresh Items and Click This Button", 
     Callback = function()
  
         local target = ToolList[ToolDropdown.Value]
