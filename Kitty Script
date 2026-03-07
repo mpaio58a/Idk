@@ -361,8 +361,9 @@ Misc:AddButton({
 
 Misc:AddButton({
     Title = "Teleport to Item",
+    Description = "Error Try Refresh Items and Try Again", 
     Callback = function()
-    Description = "Not Found Item Try Refresh Items and Click Again", 
+ 
         local target = ToolList[ToolDropdown.Value]
         if target and game.Players.LocalPlayer.Character then
             local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
