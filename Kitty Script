@@ -428,6 +428,95 @@ AntiTrapToggle:OnChanged(function()
             if attackGui then attackGui.Enabled = false end
         end
     end)
+
+-- [[ MISC TAB: Teleport System ]]
+do
+    local M = Tabs.Misc
+    local ToolList = {} -- เก็บข้อมูล Tool เอาไว้อ้างอิงตอนวาร์ป
+    local ToolNames = {"ไม่มีข้อมูล (กด Refresh ก่อน)"} -- รายชื่อที่จะแสดงใน Dropdown
+
+    M:AddParagraph({
+        Title = "Teleport to Tools",
+        Content = "ระบบค้นหาและวาร์ปไปหา Tools ในโฟลเดอร์"
+    })
+
+    -- 1. ระบบเลื่อนค้นหา (Dropdown)
+    local ToolDropdown = M:AddDropdown("ToolDropdown", {
+        Title = "เลือก Tool / Model",
+        Values = ToolNames,
+        Multi = false,
+        Default = 1,
+    })
+
+    -- 2. ปุ่มอัปเดตรายชื่อ (กันเกมโหลดไม่เสร็จแล้วหาไม่เจอ)
+    M:AddButton({
+        Title = "🔄 ค้นหา/อัปเดต รายชื่อ Tools",
+        Callback = function()
+            ToolList = {}
+            ToolNames = {}
+            
+            -- ค้นหาโฟลเดอร์ Tools (ลองหาทั้งใน Workspace และใน Map)
+            local toolsFolder = workspace:FindFirstChild("Tools") 
+            if not toolsFolder then
+                local mapFolder = workspace:FindFirstChild("Map")
+                if mapFolder then
+                    toolsFolder = mapFolder:FindFirstChild("Tools")
+                end
+            end
+
+            -- ถ้าเจอโฟลเดอร์ ให้ดึงของข้างในมาใส่ Dropdown
+            if toolsFolder then
+                for _, obj in pairs(toolsFolder:GetChildren()) do
+                    if obj:IsA("Model") or obj:IsA("Tool") or obj:IsA("BasePart") then
+                        table.insert(ToolNames, obj.Name)
+                        ToolList[obj.Name] = obj -- เก็บข้อมูลไว้สำหรับวาร์ป
+                    end
+                end
+            end
+
+            -- ถ้าไม่เจออะไรเลย
+            if #ToolNames == 0 then
+                table.insert(ToolNames, "ไม่พบ Tools ในโฟลเดอร์")
+            end
+            
+            -- อัปเดตข้อมูลเข้าไปใน Dropdown ตัวเดิม
+            ToolDropdown:SetValues(ToolNames)
+        end
+    })
+
+    -- 3. ปุ่มวาร์ป (อยู่ล่างสุด)
+    M:AddButton({
+        Title = "⚡ Teleport",
+        Callback = function()
+            local selectedName = ToolDropdown.Value
+            local targetObj = ToolList[selectedName]
+            local player = game.Players.LocalPlayer
+
+            -- ตรวจสอบว่ามีตัวละครเราและเป้าหมายอยู่จริงไหม
+            if targetObj and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local targetCFrame
+                
+                -- ตรวจสอบประเภทของ Tool เพื่อหาพิกัด
+                if targetObj:IsA("Model") and targetObj.PrimaryPart then
+                    targetCFrame = targetObj.PrimaryPart.CFrame
+                elseif targetObj:IsA("Model") then
+                    local firstPart = targetObj:FindFirstChildWhichIsA("BasePart")
+                    if firstPart then targetCFrame = firstPart.CFrame end
+                elseif targetObj:IsA("Tool") then
+                    local handle = targetObj:FindFirstChild("Handle")
+                    if handle then targetCFrame = handle.CFrame end
+                elseif targetObj:IsA("BasePart") then
+                    targetCFrame = targetObj.CFrame
+                end
+
+                -- สั่งวาร์ปตัวละคร
+                if targetCFrame then
+                    player.Character.HumanoidRootPart.CFrame = targetCFrame + Vector3.new(0, 3, 0) -- บวกความสูง 3 กันติดพื้น
+                end
+            end
+        end
+    })
+    end)
 end
 
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
