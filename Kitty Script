@@ -330,13 +330,13 @@ local ToolList = {}
 local ToolNames = {"Press Refresh"}
 
 local ToolDropdown = Misc:AddDropdown("ToolDropdown", {
-    Title = "Teleport Items (All Duplicates)",
+    Title = "Selected Item",
     Values = ToolNames,
     Multi = false
 })
 
 Misc:AddButton({
-    Title = "🔄 Refresh Items (Show All)",
+    Title = "Refresh Items",
     Callback = function()
         ToolList = {}
         ToolNames = {}
@@ -360,8 +360,9 @@ Misc:AddButton({
 })
 
 Misc:AddButton({
-    Title = "⚡ Teleport to Selected",
+    Title = "Teleport to Item",
     Callback = function()
+    Description = "Not Found Item Try Refresh Items and Click Again", 
         local target = ToolList[ToolDropdown.Value]
         if target and game.Players.LocalPlayer.Character then
             local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
