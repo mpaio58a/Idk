@@ -325,6 +325,54 @@ do
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
     end })
 
+local Misc = Tabs.Misc
+local ToolList = {}
+local ToolNames = {"Press Refresh"}
+
+local ToolDropdown = Misc:AddDropdown("ToolDropdown", {
+    Title = "Teleport Items (All Duplicates)",
+    Values = ToolNames,
+    Multi = false
+})
+
+Misc:AddButton({
+    Title = "🔄 Refresh Items (Show All)",
+    Callback = function()
+        ToolList = {}
+        ToolNames = {}
+        local nameCount = {}
+        local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
+        
+        if tf then
+            for _, v in pairs(tf:GetChildren()) do
+                if v:IsA("Model") or v:IsA("Tool") or v:IsA("BasePart") then
+                    local oName = v.Name
+                    nameCount[oName] = (nameCount[oName] or 0) + 1
+                    local dName = oName .. " [" .. tostring(nameCount[oName]) .. "]"
+                    table.insert(ToolNames, dName)
+                    ToolList[dName] = v
+                end
+            end
+        end
+        table.sort(ToolNames)
+        ToolDropdown:SetValues(#ToolNames > 0 and ToolNames or {"No Items Found"})
+    end
+})
+
+Misc:AddButton({
+    Title = "⚡ Teleport to Selected",
+    Callback = function()
+        local target = ToolList[ToolDropdown.Value]
+        if target and game.Players.LocalPlayer.Character then
+            local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local pos = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")) or target
+            if hrp and pos then 
+                hrp.CFrame = pos.CFrame + Vector3.new(0, 3, 0) 
+            end
+        end
+    end
+})
+
 -- [[ 1. สร้างปุ่ม Toggle ในหน้า Misc ]]
 local AutoSpamToggle = Tabs.Misc:AddToggle("AutoSpam", {
     Title = "Spam Interact Door Everything",
