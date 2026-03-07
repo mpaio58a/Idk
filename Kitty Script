@@ -131,184 +131,159 @@ do
     Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
 end
 
--- [[ 2. VISUAL TAB (ESP Functions) ]]
--- (Player, Item, Trap ESP Logic)
-local function createPlayerESP(char, name, color)
-    if not char then return end
-    local hl = char:FindFirstChild("P_HL") or Instance.new("Highlight")
-    hl.Name = "P_HL"
-    hl.Parent = char
-    hl.FillColor = color
-    hl.FillTransparency = 0.5
-    hl.OutlineColor = Color3.new(1, 1, 1)
-    local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
-    if root then
-        local b = root:FindFirstChild("P_B") or Instance.new("BillboardGui")
-        b.Name = "P_B"
-        b.Parent = root
-        b.Size = UDim2.new(0, 100, 0, 30)
-        b.AlwaysOnTop = true
-        b.ExtentsOffset = Vector3.new(0, 3, 0)
-        local l = b:FindFirstChild("L") or Instance.new("TextLabel")
-        l.Name = "L"
-        l.Parent = b
-        l.Size = UDim2.new(1, 0, 1, 0)
-        l.BackgroundTransparency = 1
-        l.Text = name
-        l.TextColor3 = color
-        l.Font = Enum.Font.SourceSansBold
-        l.TextSize = 14
-        l.TextStrokeTransparency = 0
-    end
-end
+local Visual = Tabs.Visual
 
-local function applyItemESP(obj)
-    if not obj or obj:FindFirstChild("I_HL") then return end
+-- [[ สร้างปุ่ม Toggle ]]
+local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty ESP", Default = false})
+local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
+local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
+
+-- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
+local FolderCache = {}
+local function GetTargetFolder(name)
+    -- ถ้าจำได้แล้ว ให้ดึงมาใช้เลย ไม่ต้องหาใหม่
+    if FolderCache[name] and FolderCache[name].Parent then return FolderCache[name] end
     
+    -- หาแบบเบาบางก่อน
+    local f = workspace:FindFirstChild(name) or (workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild(name))
+    -- ถ้าไม่เจอค่อยหาแบบทะลุ (ทำแค่ครั้งเดียว)
+    if not f then f = workspace:FindFirstChild(name, true) end
+    
+    FolderCache[name] = f
+    return f
+end
+
+-- [[ 2. ฟังก์ชันสร้าง ESP (อัปเดตเฉพาะตอนจำเป็น) ]]
+local function CreateESP(target, color, espName, displayText)
+    if not target then return end
+
     -- สร้าง Highlight
-    local hl = Instance.new("Highlight")
-    hl.Name = "I_HL"
-    hl.FillColor = Color3.fromRGB(255, 255, 255)
-    hl.FillTransparency = 0.5
-    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-    hl.Parent = obj
+    local hl = target:FindFirstChild(espName .. "_HL")
+    if not hl then
+        hl = Instance.new("Highlight")
+        hl.Name = espName .. "_HL"
+        hl.FillTransparency = 0.5
+        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+        hl.FillColor = color
+        hl.Parent = target
+    else
+        if hl.FillColor ~= color then hl.FillColor = color end -- อัปเดตสีแค่ตอนที่มันเปลี่ยน
+    end
 
-    -- ค้นหาจุดวางป้ายชื่อ (หาจุดที่เหมาะสมที่สุดในโมเดลที่ซ้อนอยู่)
-    local target = obj:FindFirstChild("Handle") or obj:FindFirstChildOfClass("BasePart", true)
-    if target then
-        local b = Instance.new("BillboardGui")
-        b.Name = "I_B"
-        b.Size = UDim2.new(0, 100, 0, 40)
-        b.AlwaysOnTop = true
-        b.ExtentsOffset = Vector3.new(0, 1.5, 0)
-        b.Parent = target
+    -- สร้างป้ายชื่อ
+    local attachPart = target:IsA("Model") and (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head") or target.PrimaryPart) or target
+    if attachPart and attachPart:IsA("BasePart") then
+        local bg = attachPart:FindFirstChild(espName .. "_BG")
+        if not bg then
+            bg = Instance.new("BillboardGui")
+            bg.Name = espName .. "_BG"
+            bg.Size = UDim2.new(0, 100, 0, 40)
+            bg.AlwaysOnTop = true
+            bg.ExtentsOffset = Vector3.new(0, 3, 0)
 
-        local l = Instance.new("TextLabel")
-        l.Size = UDim2.new(1, 0, 1, 0)
-        l.BackgroundTransparency = 1
-        l.Text = obj.Name
-        l.TextColor3 = Color3.new(1, 1, 1)
-        l.Font = Enum.Font.SourceSansBold
-        l.TextSize = 14
-        l.TextStrokeTransparency = 0
-        l.Parent = b
+            local txt = Instance.new("TextLabel")
+            txt.Name = "NameLabel"
+            txt.Size = UDim2.new(1, 0, 1, 0)
+            txt.BackgroundTransparency = 1
+            txt.Font = Enum.Font.SourceSansBold
+            txt.TextSize = 14
+            txt.TextStrokeTransparency = 0
+            txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+            txt.Text = displayText or target.Name
+            txt.TextColor3 = color
+            txt.Parent = bg
+            bg.Parent = attachPart
+        else
+            -- เปลี่ยนข้อความเฉพาะตอนที่ชื่อ/สีเปลี่ยน (ช่วยลดแลค)
+            local txt = bg:FindFirstChild("NameLabel")
+            if txt and (txt.Text ~= (displayText or target.Name) or txt.TextColor3 ~= color) then
+                txt.Text = displayText or target.Name
+                txt.TextColor3 = color
+            end
+        end
     end
 end
 
-local function applyTrapESP(model)
-    if not model or not model:IsA("Model") then return end
-    local yellowColor = Color3.fromRGB(255, 255, 0)
-    local hl = model:FindFirstChild("T_HL") or Instance.new("Highlight")
-    hl.Name = "T_HL"
-    hl.Parent = model
-    hl.FillColor = yellowColor
-    hl.OutlineColor = Color3.new(1, 1, 1)
-    hl.FillTransparency = 0.5
-    local target = model.PrimaryPart or model:FindFirstChildOfClass("BasePart")
-    if target then
-        local b = target:FindFirstChild("T_B") or Instance.new("BillboardGui")
-        b.Name = "T_B"
-        b.Parent = target
-        b.Size = UDim2.new(0, 100, 0, 40)
-        b.AlwaysOnTop = true
-        b.ExtentsOffset = Vector3.new(0, 2, 0)
-        local l = b:FindFirstChild("L") or Instance.new("TextLabel")
-        l.Name = "L"
-        l.Parent = b
-        l.Size = UDim2.new(1, 0, 1, 0)
-        l.BackgroundTransparency = 1
-        l.Text = "Trap"
-        l.TextColor3 = yellowColor
-        l.Font = Enum.Font.SourceSansBold
-        l.TextSize = 18
-        l.TextStrokeTransparency = 0
-    end
+-- [[ 3. ระบบลบ ESP (แก้แลค: ทำงานแค่ตอนกดปิด) ]]
+local function RemoveESP(espName)
+    pcall(function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v.Name == (espName .. "_HL") or v.Name == (espName .. "_BG") then
+                v:Destroy()
+            end
+        end
+    end)
 end
 
-do
-    local PlayerToggle = Tabs.Visual:AddToggle("PlayerEsp", {Title = "Player & Bot Esp", Default = false })
-    local ItemToggle = Tabs.Visual:AddToggle("ItemEsp", {Title = "Items Esp", Default = false })
-    local TrapToggle = Tabs.Visual:AddToggle("TrapEsp", {Title = "Trap Esp", Default = false })
+-- ผูกการลบเข้ากับปุ่ม (ถ้าปุ่มถูกปิด ให้สั่งลบทิ้งแค่ "ครั้งเดียว")
+PlayerEspToggle:OnChanged(function() if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end end)
+ItemEspToggle:OnChanged(function() if not ItemEspToggle.Value then RemoveESP("ESP_Item") end end)
+TrapEspToggle:OnChanged(function() if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end end)
 
-    PlayerToggle:OnChanged(function()
-        _G.PlayerEspEnabled = PlayerToggle.Value
-        if not _G.PlayerEspEnabled then
-            for _, v in pairs(workspace:GetDescendants()) do if v.Name == "P_HL" or v.Name == "P_B" then v:Destroy() end end
-        end
-    end)
-
-    ItemToggle:OnChanged(function()
-        _G.ItemEspEnabled = ItemToggle.Value
-        if not _G.ItemEspEnabled then
-            for _, v in pairs(workspace:GetDescendants()) do if v.Name == "I_HL" or v.Name == "I_B" then v:Destroy() end end
-        end
-    end)
-
-    TrapToggle:OnChanged(function()
-        _G.TrapEspEnabled = TrapToggle.Value
-        if not _G.TrapEspEnabled then
-            for _, v in pairs(workspace:GetDescendants()) do if v.Name == "T_HL" or v.Name == "T_B" then v:Destroy() end end
-        end
-    end)
-
-    task.spawn(function()
-        while true do
-            if _G.PlayerEspEnabled then
-                for _, v in pairs(workspace:GetDescendants()) do
-                    if v:IsA("Humanoid") then
-                        local char = v.Parent
-                        if char and char:IsA("Model") and char ~= game.Players.LocalPlayer.Character then
-                            local isKiller = char:FindFirstChild("Weapon", true)
-                            createPlayerESP(char, char.Name, isKiller and Color3.new(1, 0, 0) or Color3.new(0, 1, 0))
-                        end
+-- [[ 4. ลูปการทำงานของ ESP ]]
+-- Player & Bot ESP
+task.spawn(function()
+    while task.wait(1) do
+        if PlayerEspToggle.Value then
+            pcall(function()
+                for _, plr in ipairs(game.Players:GetPlayers()) do
+                    if plr.Character and plr ~= game.Players.LocalPlayer then
+                        local isKiller = plr.Character:FindFirstChild("Weapon", true)
+                        local espColor = isKiller and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+                        CreateESP(plr.Character, espColor, "ESP_Player", plr.Name)
                     end
                 end
-            end
-            task.wait(1)
-        end
-    end)
 
-    task.spawn(function()
-    while true do
-        if _G.ItemEspEnabled then
-            pcall(function()
-                -- 'true' ตรงนี้สำคัญมาก! คือการสั่งให้หาโฟลเดอร์ Tools ไม่ว่าจะซ่อนอยู่ลึกกี่ชั้นก็ตาม
-                local targetFolder = workspace:FindFirstChild("Tools", true) 
-                                  or workspace:FindFirstChild("Items", true)
-
-                if targetFolder then
-                    -- เมื่อเจอโฟลเดอร์แล้ว ให้กวาดหาของข้างในทั้งหมด (GetDescendants)
-                    for _, v in pairs(targetFolder:GetDescendants()) do
-                        -- เช็คว่าเป็น Model หรือ Tool และต้องมีชื่อ (เพื่อไม่ให้เอา Part เล็กๆ มาทำ ESP)
-                        if (v:IsA("Model") or v:IsA("Tool")) and not v:FindFirstChild("I_HL") then
-                            -- ตรวจสอบว่ามันไม่ใช่ตัวโฟลเดอร์เอง
-                            if v.Name ~= "Tools" and v.Name ~= "Items" then
-                                applyItemESP(v)
-                            end
+                local playersFolder = GetTargetFolder("Players")
+                if playersFolder then
+                    for _, bot in ipairs(playersFolder:GetChildren()) do
+                        if bot:IsA("Model") and bot ~= game.Players.LocalPlayer.Character then
+                            local isKiller = bot:FindFirstChild("Weapon", true)
+                            local espColor = isKiller and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+                            CreateESP(bot, espColor, "ESP_Player", bot.Name)
                         end
                     end
                 end
             end)
         end
-        task.wait(2)
     end
 end)
 
-    task.spawn(function()
-        while true do
-            if _G.TrapEspEnabled then
-                pcall(function()
-                    for _, obj in pairs(workspace:GetDescendants()) do
-                        if obj:IsA("Model") and obj.Name:lower():find("trap") then
-                            if not obj:FindFirstChild("T_HL") then applyTrapESP(obj) end
+-- Item ESP
+task.spawn(function()
+    while task.wait(1) do
+        if ItemEspToggle.Value then
+            pcall(function()
+                local targetFolder = GetTargetFolder("Tools") or GetTargetFolder("Items")
+                if targetFolder then
+                    for _, item in ipairs(targetFolder:GetChildren()) do
+                        if item:IsA("Model") or item:IsA("Tool") or item:IsA("BasePart") then
+                            CreateESP(item, Color3.fromRGB(255, 255, 255), "ESP_Item", item.Name)
                         end
                     end
-                end)
-            end
-            task.wait(0.5)
+                end
+            end)
         end
-    end)
-end
+    end
+end)
+
+-- Trap ESP
+task.spawn(function()
+    while task.wait(1) do
+        if TrapEspToggle.Value then
+            pcall(function()
+                local trapsFolder = GetTargetFolder("Traps")
+                if trapsFolder then
+                    for _, trap in ipairs(trapsFolder:GetChildren()) do
+                        if trap:IsA("Model") or trap:IsA("BasePart") then
+                            CreateESP(trap, Color3.fromRGB(255, 255, 0), "ESP_Trap", "Trap")
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
 
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
