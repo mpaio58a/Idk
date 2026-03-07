@@ -492,6 +492,7 @@ do
             local targetObj = ToolList[selectedName]
             local player = game.Players.LocalPlayer
 
+   })
             -- ตรวจสอบว่ามีตัวละครเราและเป้าหมายอยู่จริงไหม
             if targetObj and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                 local targetCFrame
@@ -516,7 +517,6 @@ do
             end
         end
     })
-    end)
 end
 
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
