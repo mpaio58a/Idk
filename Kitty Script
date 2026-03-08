@@ -132,7 +132,7 @@ do
 local RunService = game:GetService("RunService")
 local NoclipConnection
 
-local NoclipToggle = Tabs.Main:AddToggle("Noclip", {Title = "Noclip (เดินทะลุกำแพง)", Default = false})
+local NoclipToggle = Tabs.Main:AddToggle("Noclip", {Title = "Noclip", Default = false})
 
 NoclipToggle:OnChanged(function()
     if NoclipToggle.Value then
