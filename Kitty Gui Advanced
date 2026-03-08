@@ -166,15 +166,20 @@ local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty E
 local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
 local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
 
-local espPuzzle = false
+local PuzzleToggle = Tabs.Visual:AddToggle("PuzzleToggle", {Title = "Puzzle ESP (Blue)", Default = false})
 
-Tab.Visual:CreateToggle("Puzzles Esp", {Title = "Puzzles Esp", Default = false}) function(state)
-    espPuzzle = state
-    if not state then 
-        ClearESP("ESP_Puzzle") -- ลบสีฟ้าทิ้งตอนกดปิด
+PuzzleToggle:OnChanged(function()
+    -- ถ้ายกเลิกปุ่ม (ปิด) ให้ลบสีฟ้าทิ้ง
+    if not PuzzleToggle.Value then 
+        pcall(function()
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "ESP_Puzzle_HL" or v.Name == "ESP_Puzzle_BG" then
+                    v:Destroy()
+                end
+            end
+        end)
     end
 end)
-
 
 -- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
 local FolderCache = {}
@@ -323,21 +328,21 @@ task.spawn(function()
     end
 end)
 
-
-        -- ระบบ Puzzle ESP (หาแบบเจาะลึกทะลุโฟลเดอร์ และเอาเฉพาะ Model สีฟ้า)
-        if espPuzzle then
+        -- ระบบ Puzzle ESP (สแกนหา Model สีฟ้า)
+        if PuzzleToggle.Value then
             pcall(function()
                 local puzzlesFolder = GetTargetFolder("Puzzles")
                 if puzzlesFolder then
                     for _, puzzle in ipairs(puzzlesFolder:GetDescendants()) do
                         if puzzle:IsA("Model") then
-                            -- สีฟ้า Light Blue (0, 200, 255)
+                            -- puzzle.Name ด้านหลังสุด คือ Title (ชื่อ) ที่จะไปโชว์บนป้าย ESP ครับ
                             CreateESP(puzzle, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", puzzle.Name)
                         end
                     end
                 end
             end)
         end
+
 
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
