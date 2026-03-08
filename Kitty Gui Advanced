@@ -1,6 +1,6 @@
 -- [[ 1. โหลด Mspaint UI Library ]]
 -- (ลิงก์นี้เป็นตัวยอดฮิต ถ้าคุณมีลิงก์ loadstring ของ Mspaint ตัวอื่น สามารถเอามาเปลี่ยนตรงนี้ได้เลย)
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/not-weuz/Lua/main/roblox/scripts/UiLibraries/MSPaint.lua"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/Example.lua"))()
 
 -- [[ 2. สร้างหน้าต่างหลัก ]]
 local window = library:CreateWindow("Kitty Gui (MSPaint)")
