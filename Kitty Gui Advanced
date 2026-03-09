@@ -165,20 +165,14 @@ local Visual = Tabs.Visual
 local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty ESP", Default = false})
 local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
 local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
+local PuzzlesEspToggle =
 
-local PuzzleToggle = Tabs.Visual:AddToggle("PuzzleToggle", {Title = "Puzzle ESP (Blue)", Default = false})
+local pzT = Tabs.Visual:AddToggle("pzT", {Title="Puzzle ESP (Blue)", Default=false})
 
-PuzzleToggle:OnChanged(function()
-    -- ถ้ายกเลิกปุ่ม (ปิด) ให้ลบสีฟ้าทิ้ง
-    if not PuzzleToggle.Value then 
-        pcall(function()
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "ESP_Puzzle_HL" or v.Name == "ESP_Puzzle_BG" then
-                    v:Destroy()
-                end
-            end
-        end)
-    end
+pzT:OnChanged(function() 
+    if not pzT.Value then 
+        cESP("E_Pz") -- ลบสีฟ้าออกเมื่อกดปิด
+    end 
 end)
 
 -- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
@@ -264,85 +258,76 @@ ItemEspToggle:OnChanged(function() if not ItemEspToggle.Value then RemoveESP("ES
 TrapEspToggle:OnChanged(function() if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end end)
 
 -- [[ 4. ลูปการทำงานของ ESP ]]
--- Player & Bot ESP
 task.spawn(function()
     while task.wait(1) do
-        if PlayerEspToggle.Value then
+        
+        -- [[ 1. Player & Bot ESP (สีแดง/เขียว) ]]
+        if pT.Value then 
             pcall(function()
-                for _, plr in ipairs(game.Players:GetPlayers()) do
-                    if plr.Character and plr ~= game.Players.LocalPlayer then
-                        local isKiller = plr.Character:FindFirstChild("Weapon", true)
-                        local espColor = isKiller and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
-                        CreateESP(plr.Character, espColor, "ESP_Player", plr.Name)
-                    end
+                -- หาผู้เล่นปกติ
+                for _, p in pairs(game.Players:GetPlayers()) do 
+                    if p.Character and p ~= game.Players.LocalPlayer then 
+                        local isKiller = p.Character:FindFirstChild("Weapon", true)
+                        MkESP(p.Character, isKiller and Color3.new(1,0,0) or Color3.new(0,1,0), "E_P", p.Name) 
+                    end 
                 end
-
-                local playersFolder = GetTargetFolder("Players")
-                if playersFolder then
-                    for _, bot in ipairs(playersFolder:GetChildren()) do
-                        if bot:IsA("Model") and bot ~= game.Players.LocalPlayer.Character then
-                            local isKiller = bot:FindFirstChild("Weapon", true)
-                            local espColor = isKiller and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
-                            CreateESP(bot, espColor, "ESP_Player", bot.Name)
-                        end
-                    end
+                -- หาบอท (ในโฟลเดอร์ Players)
+                local pf = workspace:FindFirstChild("Players", true) 
+                if pf then 
+                    for _, b in pairs(pf:GetChildren()) do 
+                        if b:IsA("Model") and b ~= game.Players.LocalPlayer.Character then 
+                            local isKiller = b:FindFirstChild("Weapon", true)
+                            MkESP(b, isKiller and Color3.new(1,0,0) or Color3.new(0,1,0), "E_P", b.Name) 
+                        end 
+                    end 
                 end
-            end)
+            end) 
         end
+
+        -- [[ 2. Item ESP (เฉพาะ Tool และ Union สีขาว) ]]
+        if iT.Value then 
+            pcall(function() 
+                local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true) 
+                if tf then 
+                    for _, i in pairs(tf:GetChildren()) do 
+                        if i:IsA("Tool") or i:IsA("UnionOperation") then 
+                            MkESP(i, Color3.new(1,1,1), "E_I", i.Name) 
+                        end 
+                    end 
+                end 
+            end) 
+        end
+
+        -- [[ 3. Trap ESP (สีเหลือง) ]]
+        if tT.Value then 
+            pcall(function() 
+                local tr = workspace:FindFirstChild("Traps", true) 
+                if tr then 
+                    for _, t in pairs(tr:GetChildren()) do 
+                        if t:IsA("Model") or t:IsA("BasePart") then 
+                            MkESP(t, Color3.new(1,1,0), "E_T", "Trap") 
+                        end 
+                    end 
+                end 
+            end) 
+        end
+
+        -- [[ 4. Puzzle ESP (หาทะลุโฟลเดอร์ เอาเฉพาะ Model สีฟ้า) ]]
+        if pzT.Value then 
+            pcall(function() 
+                local pzf = workspace:FindFirstChild("Puzzles", true) 
+                if pzf then 
+                    for _, pz in pairs(pzf:GetDescendants()) do 
+                        if pz:IsA("Model") then 
+                            MkESP(pz, Color3.fromRGB(0, 200, 255), "E_Pz", pz.Name) 
+                        end 
+                    end 
+                end 
+            end) 
+        end
+
     end
 end)
-
--- Item ESP
-task.spawn(function()
-    while task.wait(1) do
-        if ItemEspToggle.Value then
-            pcall(function()
-                local targetFolder = GetTargetFolder("Tools") or GetTargetFolder("Items")
-                if targetFolder then
-                    for _, item in ipairs(targetFolder:GetChildren()) do
-                        if item:IsA("Model") or item:IsA("Tool") or item:IsA("BasePart") then
-                            CreateESP(item, Color3.fromRGB(255, 255, 255), "ESP_Item", item.Name)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- Trap ESP
-task.spawn(function()
-    while task.wait(1) do
-        if TrapEspToggle.Value then
-            pcall(function()
-                local trapsFolder = GetTargetFolder("Traps")
-                if trapsFolder then
-                    for _, trap in ipairs(trapsFolder:GetChildren()) do
-                        if trap:IsA("Model") or trap:IsA("BasePart") then
-                            CreateESP(trap, Color3.fromRGB(255, 255, 0), "ESP_Trap", "Trap")
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
-        -- ระบบ Puzzle ESP (สแกนหา Model สีฟ้า)
-        if PuzzleToggle.Value then
-            pcall(function()
-                local puzzlesFolder = GetTargetFolder("Puzzles")
-                if puzzlesFolder then
-                    for _, puzzle in ipairs(puzzlesFolder:GetDescendants()) do
-                        if puzzle:IsA("Model") then
-                            -- puzzle.Name ด้านหลังสุด คือ Title (ชื่อ) ที่จะไปโชว์บนป้าย ESP ครับ
-                            CreateESP(puzzle, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", puzzle.Name)
-                        end
-                    end
-                end
-            end)
-        end
-
 
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
