@@ -165,16 +165,15 @@ local Visual = Tabs.Visual
 local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty ESP", Default = false})
 local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
 local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
+-- 🟢 เพิ่มปุ่ม Puzzle ต่อท้าย
+local PuzzleEspToggle = Visual:AddToggle("PuzzleEsp", {Title = "Puzzle ESP (Blue)", Default = false})
 
 -- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
 local FolderCache = {}
 local function GetTargetFolder(name)
-    -- ถ้าจำได้แล้ว ให้ดึงมาใช้เลย ไม่ต้องหาใหม่
     if FolderCache[name] and FolderCache[name].Parent then return FolderCache[name] end
 
-    -- หาแบบเบาบางก่อน
     local f = workspace:FindFirstChild(name) or (workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild(name))
-    -- ถ้าไม่เจอค่อยหาแบบทะลุ (ทำแค่ครั้งเดียว)
     if not f then f = workspace:FindFirstChild(name, true) end
 
     FolderCache[name] = f
@@ -185,7 +184,6 @@ end
 local function CreateESP(target, color, espName, displayText)
     if not target then return end
 
-    -- สร้าง Highlight
     local hl = target:FindFirstChild(espName .. "_HL")
     if not hl then
         hl = Instance.new("Highlight")
@@ -195,10 +193,9 @@ local function CreateESP(target, color, espName, displayText)
         hl.FillColor = color
         hl.Parent = target
     else
-        if hl.FillColor ~= color then hl.FillColor = color end -- อัปเดตสีแค่ตอนที่มันเปลี่ยน
+        if hl.FillColor ~= color then hl.FillColor = color end
     end
 
-    -- สร้างป้ายชื่อ
     local attachPart = target:IsA("Model") and (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head") or target.PrimaryPart) or target
     if attachPart and attachPart:IsA("BasePart") then
         local bg = attachPart:FindFirstChild(espName .. "_BG")
@@ -222,7 +219,6 @@ local function CreateESP(target, color, espName, displayText)
             txt.Parent = bg
             bg.Parent = attachPart
         else
-            -- เปลี่ยนข้อความเฉพาะตอนที่ชื่อ/สีเปลี่ยน (ช่วยลดแลค)
             local txt = bg:FindFirstChild("NameLabel")
             if txt and (txt.Text ~= (displayText or target.Name) or txt.TextColor3 ~= color) then
                 txt.Text = displayText or target.Name
@@ -243,12 +239,15 @@ local function RemoveESP(espName)
     end)
 end
 
--- ผูกการลบเข้ากับปุ่ม (ถ้าปุ่มถูกปิด ให้สั่งลบทิ้งแค่ "ครั้งเดียว")
+-- ผูกการลบเข้ากับปุ่ม
 PlayerEspToggle:OnChanged(function() if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end end)
 ItemEspToggle:OnChanged(function() if not ItemEspToggle.Value then RemoveESP("ESP_Item") end end)
 TrapEspToggle:OnChanged(function() if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end end)
+-- 🟢 ผูกคำสั่งลบสีของ Puzzle
+PuzzleEspToggle:OnChanged(function() if not PuzzleEspToggle.Value then RemoveESP("ESP_Puzzle") end end)
 
 -- [[ 4. ลูปการทำงานของ ESP ]]
+
 -- Player & Bot ESP
 task.spawn(function()
     while task.wait(1) do
@@ -305,6 +304,25 @@ task.spawn(function()
                     for _, trap in ipairs(trapsFolder:GetChildren()) do
                         if trap:IsA("Model") or trap:IsA("BasePart") then
                             CreateESP(trap, Color3.fromRGB(255, 255, 0), "ESP_Trap", "Trap")
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- 🟢 Puzzle ESP
+task.spawn(function()
+    while task.wait(1) do
+        if PuzzleEspToggle.Value then
+            pcall(function()
+                local puzzlesFolder = GetTargetFolder("Puzzles")
+                if puzzlesFolder then
+                    -- ใช้ GetDescendants() เพื่อเจาะหา Puzzle ที่อาจจะซ้อนอยู่ลึกๆ
+                    for _, puzzle in ipairs(puzzlesFolder:GetDescendants()) do
+                        if puzzle:IsA("Model") then
+                            CreateESP(puzzle, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", puzzle.Name)
                         end
                     end
                 end
