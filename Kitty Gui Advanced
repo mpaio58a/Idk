@@ -312,16 +312,16 @@ task.spawn(function()
     end
 end)
 
--- Puzzle ESP 🟢 (อัปเกรดให้จับ BasePart และ Tool ด้วย)
+-- Puzzle ESP (Blue)
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(1) do -- 🟢 ใช้ task.wait(1) ให้ลื่นไหลเหมือนอันอื่น ไม่มีกระตุก 3 วิแล้ว!
         if PuzzleEspToggle.Value then
             pcall(function()
                 local puzzlesFolder = GetTargetFolder("Puzzles")
                 if puzzlesFolder then
                     -- ใช้ GetDescendants() เพื่อเจาะหา Puzzle ที่อาจจะซ้อนอยู่ลึกๆ
                     for _, puzzle in ipairs(puzzlesFolder:GetDescendants()) do
-                        -- 🚨 แก้ไขตรงนี้: เพิ่ม BasePart และ Tool เข้าไปดักจับด้วย!
+                        -- 🚨 ดักจับครบทั้ง Model, BasePart และ Tool
                         if puzzle:IsA("Model") or puzzle:IsA("BasePart") or puzzle:IsA("Tool") then
                             CreateESP(puzzle, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", puzzle.Name)
                         end
