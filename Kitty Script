@@ -165,7 +165,20 @@ local Visual = Tabs.Visual
 local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty ESP", Default = false})
 local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
 local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
-local PuzzleEspToggle = Visual:AddToggle("PuzzleEsp", {Title = "Puzzle ESP", Default = false})
+local PuzzleEspToggle = Tabs.Visual:AddToggle("PuzzleEsp", {Title = "Puzzle ESP", Default = false})
+
+PuzzleEspToggle:OnChanged(function() 
+    if not PuzzleEspToggle.Value then 
+        -- สั่งลบทุกอย่างที่ลงท้ายด้วย _HL, _BG, _Box
+        pcall(function()
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "ESP_Puzzle_HL" or v.Name == "ESP_Puzzle_BG" or v.Name == "ESP_Puzzle_Box" then
+                    v:Destroy()
+                end
+            end
+        end)
+    end 
+end)
 
 -- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
 local FolderCache = {}
@@ -184,61 +197,77 @@ end
 
 -- [[ 2. ฟังก์ชันสร้าง ESP (อัปเดตเฉพาะตอนจำเป็น) ]]
 local function CreateESP(target, color, espName, displayText)
-    if not target then return end
+    if not target or not target.Parent then return end
 
-    -- สร้าง Highlight
-    local hl = target:FindFirstChild(espName .. "_HL")
-    if not hl then
-        hl = Instance.new("Highlight")
+    pcall(function()
+        -- ระบบจัดการความโปร่งใส (ฝังชิป)
+        local function HandleTransparency(part)
+            if part:IsA("BasePart") then
+                if part:GetAttribute("OrigTrans_" .. espName) == nil then
+                    part:SetAttribute("OrigTrans_" .. espName, part.Transparency)
+                end
+                part.Transparency = 0 
+            end
+        end
+
+        if target:IsA("BasePart") then
+            HandleTransparency(target)
+        elseif target:IsA("Model") then
+            for _, v in ipairs(target:GetDescendants()) do
+                HandleTransparency(v)
+            end
+        end
+
+        -- สร้าง Highlight
+        local hl = target:FindFirstChild(espName .. "_HL") or Instance.new("Highlight")
         hl.Name = espName .. "_HL"
+        hl.FillColor = color
         hl.FillTransparency = 0.5
         hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-        hl.FillColor = color
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         hl.Parent = target
-    else
-        if hl.FillColor ~= color then hl.FillColor = color end -- อัปเดตสีแค่ตอนที่มันเปลี่ยน
-    end
 
-    -- สร้างป้ายชื่อ
-    local attachPart = target:IsA("Model") and (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head") or target.PrimaryPart) or target
-    if attachPart and attachPart:IsA("BasePart") then
-        local bg = attachPart:FindFirstChild(espName .. "_BG")
-        if not bg then
-            bg = Instance.new("BillboardGui")
+        -- สร้างป้ายชื่อ (หา Root Part ให้เจอชัวร์ๆ)
+        local root = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart", true)) or (target:IsA("BasePart") and target)
+        
+        if root then
+            local bg = root:FindFirstChild(espName .. "_BG") or Instance.new("BillboardGui")
             bg.Name = espName .. "_BG"
             bg.Size = UDim2.new(0, 100, 0, 40)
             bg.AlwaysOnTop = true
             bg.ExtentsOffset = Vector3.new(0, 3, 0)
-
-            local txt = Instance.new("TextLabel")
+            
+            local txt = bg:FindFirstChild("NameLabel") or Instance.new("TextLabel")
             txt.Name = "NameLabel"
             txt.Size = UDim2.new(1, 0, 1, 0)
             txt.BackgroundTransparency = 1
+            txt.Text = displayText or target.Name
+            txt.TextColor3 = color
             txt.Font = Enum.Font.SourceSansBold
             txt.TextSize = 14
             txt.TextStrokeTransparency = 0
-            txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            txt.Text = displayText or target.Name
-            txt.TextColor3 = color
             txt.Parent = bg
-            bg.Parent = attachPart
-        else
-            -- เปลี่ยนข้อความเฉพาะตอนที่ชื่อ/สีเปลี่ยน (ช่วยลดแลค)
-            local txt = bg:FindFirstChild("NameLabel")
-            if txt and (txt.Text ~= (displayText or target.Name) or txt.TextColor3 ~= color) then
-                txt.Text = displayText or target.Name
-                txt.TextColor3 = color
-            end
+            bg.Parent = root
         end
-    end
+    end)
 end
 
 -- [[ 3. ระบบลบ ESP (แก้แลค: ทำงานแค่ตอนกดปิด) ]]
 local function RemoveESP(espName)
     pcall(function()
-        for _, v in pairs(workspace:GetDescendants()) do
+        for _, v in ipairs(workspace:GetDescendants()) do
+            -- ลบ Highlight และ ป้ายชื่อ
             if v.Name == (espName .. "_HL") or v.Name == (espName .. "_BG") then
                 v:Destroy()
+            end
+            
+            -- ถอดชิปความจำและคืนค่าความโปร่งใสเดิม
+            if v:IsA("BasePart") then
+                local origTrans = v:GetAttribute("OrigTrans_" .. espName)
+                if origTrans ~= nil then
+                    v.Transparency = origTrans
+                    v:SetAttribute("OrigTrans_" .. espName, nil)
+                end
             end
         end
     end)
@@ -316,26 +345,22 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while task.wait(1.5) do -- สแกนทุก 1.5 วินาทีเพื่อลดภาระเครื่อง
+    repeat task.wait(1) until PuzzleEspToggle ~= nil
+    while true do
         if PuzzleEspToggle.Value then
             pcall(function()
-                -- สแกนแบบ "ทะลวง" เหมือนสคริปต์ Puzzle เดิมของคุณเพื่อให้โชว์ครบ
                 for _, obj in ipairs(workspace:GetDescendants()) do
-                    -- เช็คว่า Toggle ยังเปิดอยู่ไหม (กัน Error เวลาปิดปุ่มกะทันหัน)
                     if not PuzzleEspToggle.Value then break end
-
-                    local pName = obj.Parent and string.lower(obj.Parent.Name) or ""
+                    if not obj or not obj.Parent then continue end
                     
-                    -- Logic เดิมที่คุณต้องการ: เช็คชื่อ Parent ว่าเป็น puzzle หรือ puzzles
+                    local pName = obj.Parent and string.lower(obj.Parent.Name) or ""
                     if pName == "puzzles" or pName == "puzzle" then
-                        if obj:IsA("Model") or obj:IsA("BasePart") then
-                            -- ปรับให้ใช้ฟังก์ชัน CreateESP ของสคริปต์หลัก (สีฟ้า Blue)
-                            CreateESP(obj, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", obj.Name)
-                        end
+                        CreateESP(obj, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", obj.Name)
                     end
                 end
             end)
         end
+        task.wait(1.5)
     end
 end)
 
