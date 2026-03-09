@@ -166,6 +166,12 @@ local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty E
 local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
 local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
 
+local espPz = false
+
+Tabs.Visual:AddToggle("TPz", {Title = "Puzzle ESP (Blue)", Default = false}):OnChanged(function(v)
+    espPz = v if not v then ClearESP("E_Pz") end
+end)
+
 -- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
 local FolderCache = {}
 local function GetTargetFolder(name)
@@ -334,6 +340,15 @@ task.spawn(function()
         end
     end
 end)
+
+                    -- สแกน Puzzle (โฟลเดอร์ puzzles หรือ puzzle)
+                    if espPz and (pName == "puzzles" or pName == "puzzle") then
+                        if obj:IsA("Model") or obj:IsA("BasePart") then
+                            -- โยนให้ฟังก์ชัน ApplyESP ทำไฮไลต์สีฟ้า
+                            ApplyESP(obj, Color3.fromRGB(0, 200, 255), "E_Pz", obj.Name)
+                        end
+                    end
+
 
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
