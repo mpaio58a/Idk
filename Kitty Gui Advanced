@@ -159,175 +159,189 @@ end)
     Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
 end
 
-local Visual = Tabs.Visual
+-- ==========================================
+-- 1. ตัวแปรเก็บสถานะเปิด/ปิด
+-- ==========================================
+local espPlayer = false
+local espItem = false
+local espTrap = false
+local espPuzzle = false
 
--- [[ สร้างปุ่ม Toggle ]]
-local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty ESP", Default = false})
-local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
-local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
-local PuzzlesEspToggle =
-
-local pzT = Tabs.Visual:AddToggle("pzT", {Title="Puzzle ESP (Blue)", Default=false})
-
-pzT:OnChanged(function() 
-    if not pzT.Value then 
-        cESP("E_Pz") -- ลบสีฟ้าออกเมื่อกดปิด
-    end 
-end)
-
--- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
-local FolderCache = {}
-local function GetTargetFolder(name)
-    -- ถ้าจำได้แล้ว ให้ดึงมาใช้เลย ไม่ต้องหาใหม่
-    if FolderCache[name] and FolderCache[name].Parent then return FolderCache[name] end
-    
-    -- หาแบบเบาบางก่อน
-    local f = workspace:FindFirstChild(name) or (workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild(name))
-    -- ถ้าไม่เจอค่อยหาแบบทะลุ (ทำแค่ครั้งเดียว)
-    if not f then f = workspace:FindFirstChild(name, true) end
-    
-    FolderCache[name] = f
-    return f
-end
-
--- [[ 2. ฟังก์ชันสร้าง ESP (อัปเดตเฉพาะตอนจำเป็น) ]]
-local function CreateESP(target, color, espName, displayText)
-    if not target then return end
-
-    -- สร้าง Highlight
-    local hl = target:FindFirstChild(espName .. "_HL")
-    if not hl then
-        hl = Instance.new("Highlight")
-        hl.Name = espName .. "_HL"
-        hl.FillTransparency = 0.5
-        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-        hl.FillColor = color
-        hl.Parent = target
-    else
-        if hl.FillColor ~= color then hl.FillColor = color end -- อัปเดตสีแค่ตอนที่มันเปลี่ยน
-    end
-
-    -- สร้างป้ายชื่อ
-    local attachPart = target:IsA("Model") and (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head") or target.PrimaryPart) or target
-    if attachPart and attachPart:IsA("BasePart") then
-        local bg = attachPart:FindFirstChild(espName .. "_BG")
-        if not bg then
-            bg = Instance.new("BillboardGui")
-            bg.Name = espName .. "_BG"
-            bg.Size = UDim2.new(0, 100, 0, 40)
-            bg.AlwaysOnTop = true
-            bg.ExtentsOffset = Vector3.new(0, 3, 0)
-
-            local txt = Instance.new("TextLabel")
-            txt.Name = "NameLabel"
-            txt.Size = UDim2.new(1, 0, 1, 0)
-            txt.BackgroundTransparency = 1
-            txt.Font = Enum.Font.SourceSansBold
-            txt.TextSize = 14
-            txt.TextStrokeTransparency = 0
-            txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            txt.Text = displayText or target.Name
-            txt.TextColor3 = color
-            txt.Parent = bg
-            bg.Parent = attachPart
-        else
-            -- เปลี่ยนข้อความเฉพาะตอนที่ชื่อ/สีเปลี่ยน (ช่วยลดแลค)
-            local txt = bg:FindFirstChild("NameLabel")
-            if txt and (txt.Text ~= (displayText or target.Name) or txt.TextColor3 ~= color) then
-                txt.Text = displayText or target.Name
-                txt.TextColor3 = color
-            end
-        end
-    end
-end
-
--- [[ 3. ระบบลบ ESP (แก้แลค: ทำงานแค่ตอนกดปิด) ]]
-local function RemoveESP(espName)
+-- ==========================================
+-- 2. ฟังก์ชันลบ ESP (อิงตามชื่อที่ส่งมา)
+-- ==========================================
+local function ClearESP(espName)
     pcall(function()
         for _, v in pairs(workspace:GetDescendants()) do
-            if v.Name == (espName .. "_HL") or v.Name == (espName .. "_BG") then
+            if v.Name == espName .. "_HL" or v.Name == espName .. "_BG" then
                 v:Destroy()
             end
         end
     end)
 end
 
--- ผูกการลบเข้ากับปุ่ม (ถ้าปุ่มถูกปิด ให้สั่งลบทิ้งแค่ "ครั้งเดียว")
-PlayerEspToggle:OnChanged(function() if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end end)
-ItemEspToggle:OnChanged(function() if not ItemEspToggle.Value then RemoveESP("ESP_Item") end end)
-TrapEspToggle:OnChanged(function() if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end end)
+-- ==========================================
+-- 3. ฟังก์ชันสร้าง ESP (ไฮไลต์ + ชื่อ + เลือด) ไม่มี Box
+-- ==========================================
+local function ApplyESP(target, color, espName, text, hp)
+    if not target then return end
 
--- [[ 4. ลูปการทำงานของ ESP ]]
+    -- สร้าง Highlight
+    local hl = target:FindFirstChild(espName .. "_HL") or Instance.new("Highlight", target)
+    hl.Name = espName .. "_HL"
+    hl.FillColor = color
+    hl.FillTransparency = 0.5
+    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+
+    -- สร้าง ป้ายชื่อ
+    local attachPart = target:IsA("Model") and (target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head") or target.PrimaryPart) or target
+    if attachPart and attachPart:IsA("BasePart") then
+        local bg = attachPart:FindFirstChild(espName .. "_BG") or Instance.new("BillboardGui", attachPart)
+        bg.Name = espName .. "_BG"
+        bg.Size = UDim2.new(0, 100, 0, 40)
+        bg.AlwaysOnTop = true
+        bg.ExtentsOffset = Vector3.new(0, 3, 0)
+
+        local txt = bg:FindFirstChild("NameLabel") or Instance.new("TextLabel", bg)
+        txt.Name = "NameLabel"
+        txt.Size = UDim2.new(1, 0, 1, 0)
+        txt.BackgroundTransparency = 1
+        txt.Font = Enum.Font.SourceSansBold
+        txt.TextSize = 14
+        txt.TextStrokeTransparency = 0
+        
+        -- ถ้ามีค่าเลือดส่งมาให้โชว์เลือดด้วย ถ้าไม่มีก็โชว์แค่ชื่อ
+        local finalText = text
+        if hp then
+            finalText = finalText .. " [" .. math.floor(hp) .. " HP]"
+        end
+        txt.Text = finalText
+        txt.TextColor3 = color
+    end
+end
+
+-- สมมติว่าคุณสร้างแท็บ Visual ไว้แบบนี้
+-- local Tabs = { Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }) }
+
+-- ==========================================
+-- 🔘 ส่วนที่ 2: สร้างปุ่มลงใน Fluent UI
+-- ==========================================
+
+-- 1. ปุ่ม Player & Bot ESP
+local PlayerToggle = Tabs.Visual:AddToggle("PlayerToggle", {Title = "Player ESP", Default = false})
+PlayerToggle:OnChanged(function()
+    espPlayer = PlayerToggle.Value -- อัปเดตตัวแปรตามสถานะปุ่ม
+    if not PlayerToggle.Value then 
+        ClearESP("ESP_P") -- ถ้าปิดปุ่ม ให้ลบสีทิ้ง
+    end
+end)
+
+-- 2. ปุ่ม Item ESP
+local ItemToggle = Tabs.Visual:AddToggle("ItemToggle", {Title = "Item ESP", Default = false})
+ItemToggle:OnChanged(function()
+    espItem = ItemToggle.Value
+    if not ItemToggle.Value then 
+        ClearESP("ESP_I")
+    end
+end)
+
+-- 3. ปุ่ม Trap ESP
+local TrapToggle = Tabs.Visual:AddToggle("TrapToggle", {Title = "Trap ESP", Default = false})
+TrapToggle:OnChanged(function()
+    espTrap = TrapToggle.Value
+    if not TrapToggle.Value then 
+        ClearESP("ESP_T")
+    end
+end)
+
+-- 4. ปุ่ม Puzzle ESP (Blue)
+local PuzzleToggle = Tabs.Visual:AddToggle("PuzzleToggle", {Title = "Puzzle ESP (Blue)", Default = false})
+PuzzleToggle:OnChanged(function()
+    espPuzzle = PuzzleToggle.Value
+    if not PuzzleToggle.Value then 
+        ClearESP("ESP_Pz")
+    end
+end)
+
+-- ==========================================
+-- ลูปทำงานหลัก
+-- ==========================================
 task.spawn(function()
     while task.wait(1) do
         
-        -- [[ 1. Player & Bot ESP (สีแดง/เขียว) ]]
-        if pT.Value then 
+        -- [[ 1. Player & Bot ESP ]]
+        if espPlayer then
             pcall(function()
-                -- หาผู้เล่นปกติ
-                for _, p in pairs(game.Players:GetPlayers()) do 
-                    if p.Character and p ~= game.Players.LocalPlayer then 
+                -- 1.1 ผู้เล่น
+                for _, p in pairs(game.Players:GetPlayers()) do
+                    if p.Character and p ~= game.Players.LocalPlayer then
                         local isKiller = p.Character:FindFirstChild("Weapon", true)
-                        MkESP(p.Character, isKiller and Color3.new(1,0,0) or Color3.new(0,1,0), "E_P", p.Name) 
-                    end 
+                        local col = isKiller and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+                        local hum = p.Character:FindFirstChild("Humanoid")
+                        ApplyESP(p.Character, col, "ESP_P", p.Name, hum and hum.Health or nil)
+                    end
                 end
-                -- หาบอท (ในโฟลเดอร์ Players)
-                local pf = workspace:FindFirstChild("Players", true) 
-                if pf then 
-                    for _, b in pairs(pf:GetChildren()) do 
-                        if b:IsA("Model") and b ~= game.Players.LocalPlayer.Character then 
+                
+                -- 1.2 บอท
+                local pf = workspace:FindFirstChild("Players", true)
+                if pf then
+                    for _, b in pairs(pf:GetChildren()) do
+                        if b:IsA("Model") and b ~= game.Players.LocalPlayer.Character then
                             local isKiller = b:FindFirstChild("Weapon", true)
-                            MkESP(b, isKiller and Color3.new(1,0,0) or Color3.new(0,1,0), "E_P", b.Name) 
-                        end 
-                    end 
+                            local col = isKiller and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+                            local hum = b:FindFirstChild("Humanoid")
+                            ApplyESP(b, col, "ESP_P", b.Name, hum and hum.Health or nil)
+                        end
+                    end
                 end
-            end) 
+            end)
         end
 
-        -- [[ 2. Item ESP (เฉพาะ Tool และ Union สีขาว) ]]
-        if iT.Value then 
-            pcall(function() 
-                local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true) 
-                if tf then 
-                    for _, i in pairs(tf:GetChildren()) do 
-                        if i:IsA("Tool") or i:IsA("UnionOperation") then 
-                            MkESP(i, Color3.new(1,1,1), "E_I", i.Name) 
-                        end 
-                    end 
-                end 
-            end) 
+        -- [[ 2. Item ESP ]]
+        if espItem then
+            pcall(function()
+                local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
+                if tf then
+                    for _, i in pairs(tf:GetChildren()) do
+                        if i:IsA("Tool") or i:IsA("UnionOperation") then
+                            ApplyESP(i, Color3.fromRGB(255, 255, 255), "ESP_I", i.Name)
+                        end
+                    end
+                end
+            end)
         end
 
-        -- [[ 3. Trap ESP (สีเหลือง) ]]
-        if tT.Value then 
-            pcall(function() 
-                local tr = workspace:FindFirstChild("Traps", true) 
-                if tr then 
-                    for _, t in pairs(tr:GetChildren()) do 
-                        if t:IsA("Model") or t:IsA("BasePart") then 
-                            MkESP(t, Color3.new(1,1,0), "E_T", "Trap") 
-                        end 
-                    end 
-                end 
-            end) 
+        -- [[ 3. Trap ESP ]]
+        if espTrap then
+            pcall(function()
+                local trf = workspace:FindFirstChild("Traps", true)
+                if trf then
+                    for _, t in pairs(trf:GetChildren()) do
+                        if t:IsA("Model") or t:IsA("BasePart") then
+                            ApplyESP(t, Color3.fromRGB(255, 255, 0), "ESP_T", "Trap")
+                        end
+                    end
+                end
+            end)
         end
 
-        -- [[ 4. Puzzle ESP (หาทะลุโฟลเดอร์ เอาเฉพาะ Model สีฟ้า) ]]
-        if pzT.Value then 
-            pcall(function() 
-                local pzf = workspace:FindFirstChild("Puzzles", true) 
-                if pzf then 
-                    for _, pz in pairs(pzf:GetDescendants()) do 
-                        if pz:IsA("Model") then 
-                            MkESP(pz, Color3.fromRGB(0, 200, 255), "E_Pz", pz.Name) 
-                        end 
-                    end 
-                end 
-            end) 
+        -- [[ 4. Puzzle ESP ]]
+        if espPuzzle then
+            pcall(function()
+                local pzf = workspace:FindFirstChild("Puzzles", true)
+                if pzf then
+                    for _, pz in pairs(pzf:GetDescendants()) do
+                        if pz:IsA("Model") then
+                            ApplyESP(pz, Color3.fromRGB(0, 200, 255), "ESP_Pz", pz.Name)
+                        end
+                    end
+                end
+            end)
         end
 
     end
 end)
+
 
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
