@@ -249,7 +249,7 @@ end
 PlayerEspToggle:OnChanged(function() if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end end)
 ItemEspToggle:OnChanged(function() if not ItemEspToggle.Value then RemoveESP("ESP_Item") end end)
 TrapEspToggle:OnChanged(function() if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end end)
-PuzzlesEspToggle:OnChanged(function() if not PuzzlesEspToggle.Value then RemoveESP("ESP_Puzzles") end end)
+PuzzleEspToggle:OnChanged(function() if not PuzzleEspToggle.Value then RemoveESP("ESP_Puzzle") end end)
 
 -- [[ 4. ลูปการทำงานของ ESP ]]
 -- Player & Bot ESP
