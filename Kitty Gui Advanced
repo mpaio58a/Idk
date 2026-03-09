@@ -119,7 +119,7 @@ end
 do
     Tabs.Main:AddSlider("WalkSpeed", { Title = "WalkSpeed", Default = 16, Min = 16, Max = 100, Rounding = 0, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end) end })
     Tabs.Main:AddInput("WSInput", { Title = "WalkSpeed TextBox", Numeric = true, Finished = true, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = tonumber(v) end) end })
-    
+
     Tabs.Main:AddSlider("JumpPower", { Title = "JumpPower", Default = 50, Min = 50, Max = 250, Rounding = 0, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = v end) end })
     Tabs.Main:AddInput("JPInput", { Title = "JumpPower TextBox", Numeric = true, Finished = true, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = tonumber(v) end) end })
 
@@ -171,12 +171,12 @@ local FolderCache = {}
 local function GetTargetFolder(name)
     -- ถ้าจำได้แล้ว ให้ดึงมาใช้เลย ไม่ต้องหาใหม่
     if FolderCache[name] and FolderCache[name].Parent then return FolderCache[name] end
-    
+
     -- หาแบบเบาบางก่อน
     local f = workspace:FindFirstChild(name) or (workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild(name))
     -- ถ้าไม่เจอค่อยหาแบบทะลุ (ทำแค่ครั้งเดียว)
     if not f then f = workspace:FindFirstChild(name, true) end
-    
+
     FolderCache[name] = f
     return f
 end
@@ -295,28 +295,6 @@ task.spawn(function()
     end
 end)
 
-        end
-    end
-end)
-
--- Item ESP
-task.spawn(function()
-    while task.wait(1) do
-        if ItemEspToggle.Value then
-            pcall(function()
-                local targetFolder = GetTargetFolder("Tools") or GetTargetFolder("Items")
-                if targetFolder then
-                    for _, item in ipairs(targetFolder:GetChildren()) do
-                        if item:IsA("Model") or item:IsA("Tool") or item:IsA("BasePart") then
-                            CreateESP(item, Color3.fromRGB(255, 255, 255), "ESP_Item", item.Name)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
 -- Trap ESP
 task.spawn(function()
     while task.wait(1) do
@@ -367,7 +345,7 @@ Misc:AddButton({
         ToolNames = {}
         local nameCount = {}
         local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
-        
+
         if tf then
             for _, v in pairs(tf:GetChildren()) do
                 if v:IsA("Model") or v:IsA("Tool") or v:IsA("BasePart") then
@@ -388,7 +366,7 @@ Misc:AddButton({
     Title = "Teleport to Item",
     Description = "Error Try Refresh Items and Click This Button", 
     Callback = function()
- 
+
         local target = ToolList[ToolDropdown.Value]
         if target and game.Players.LocalPlayer.Character then
             local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -413,7 +391,7 @@ task.spawn(function()
     local success, interactRemote = pcall(function()
         return game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Interact")
     end)
-    
+
     while true do
         -- เช็คทั้งตัวแปร success และค่า Toggle
         if success and AutoSpamToggle.Value then
@@ -505,80 +483,3 @@ AntiTrapToggle:OnChanged(function()
     end)
 end
 
--- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
-do
-    -- ตารางข้อมูลใหม่: {ชื่อที่โชว์บนปุ่ม, คำอธิบาย (Official Name + Cheese), ID Pastebin}
-    local SkinsData = {
-        {"Great Hair Mouse", "Official Name: Mouse Manirdudes1234 | Cheese: x35000", "SW3R8f7s"},
-        {"Red Eye Mouse", "Official Name: Bad Mouse | Cheese: x0", "WyaBLU8N"},
-        {"Mouse Penguin", "Official Name: Mouse Penguin | Cheese: x25", "W9gzPLvT"},
-        {"Cowboy Event Mouse (Special Sound)", "Official Name: Vaquero | Cheese: x500", "qf2gU6mU"},
-        {"Invisible 100%", "Official Name: ... | Cheese: x0", "ta5DZqU5"},
-        {"Gabstudio Mouse", "Official Name: Gabstudio | Cheese: x-1", "UgSci3YS"},
-        {"BlockHead Mouse", "Official Name: dummy | Cheese: x666", "WuTpzeee"},
-        {"Hat Mouse", "Official Name: eresrodrigo16 | Cheese: x666", "VmjC8LTg"},
-        {"Glasses Black Mouse", "Official Name: Tempre | Cheese: x0", "wuMe64nC"},
-        {"Rainbow Neon + Epic Face", "Official Name: Memo | Cheese: x500", "mnCrCcuv"},
-        {"Wheel Mouse", "Official Name: ASD | Cheese: x696969", "nNapjRTc"},
-        {"Yellow Cat Mouse", "Official Name: Corgi Cabbage | Cheese: x0", "uRtwXd6b"},
-        {"Snow Mouse", "Official Name: Daniel_1452 | Cheese: x1500", "Tyw7jkCU"},
-        {"Glasses Mouse", "Official Name: Limon | Cheese: x150000", "Z2KUf83c"},
-        {"Pink Mouse", "Official Name: IMemo | Cheese: x15000", "K4tUrEUU"},
-        {"Demon Mouse", "Official Name: Kimba | Cheese: x150000", "KAAXHi1h"}
-    }
-
-    for _, s in pairs(SkinsData) do 
-        Tabs.Skins:AddButton({ 
-            Title = s[1], 
-            Description = s[2], 
-            Callback = function() 
-                -- รันสคริปต์เปลี่ยนสกิน
-                loadstring(game:HttpGet("https://pastebin.com/raw/"..s[3]))() 
-                
-                -- แจ้งเตือนสถานะ
-                Fluent:Notify({
-                    Title = "Skin Selected",
-                    Content = "Applied: " .. s[1],
-                    Duration = 2
-                })
-            end 
-        }) 
-    end
-end
-
--- [[ 6. UPDATE TAB ]]
-do
-    Tabs.Update:AddParagraph({ 
-        Title = "Update Log v3.0", 
-        Content = "--- New UI Redesign\n--- Removed unnecessary menus and broken buttons\n--- Improved Main Tab layout\n--- Added Visual menu (Player, Item, Trap ESP)\n--- Anti Trap with Hide/Restore logic\n--- General system optimizations and improvements" 
-    })
-end
-
--- [[ 7. SETTINGS ]]
-SaveManager:SetLibrary(Fluent)
-InterfaceManager:SetLibrary(Fluent)
-InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-SaveManager:BuildConfigSection(Tabs.Settings)
-
-Window:SelectTab(1)
-
--- Cleanup on Close
-task.spawn(function()
-    while task.wait(0.5) do
-        if not Window or not Window.Root or not Window.Root.Parent then
-            if attackGui then attackGui:Destroy() end
-            _G.PlayerEspEnabled = false
-            _G.ItemEspEnabled = false
-            _G.TrapEspEnabled = false
-            
-            -- คืนค่าพาร์ท Center ถ้าปิด UI ไปดื้อๆ
-            if _G.HiddenCenterParts and #_G.HiddenCenterParts > 0 then
-                for _, data in pairs(_G.HiddenCenterParts) do
-                    if data.part and data.parent then data.part.Parent = data.parent end
-                end
-                _G.HiddenCenterParts = {}
-            end
-            break
-        end
-    end
- end)
