@@ -573,6 +573,77 @@ AntiTrapToggle:OnChanged(function()
     end
     end)
 
+-- ==========================================================
+-- 🛡️ Anti Logic (Strict Mode + ป้องกันตัวเอง)
+-- ==========================================================
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local AntiLogicCache = {}
+
+local AntiLogicToggle = Tabs.Misc:AddToggle("AntiLogic", {Title = "Anti Logic (Break Invisible Wall)",     
+Description = "Not recommended, it's buggy.", 
+     Default = false})
+
+task.spawn(function()
+    repeat task.wait(1) until AntiLogicToggle ~= nil
+    
+    while true do
+        if AntiLogicToggle.Value then
+            pcall(function()
+                -- ดึงตัวละครของเรา ณ ปัจจุบัน (เผื่อตายแล้วเกิดใหม่)
+                local myCharacter = LocalPlayer.Character
+                
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if not AntiLogicToggle.Value then break end
+                    
+                    -- 🔥 หมัดเด็ด: ถ้า Part นี้เป็นชิ้นส่วนในร่างกายของเรา ให้ข้ามไปเลย ไม่ต้องทำอะไร!
+                    if myCharacter and obj:IsDescendantOf(myCharacter) then
+                        continue
+                    end
+                    
+                    -- กรองเฉพาะ ClassName เป็น "Part"
+                    if obj.ClassName == "Part" then
+                        
+                        -- บันทึกค่า CanCollide เดิมไว้ก่อน
+                        if AntiLogicCache[obj] == nil then
+                            AntiLogicCache[obj] = obj.CanCollide
+                        end
+
+                        -- เช็คเงื่อนไขความโปร่งใส
+                        if obj.Transparency >= 1 then
+                            -- ล่องหน = บังคับทะลุ
+                            if obj.CanCollide ~= false then
+                                obj.CanCollide = false
+                            end
+                        else
+                            -- ไม่ล่องหน = บังคับแข็ง
+                            if obj.CanCollide ~= true then
+                                obj.CanCollide = true
+                            end
+                        end
+                        
+                    end
+                end
+            end)
+        end
+        task.wait(2) -- สแกนทุก 2 วินาที
+    end
+end)
+
+-- ระบบคืนค่าเมื่อกดปิดปุ่ม
+AntiLogicToggle:OnChanged(function()
+    if not AntiLogicToggle.Value then
+        pcall(function()
+            for part, origCollide in pairs(AntiLogicCache) do
+                if part and part.Parent then
+                    part.CanCollide = origCollide
+                end
+            end
+            AntiLogicCache = {} -- ล้างความจำ
+        end)
+    end
+end)
+
     local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Show Custom Attack Button", Default = false })
     AttackToggle:OnChanged(function()
         if AttackToggle.Value then
