@@ -312,7 +312,7 @@ task.spawn(function()
     end
 end)
 
--- 🟢 Puzzle ESP
+-- Puzzle ESP 🟢 (อัปเกรดให้จับ BasePart และ Tool ด้วย)
 task.spawn(function()
     while task.wait(1) do
         if PuzzleEspToggle.Value then
@@ -321,7 +321,8 @@ task.spawn(function()
                 if puzzlesFolder then
                     -- ใช้ GetDescendants() เพื่อเจาะหา Puzzle ที่อาจจะซ้อนอยู่ลึกๆ
                     for _, puzzle in ipairs(puzzlesFolder:GetDescendants()) do
-                        if puzzle:IsA("Model") then
+                        -- 🚨 แก้ไขตรงนี้: เพิ่ม BasePart และ Tool เข้าไปดักจับด้วย!
+                        if puzzle:IsA("Model") or puzzle:IsA("BasePart") or puzzle:IsA("Tool") then
                             CreateESP(puzzle, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", puzzle.Name)
                         end
                     end
