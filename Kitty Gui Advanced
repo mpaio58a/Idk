@@ -165,12 +165,8 @@ local Visual = Tabs.Visual
 local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty ESP", Default = false})
 local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
 local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
+local PuzzlesEspToggle = Visual:AddToggle("PuzzlesEsp", {Title = "Puzzles ESP", Default = false})
 
-local espPz = false
-
-Tabs.Visual:AddToggle("TPz", {Title = "Puzzle ESP (Blue)", Default = false}):OnChanged(function(v)
-    espPz = v if not v then ClearESP("E_Pz") end
-end)
 
 -- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
 local FolderCache = {}
@@ -253,6 +249,7 @@ end
 PlayerEspToggle:OnChanged(function() if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end end)
 ItemEspToggle:OnChanged(function() if not ItemEspToggle.Value then RemoveESP("ESP_Item") end end)
 TrapEspToggle:OnChanged(function() if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end end)
+PuzzlesEspToggle:OnChanged(function() if not PuzzlesEspToggle.Value then RemoveESP("ESP_Puzzles") end end)
 
 -- [[ 4. ลูปการทำงานของ ESP ]]
 -- Player & Bot ESP
@@ -341,14 +338,24 @@ task.spawn(function()
     end
 end)
 
-                    -- สแกน Puzzle (โฟลเดอร์ puzzles หรือ puzzle)
-                    if espPz and (pName == "puzzles" or pName == "puzzle") then
-                        if obj:IsA("Model") or obj:IsA("BasePart") then
-                            -- โยนให้ฟังก์ชัน ApplyESP ทำไฮไลต์สีฟ้า
-                            ApplyESP(obj, Color3.fromRGB(0, 200, 255), "E_Pz", obj.Name)
+-- Puzzle ESP
+task.spawn(function()
+    while task.wait(1) do
+        if PuzzleEspToggle.Value then
+            pcall(function()
+                local puzzlesFolder = GetTargetFolder("Puzzles")
+                if puzzlesFolder then
+                    -- ใช้ GetDescendants() เพื่อหาโมเดลที่ซ้อนอยู่ลึกๆ ในโฟลเดอร์
+                    for _, puzzle in ipairs(puzzlesFolder:GetDescendants()) do
+                        if puzzle:IsA("Model") then
+                            CreateESP(puzzle, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", puzzle.Name)
                         end
                     end
-
+                end
+            end)
+        end
+    end
+end)
 
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
