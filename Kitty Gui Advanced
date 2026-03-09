@@ -483,3 +483,80 @@ AntiTrapToggle:OnChanged(function()
     end)
 end
 
+-- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
+do
+    -- ตารางข้อมูลใหม่: {ชื่อที่โชว์บนปุ่ม, คำอธิบาย (Official Name + Cheese), ID Pastebin}
+    local SkinsData = {
+        {"Great Hair Mouse", "Official Name: Mouse Manirdudes1234 | Cheese: x35000", "SW3R8f7s"},
+        {"Red Eye Mouse", "Official Name: Bad Mouse | Cheese: x0", "WyaBLU8N"},
+        {"Mouse Penguin", "Official Name: Mouse Penguin | Cheese: x25", "W9gzPLvT"},
+        {"Cowboy Event Mouse (Special Sound)", "Official Name: Vaquero | Cheese: x500", "qf2gU6mU"},
+        {"Invisible 100%", "Official Name: ... | Cheese: x0", "ta5DZqU5"},
+        {"Gabstudio Mouse", "Official Name: Gabstudio | Cheese: x-1", "UgSci3YS"},
+        {"BlockHead Mouse", "Official Name: dummy | Cheese: x666", "WuTpzeee"},
+        {"Hat Mouse", "Official Name: eresrodrigo16 | Cheese: x666", "VmjC8LTg"},
+        {"Glasses Black Mouse", "Official Name: Tempre | Cheese: x0", "wuMe64nC"},
+        {"Rainbow Neon + Epic Face", "Official Name: Memo | Cheese: x500", "mnCrCcuv"},
+        {"Wheel Mouse", "Official Name: ASD | Cheese: x696969", "nNapjRTc"},
+        {"Yellow Cat Mouse", "Official Name: Corgi Cabbage | Cheese: x0", "uRtwXd6b"},
+        {"Snow Mouse", "Official Name: Daniel_1452 | Cheese: x1500", "Tyw7jkCU"},
+        {"Glasses Mouse", "Official Name: Limon | Cheese: x150000", "Z2KUf83c"},
+        {"Pink Mouse", "Official Name: IMemo | Cheese: x15000", "K4tUrEUU"},
+        {"Demon Mouse", "Official Name: Kimba | Cheese: x150000", "KAAXHi1h"}
+    }
+
+    for _, s in pairs(SkinsData) do 
+        Tabs.Skins:AddButton({ 
+            Title = s[1], 
+            Description = s[2], 
+            Callback = function() 
+                -- รันสคริปต์เปลี่ยนสกิน
+                loadstring(game:HttpGet("https://pastebin.com/raw/"..s[3]))() 
+
+                -- แจ้งเตือนสถานะ
+                Fluent:Notify({
+                    Title = "Skin Selected",
+                    Content = "Applied: " .. s[1],
+                    Duration = 2
+                })
+            end 
+        }) 
+    end
+end
+
+-- [[ 6. UPDATE TAB ]]
+do
+    Tabs.Update:AddParagraph({ 
+        Title = "Update Log v3.0", 
+        Content = "--- New UI Redesign\n--- Removed unnecessary menus and broken buttons\n--- Improved Main Tab layout\n--- Added Visual menu (Player, Item, Trap ESP)\n--- Anti Trap with Hide/Restore logic\n--- General system optimizations and improvements" 
+    })
+end
+
+-- [[ 7. SETTINGS ]]
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+Window:SelectTab(1)
+
+-- Cleanup on Close
+task.spawn(function()
+    while task.wait(0.5) do
+        if not Window or not Window.Root or not Window.Root.Parent then
+            if attackGui then attackGui:Destroy() end
+            _G.PlayerEspEnabled = false
+            _G.ItemEspEnabled = false
+            _G.TrapEspEnabled = false
+
+            -- คืนค่าพาร์ท Center ถ้าปิด UI ไปดื้อๆ
+            if _G.HiddenCenterParts and #_G.HiddenCenterParts > 0 then
+                for _, data in pairs(_G.HiddenCenterParts) do
+                    if data.part and data.parent then data.part.Parent = data.parent end
+                end
+                _G.HiddenCenterParts = {}
+            end
+            break
+        end
+    end
+ end)
