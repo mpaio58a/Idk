@@ -165,6 +165,7 @@ local Visual = Tabs.Visual
 local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty ESP", Default = false})
 local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
 local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
+local PuzzleEspToggle = Visual:AddToggle("PuzzleEsp", {Title = "Puzzle ESP", Default = false})
 
 -- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
 local FolderCache = {}
@@ -243,10 +244,11 @@ local function RemoveESP(espName)
     end)
 end
 
--- ผูกการลบเข้ากับปุ่ม (ถ้าปุ่มถูกปิด ให้สั่งลบทิ้งแค่ "ครั้งเดียว")
+-- ผูกการลบเข้ากับปุ่ม (ถ้าปุ่มถูกปิด ให้สั่งลบทิ้ง)
 PlayerEspToggle:OnChanged(function() if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end end)
 ItemEspToggle:OnChanged(function() if not ItemEspToggle.Value then RemoveESP("ESP_Item") end end)
 TrapEspToggle:OnChanged(function() if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end end)
+PuzzleEspToggle:OnChanged(function() if not PuzzleEspToggle.Value then RemoveESP("ESP_Puzzle") end end)
 
 -- [[ 4. ลูปการทำงานของ ESP ]]
 -- Player & Bot ESP
@@ -305,6 +307,30 @@ task.spawn(function()
                     for _, trap in ipairs(trapsFolder:GetChildren()) do
                         if trap:IsA("Model") or trap:IsA("BasePart") then
                             CreateESP(trap, Color3.fromRGB(255, 255, 0), "ESP_Trap", "Trap")
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(1.5) do -- สแกนทุก 1.5 วินาทีเพื่อลดภาระเครื่อง
+        if PuzzleEspToggle.Value then
+            pcall(function()
+                -- สแกนแบบ "ทะลวง" เหมือนสคริปต์ Puzzle เดิมของคุณเพื่อให้โชว์ครบ
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    -- เช็คว่า Toggle ยังเปิดอยู่ไหม (กัน Error เวลาปิดปุ่มกะทันหัน)
+                    if not PuzzleEspToggle.Value then break end
+
+                    local pName = obj.Parent and string.lower(obj.Parent.Name) or ""
+                    
+                    -- Logic เดิมที่คุณต้องการ: เช็คชื่อ Parent ว่าเป็น puzzle หรือ puzzles
+                    if pName == "puzzles" or pName == "puzzle" then
+                        if obj:IsA("Model") or obj:IsA("BasePart") then
+                            -- ปรับให้ใช้ฟังก์ชัน CreateESP ของสคริปต์หลัก (สีฟ้า Blue)
+                            CreateESP(obj, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", obj.Name)
                         end
                     end
                 end
