@@ -57,8 +57,7 @@ local Tabs = {
     Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- ย้ายมาไว้ตรงนี้
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
-    local Misc2Tab = Window:AddTab({ Title = "Misc 2", Icon = "wand" })
-Tabs.Misc2 = Misc2Tab
+    Misc2 = Window:AddTab({ Title = "Misc 2", Icon = "wand" })
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
     Update = Window:AddTab({ Title = "Update", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
