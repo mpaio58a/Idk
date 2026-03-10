@@ -57,6 +57,7 @@ local Tabs = {
     Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- ย้ายมาไว้ตรงนี้
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
+    Misc2 = Window:AddTab({ Title = "Misc 2", Icon = "wand" }),
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
     Update = Window:AddTab({ Title = "Update", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
@@ -610,9 +611,107 @@ AntiTrapToggle:OnChanged(function()
     end
     end)
 
--- ==========================================================
--- 🛡️ Anti Logic (Strict Mode + ป้องกันตัวเอง)
--- ==========================================================
+    local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Show Custom Attack Button", Default = false })
+    AttackToggle:OnChanged(function()
+        if AttackToggle.Value then
+            if not attackGui then
+                attackGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+                local btn = Instance.new("TextButton", attackGui)
+                local c = Instance.new("UICorner", btn)
+                btn.Size = UDim2.new(0, 120, 0, 50)
+                btn.Position = UDim2.new(0.5, -60, 0.8, 0)
+                btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                btn.Text = "ATTACK"
+                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                btn.Font = Enum.Font.SourceSansBold
+                btn.TextSize = 20
+                btn.Draggable = true
+                c.CornerRadius = UDim.new(0, 12)
+                btn.MouseButton1Click:Connect(function() game:GetService("ReplicatedStorage").Events.Attack:FireServer() end)
+            end
+            attackGui.Enabled = true
+        else
+            if attackGui then attackGui.Enabled = false end
+        end
+    end)
+end
+
+local EmoteScriptData = ""
+
+Tabs.Misc2:AddInput("EmoteInputBox", {
+    Title = "Emote Script",
+    Default = "",
+    Placeholder = "Paste your script here...",
+    Numeric = false,
+    Finished = false,
+    Callback = function(Value)
+        EmoteScriptData = Value
+    end
+})
+
+Tabs.Misc2:AddButton({
+    Title = "Run Emote",
+    Description = "ส่งสคริปต์เข้าทุกชิ้นส่วน (ส่งเป็นชื่อแบบในคลิป)",
+    Callback = function()
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            local Player = Players.LocalPlayer
+            local Character = Player.Character or Player.CharacterAdded:Wait()
+            
+            if not Character then return end
+            if EmoteScriptData == "" then 
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Warning", 
+                    Text = "Please paste script first!", 
+                    Duration = 3
+                })
+                return 
+            end
+
+            pcall(function()
+                local events = ReplicatedStorage:WaitForChild("Events", 3)
+                if events then
+                    local modelAnim = events:WaitForChild("ModelAnimation", 3)
+                    if modelAnim then
+                        
+                        local executedCount = 0
+                        
+                        -- [[ ลูปหาชิ้นส่วนและส่ง "ชื่อ" ไปให้ Server ทีละชื่อ ]]
+                        for _, part in ipairs(Character:GetDescendants()) do
+                            -- กรองเอาเฉพาะ Part, MeshPart หรือ UnionOperation
+                            if part:IsA("BasePart") or part.ClassName == "UnionOperation" then
+                                
+                                local args = {
+                                    [1] = 0,
+                                    [2] = EmoteScriptData,
+                                    [3] = part.Name,   -- 🔥 หมัดเด็ด! ส่ง "ชื่อ (String)" ไปเหมือนในคลิปเป๊ะๆ
+                                    [4] = Character
+                                }
+                                
+                                -- ยิงข้อมูลเข้า Server
+                                modelAnim:FireServer(unpack(args))
+                                executedCount = executedCount + 1
+                                
+                                task.wait() -- ใส่หน่วงเวลานิดนึงกันเกมเตะเพราะส่งข้อมูลรัวไป
+                            end
+                        end
+                        
+                        -- แจ้งเตือนเมื่อยิงครบทุกชิ้น
+                        game:GetService("StarterGui"):SetCore("SendNotification", {
+                            Title = "Success", 
+                            Text = "Emote fired on " .. executedCount .. " parts!", 
+                            Duration = 3
+                        })
+                        
+                    end
+                end
+            end)
+        end)
+    end
+})
+
+--Anti Logic
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local AntiLogicCache = {}
@@ -680,31 +779,6 @@ AntiLogicToggle:OnChanged(function()
         end)
     end
 end)
-
-    local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Show Custom Attack Button", Default = false })
-    AttackToggle:OnChanged(function()
-        if AttackToggle.Value then
-            if not attackGui then
-                attackGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-                local btn = Instance.new("TextButton", attackGui)
-                local c = Instance.new("UICorner", btn)
-                btn.Size = UDim2.new(0, 120, 0, 50)
-                btn.Position = UDim2.new(0.5, -60, 0.8, 0)
-                btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-                btn.Text = "ATTACK"
-                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                btn.Font = Enum.Font.SourceSansBold
-                btn.TextSize = 20
-                btn.Draggable = true
-                c.CornerRadius = UDim.new(0, 12)
-                btn.MouseButton1Click:Connect(function() game:GetService("ReplicatedStorage").Events.Attack:FireServer() end)
-            end
-            attackGui.Enabled = true
-        else
-            if attackGui then attackGui.Enabled = false end
-        end
-    end)
-end
 
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
 do
