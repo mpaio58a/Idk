@@ -212,22 +212,33 @@ for _, obj in ipairs(workspace:GetDescendants()) do
     -- เช่น if obj.Name == "Key" then CreateESP(...) end
 end
 
--- 👁️ ฟังก์ชัน CreateESP (เวอร์ชัน: ปล่อย HumanoidRootPart ล่องหนไป!)
+-- ==========================================================
+-- 👁️ ฟังก์ชัน CreateESP (เวอร์ชัน: ซ่อน Hitbox ล่องหนในตัวผู้เล่น)
+-- ==========================================================
 local function CreateESP(target, color, espName, displayText)
     if not target or not target.Parent then return end
 
     pcall(function()
-        -- [[ 🟢 ระบบจัดการความโปร่งใส (แบบมีข้อยกเว้น) ]]
+        -- [[ 🟢 ระบบจัดการความโปร่งใส (ฉลาดขึ้น ไม่ยุ่งกับของล่องหนในตัวคน) ]]
         local function HandleTransparency(part)
             if part:IsA("BasePart") then
                 
-                -- 🔥 หมัดเด็ด 1: ห้ามยุ่งกับ HumanoidRootPart ปล่อยให้มันล่องหน (Transparency 1) ต่อไป!
+                -- ข้อยกเว้นที่ 1: ห้ามยุ่งกับ HumanoidRootPart
                 if part.Name == "HumanoidRootPart" then return end
                 
-                -- 🔥 หมัดเด็ด 2: ถ้าเป็น Handle ที่เกมสั่งให้ล่องหนอยู่แล้ว ก็ห้ามไปทำให้มันทึบแสง!
+                -- ข้อยกเว้นที่ 2: ห้ามยุ่งกับ Handle ที่เกมสั่งให้ล่องหน
                 if part.Name == "Handle" and part.Transparency >= 1 then return end
 
-                -- ถ้าไม่ใช่ 2 อย่างข้างบน ค่อยฝังชิปความจำและปรับให้ทึบแสง
+                -- 🔥 ข้อยกเว้นที่ 3 (ใหม่ล่าสุด): ห้ามยุ่งกับ Part ล่องหนที่อยู่ในตัวละคร!
+                if part.Transparency >= 1 then
+                    -- เช็คว่าชิ้นส่วนนี้อยู่ใน Model ที่มี Humanoid (ผู้เล่นหรือบอท) หรือไม่
+                    local ancestorModel = part:FindFirstAncestorWhichIsA("Model")
+                    if ancestorModel and ancestorModel:FindFirstChildOfClass("Humanoid") then
+                        return -- ถ้าใช่ ปล่อยให้มันล่องหนต่อไป ไม่ต้องไปบังคับทึบแสง!
+                    end
+                end
+
+                -- ถ้าหลุดรอดข้อยกเว้นมาได้ ค่อยฝังชิปความจำและบังคับทึบแสง
                 if part:GetAttribute("OrigTrans_" .. espName) == nil then
                     part:SetAttribute("OrigTrans_" .. espName, part.Transparency)
                 end
@@ -244,7 +255,7 @@ local function CreateESP(target, color, espName, displayText)
             end
         end
 
-        -- [[ 🔴 สร้าง Highlight (มองทะลุ) ]]
+        -- [[ 🔴 สร้าง Highlight (เกาะเฉพาะชิ้นส่วนที่มองเห็น) ]]
         local hl = target:FindFirstChild(espName .. "_HL") or Instance.new("Highlight")
         hl.Name = espName .. "_HL"
         hl.FillColor = color
@@ -253,8 +264,7 @@ local function CreateESP(target, color, espName, displayText)
         hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         hl.Parent = target
 
-        -- [[ 🟡 สร้างป้ายชื่อ (ล็อคเป้าให้แม่นขึ้น) ]]
-        -- เช็คให้ชัวร์ว่าจะไม่เอาป้ายชื่อไปแปะบน HumanoidRootPart หรือ Handle ล่องหน
+        -- [[ 🟡 สร้างป้ายชื่อ ]]
         local root = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChild("Head") or target:FindFirstChildWhichIsA("BasePart", true)) or (target:IsA("BasePart") and target)
         
         if root then
