@@ -57,7 +57,9 @@ local Tabs = {
     Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- ย้ายมาไว้ตรงนี้
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
-    Misc2 = Window:AddTab({ Title = "Misc 2", Icon = "wand" }),
+    local Misc2Tab = Window:AddTab({ Title = "Misc 2", Icon = "wand" }),
+Tabs.Misc2 = Misc2Tab
+
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
     Update = Window:AddTab({ Title = "Update", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
@@ -706,6 +708,76 @@ end)
         end
     end)
 end
+
+local EmoteScriptData = ""
+
+Tabs.Misc2:AddInput("EmoteInputBox", {
+    Title = "Emote Script",
+    Default = "",
+    Placeholder = "Paste your script here...",
+    Numeric = false,
+    Finished = false,
+    Callback = function(Value)
+        EmoteScriptData = Value
+    end
+})
+
+Tabs.Misc2:AddButton({
+    Title = "Run Emote",
+    Description = "Apply script to all Parts and UnionOperations",
+    Callback = function()
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            local Player = Players.LocalPlayer
+            local Character = Player.Character or Player.CharacterAdded:Wait()
+            
+            if not Character then return end
+            if EmoteScriptData == "" then 
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Warning", 
+                    Text = "Please enter a script first!", 
+                    Duration = 3
+                })
+                return 
+            end
+
+            pcall(function()
+                local events = ReplicatedStorage:WaitForChild("Events", 3)
+                if events then
+                    local modelAnim = events:WaitForChild("ModelAnimation", 3)
+                    if modelAnim then
+                        
+                        local executedCount = 0
+                        
+                        for _, part in ipairs(Character:GetDescendants()) do
+                            if part.ClassName == "Part" or part.ClassName == "UnionOperation" then
+                                
+                                local args = {
+                                    [1] = 0,
+                                    [2] = EmoteScriptData,
+                                    [3] = part,
+                                    [4] = Character
+                                }
+                                
+                                modelAnim:FireServer(unpack(args))
+                                executedCount = executedCount + 1
+                                
+                            end
+                        end
+                        
+                        game:GetService("StarterGui"):SetCore("SendNotification", {
+                            Title = "Success", 
+                            Text = "Emote executed on " .. executedCount .. " parts!", 
+                            Duration = 3
+                        })
+                        
+                    end
+                end
+            end)
+        end)
+    end
+})
 
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
 do
