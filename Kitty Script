@@ -651,7 +651,6 @@ Tabs.Misc2:AddInput("EmoteInputBox", {
 
 Tabs.Misc2:AddButton({
     Title = "Run Emote",
-    Description = "ส่งสคริปต์เข้าทุกชิ้นส่วน (ส่งเป็นชื่อแบบในคลิป)",
     Callback = function()
         task.spawn(function()
             local Players = game:GetService("Players")
