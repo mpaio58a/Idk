@@ -611,7 +611,7 @@ AntiTrapToggle:OnChanged(function()
     end
     end)
 
-    local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Show Custom Attack Button", Default = false })
+    local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Attack Button", Default = false })
     AttackToggle:OnChanged(function()
         if AttackToggle.Value then
             if not attackGui then
@@ -716,7 +716,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local AntiLogicCache = {}
 
-local AntiLogicToggle = Tabs.Misc:AddToggle("AntiLogic", {Title = "Anti Logic (Break Invisible Wall)",     
+local AntiLogicToggle = Tabs.Misc2:AddToggle("AntiLogic", {Title = "Anti Logic (Break Invisible Wall)",     
 Description = "Not recommended, it's buggy.", 
      Default = false})
 
