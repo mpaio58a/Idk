@@ -120,7 +120,7 @@ end
 do
     Tabs.Main:AddSlider("WalkSpeed", { Title = "WalkSpeed", Default = 16, Min = 16, Max = 100, Rounding = 0, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end) end })
     Tabs.Main:AddInput("WSInput", { Title = "WalkSpeed TextBox", Numeric = true, Finished = true, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = tonumber(v) end) end })
-    
+
     Tabs.Main:AddSlider("JumpPower", { Title = "JumpPower", Default = 50, Min = 50, Max = 250, Rounding = 0, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = v end) end })
     Tabs.Main:AddInput("JPInput", { Title = "JumpPower TextBox", Numeric = true, Finished = true, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = tonumber(v) end) end })
 
@@ -162,42 +162,29 @@ end
 
 local Visual = Tabs.Visual
 
--- [[ สร้างปุ่ม Toggle ]]
 local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty ESP", Default = false})
+local SlotEspToggle = Visual:AddToggle("SlotEsp", {Title = "Player Slot ESP", Default = false})
 local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
 local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
-local PuzzleEspToggle = Tabs.Visual:AddToggle("PuzzleEsp", {Title = "Puzzle ESP", Default = false})
-
-PuzzleEspToggle:OnChanged(function() 
-    if not PuzzleEspToggle.Value then 
-        -- สั่งลบทุกอย่างที่ลงท้ายด้วย _HL, _BG, _Box
-        pcall(function()
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "ESP_Puzzle_HL" or v.Name == "ESP_Puzzle_BG" or v.Name == "ESP_Puzzle_Box" then
-                    v:Destroy()
-                end
-            end
-        end)
-    end 
-end)
+local PuzzleEspToggle = Visual:AddToggle("PuzzleEsp", {Title = "Puzzle ESP", Default = false})
 
 -- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
 local FolderCache = {}
 local function GetTargetFolder(name)
     -- ถ้าจำได้แล้ว ให้ดึงมาใช้เลย ไม่ต้องหาใหม่
     if FolderCache[name] and FolderCache[name].Parent then return FolderCache[name] end
-    
+
     -- หาแบบเบาบางก่อน
     local f = workspace:FindFirstChild(name) or (workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild(name))
     -- ถ้าไม่เจอค่อยหาแบบทะลุ (ทำแค่ครั้งเดียว)
     if not f then f = workspace:FindFirstChild(name, true) end
-    
+
     FolderCache[name] = f
     return f
 end
 
 for _, obj in ipairs(workspace:GetDescendants()) do
-    
+
     -- [[ 🔥 เอาโค้ดดักจับ Handle มาวางดักตรงนี้เลยครับ! 🔥 ]]
     if obj.Name == "Handle" and obj.ClassName == "Part" then
         if obj.Transparency >= 1 then
@@ -223,10 +210,10 @@ local function CreateESP(target, color, espName, displayText)
         -- [[ 🟢 ระบบจัดการความโปร่งใส (ฉลาดขึ้น ไม่ยุ่งกับของล่องหนในตัวคน) ]]
         local function HandleTransparency(part)
             if part:IsA("BasePart") then
-                
+
                 -- ข้อยกเว้นที่ 1: ห้ามยุ่งกับ HumanoidRootPart
                 if part.Name == "HumanoidRootPart" then return end
-                
+
                 -- ข้อยกเว้นที่ 2: ห้ามยุ่งกับ Handle ที่เกมสั่งให้ล่องหน
                 if part.Name == "Handle" and part.Transparency >= 1 then return end
 
@@ -267,14 +254,14 @@ local function CreateESP(target, color, espName, displayText)
 
         -- [[ 🟡 สร้างป้ายชื่อ ]]
         local root = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChild("Head") or target:FindFirstChildWhichIsA("BasePart", true)) or (target:IsA("BasePart") and target)
-        
+
         if root then
             local bg = root:FindFirstChild(espName .. "_BG") or Instance.new("BillboardGui")
             bg.Name = espName .. "_BG"
             bg.Size = UDim2.new(0, 100, 0, 40)
             bg.AlwaysOnTop = true
             bg.ExtentsOffset = Vector3.new(0, 3, 0)
-            
+
             local txt = bg:FindFirstChild("NameLabel") or Instance.new("TextLabel")
             txt.Name = "NameLabel"
             txt.Size = UDim2.new(1, 0, 1, 0)
@@ -298,7 +285,7 @@ local function RemoveESP(espName)
             if v.Name == (espName .. "_HL") or v.Name == (espName .. "_BG") then
                 v:Destroy()
             end
-            
+
             -- ถอดชิปความจำและคืนค่าความโปร่งใสเดิม
             if v:IsA("BasePart") then
                 local origTrans = v:GetAttribute("OrigTrans_" .. espName)
@@ -311,11 +298,44 @@ local function RemoveESP(espName)
     end)
 end
 
--- ผูกการลบเข้ากับปุ่ม (ถ้าปุ่มถูกปิด ให้สั่งลบทิ้ง)
-PlayerEspToggle:OnChanged(function() if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end end)
-ItemEspToggle:OnChanged(function() if not ItemEspToggle.Value then RemoveESP("ESP_Item") end end)
-TrapEspToggle:OnChanged(function() if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end end)
-PuzzleEspToggle:OnChanged(function() if not PuzzleEspToggle.Value then RemoveESP("ESP_Puzzle") end end)
+-- ==========================================
+-- [[ 2. ผูกคำสั่งลบ ESP เมื่อกดปิดปุ่ม ]]
+-- ==========================================
+PlayerEspToggle:OnChanged(function() 
+    if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end 
+end)
+
+SlotEspToggle:OnChanged(function() 
+    if not SlotEspToggle.Value then 
+        pcall(function()
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v.Name == "ESP_Slot_BG" then v:Destroy() end
+            end
+        end)
+    end 
+end)
+
+ItemEspToggle:OnChanged(function() 
+    if not ItemEspToggle.Value then RemoveESP("ESP_Item") end 
+end)
+
+TrapEspToggle:OnChanged(function() 
+    if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end 
+end)
+
+PuzzleEspToggle:OnChanged(function() 
+    if not PuzzleEspToggle.Value then 
+        RemoveESP("ESP_Puzzle")
+        -- โค้ดลบ Puzzle พิเศษของคุณ
+        pcall(function()
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "ESP_Puzzle_HL" or v.Name == "ESP_Puzzle_BG" or v.Name == "ESP_Puzzle_Box" then
+                    v:Destroy()
+                end
+            end
+        end)
+    end 
+end)
 
 -- [[ 4. ลูปการทำงานของ ESP ]]
 -- Player & Bot ESP
@@ -323,6 +343,7 @@ task.spawn(function()
     while task.wait(1) do
         if PlayerEspToggle.Value then
             pcall(function()
+                -- สแกนผู้เล่น
                 for _, plr in ipairs(game.Players:GetPlayers()) do
                     if plr.Character and plr ~= game.Players.LocalPlayer then
                         local isKiller = plr.Character:FindFirstChild("Weapon", true)
@@ -331,6 +352,7 @@ task.spawn(function()
                     end
                 end
 
+                -- สแกนบอท (Kitty)
                 local playersFolder = GetTargetFolder("Players")
                 if playersFolder then
                     for _, bot in ipairs(playersFolder:GetChildren()) do
@@ -346,125 +368,136 @@ task.spawn(function()
     end
 end)
 
--- Item ESP
+-- ⚪ ส่วนที่ 3: ระบบ Slot ESP (เวอร์ชันปลดล็อคข้อจำกัด หาเจอแน่นอน)
 task.spawn(function()
-    while task.wait(1) do
-        if ItemEspToggle.Value then
-            pcall(function()
-                local targetFolder = GetTargetFolder("Tools") or GetTargetFolder("Items")
-                if targetFolder then
-                    for _, item in ipairs(targetFolder:GetChildren()) do
-                        if item:IsA("Model") or item:IsA("Tool") or item:IsA("BasePart") then
-                            CreateESP(item, Color3.fromRGB(255, 255, 255), "ESP_Item", item.Name)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- Trap ESP
-task.spawn(function()
-    while task.wait(1) do
-        if TrapEspToggle.Value then
-            pcall(function()
-                local trapsFolder = GetTargetFolder("Traps")
-                if trapsFolder then
-                    for _, trap in ipairs(trapsFolder:GetChildren()) do
-                        if trap:IsA("Model") or trap:IsA("BasePart") then
-                            CreateESP(trap, Color3.fromRGB(255, 255, 0), "ESP_Trap", "Trap")
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- Puzzle ESP Advanced
-task.spawn(function()
-    repeat task.wait(1) until PuzzleEspToggle ~= nil
-    
-    -- ลิสต์รายชื่อ Status ที่เราต้องการ (พิมพ์ต้องเป๊ะตามนี้เลยนะครับ)
-    local validStatuses = {
-        ["PuzzlePut"] = true,
-        ["PuzzleLocked"] = true,
-        ["RecipePuzzle"] = true,
-        ["PuzzleExtractor"] = true,
-        ["PuzzleInfinite"] = true
-    }
-    
-    local valueConnections = {}
-
-    local function RemoveSpecificESP(model, espName)
-        pcall(function()
-            if model:FindFirstChild(espName .. "_HL") then model[espName .. "_HL"]:Destroy() end
-            
-            local root = model:IsA("Model") and (model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)) or model
-            if root and root:FindFirstChild(espName .. "_BG") then root[espName .. "_BG"]:Destroy() end
-            
-            local function RestoreTrans(part)
-                if part:IsA("BasePart") then
-                    local orig = part:GetAttribute("OrigTrans_" .. espName)
-                    if orig then
-                        part.Transparency = orig
-                        part:SetAttribute("OrigTrans_" .. espName, nil)
-                    end
-                end
+    local function GetSlotText(entity)
+        -- 1. พยายามหาโฟลเดอร์ Slots (หาทั้งตัวอักษรพิมพ์เล็ก/ใหญ่ เผื่อเกมใช้คำว่า slots)
+        local slotsFolder = entity:FindFirstChild("Slots", true) or entity:FindFirstChild("slots", true)
+        
+        if not slotsFolder then
+            local plr = game.Players:GetPlayerFromCharacter(entity)
+            if plr then 
+                slotsFolder = plr:FindFirstChild("Slots", true) or plr:FindFirstChild("slots", true) 
             end
-            
-            if model:IsA("BasePart") then RestoreTrans(model)
-            elseif model:IsA("Model") then
-                for _, p in ipairs(model:GetDescendants()) do RestoreTrans(p) end
-            end
-        end)
-    end
+        end
 
-    while true do
-        if PuzzleEspToggle.Value then
-            pcall(function()
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    if not PuzzleEspToggle.Value then break end
+        if not slotsFolder then return nil end
+
+        local slotsData = {}
+
+        -- 2. วนลูปเช็ค Slot (รองรับทั้งแบบติดกันและเว้นวรรค)
+        for i = 1, 10 do
+            -- หาชื่อแบบ Slot1 หรือ Slot 1
+            local s = slotsFolder:FindFirstChild("Slot" .. i) or slotsFolder:FindFirstChild("Slot " .. i)
+            
+            if s then
+                -- พยายามอ่านค่า Value แบบครอบจักรวาล (ใช้ pcall กันพัง)
+                local success, rawValue = pcall(function() return s.Value end)
+                
+                if success then
+                    -- ถ้าเป็น Object ให้เอาชื่อมันมา ถ้าเป็น String ให้เอาข้อความมา
+                    local val = "None"
+                    if typeof(rawValue) == "Instance" then
+                        val = rawValue.Name
+                    elseif rawValue ~= nil then
+                        val = tostring(rawValue)
+                    end
                     
-                    -- หา StringValue ที่ชื่อ "Status"
-                    if obj:IsA("StringValue") and obj.Name == "Status" then
-                        
-                        -- 🔥 หมัดเด็ด: ดึง Model หลักที่ครอบมันอยู่ ไม่ว่าจะอยู่ลึกแค่ไหน
-                        local model = obj:FindFirstAncestorWhichIsA("Model") 
-                        if not model then model = obj.Parent end -- สำรองไว้เผื่อมันไม่ได้อยู่ใน Model
-                        
-                        if model and (model:IsA("Model") or model:IsA("BasePart")) then
-                            
-                            -- เช็ค Value ว่าตรงกับในลิสต์ไหม
-                            if validStatuses[obj.Value] then
-                                -- ส่งไปสร้าง ESP
-                                CreateESP(model, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", model.Name)
-                                
-                                -- ดักฟังการเปลี่ยนแปลง Value (ถ้าคนไขพัซเซิลแล้ว ลบทิ้ง!)
-                                if not valueConnections[obj] then
-                                    valueConnections[obj] = obj:GetPropertyChangedSignal("Value"):Connect(function()
-                                        if not validStatuses[obj.Value] or not PuzzleEspToggle.Value then
-                                            RemoveSpecificESP(model, "ESP_Puzzle")
-                                            if valueConnections[obj] then
-                                                valueConnections[obj]:Disconnect()
-                                                valueConnections[obj] = nil
-                                            end
-                                        end
-                                    end)
-                                end
+                    if val == "" or val == "nil" or val:match("^%s*$") then
+                        val = "None"
+                    end
+                    
+                    table.insert(slotsData, "Slot " .. i .. " : " .. val)
+                end
+            end
+        end
+
+        if #slotsData == 0 then return nil end
+
+        -- 3. จัดเรียงบรรทัด
+        local line1 = {}
+        local line2 = {}
+        
+        for i, text in ipairs(slotsData) do
+            if i <= 2 then table.insert(line1, text)
+            else table.insert(line2, text) end
+        end
+
+        local finalText = table.concat(line1, "   ")
+        if #line2 > 0 then
+            finalText = finalText .. "\n" .. table.concat(line2, "   ")
+        end
+
+        -- 4. เช็คของในมือ
+        local equippedTool = entity:FindFirstChildOfClass("Tool")
+        if equippedTool then
+            finalText = finalText .. "\n[ Holding : " .. equippedTool.Name .. " ]"
+        end
+
+        return finalText
+    end
+
+    local function UpdateSlotESP(target, text)
+        if not target or not target.Parent then return end
+        
+        local root = target:FindFirstChild("HumanoidRootPart") or target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")
+        if not root then return end
+
+        local bg = root:FindFirstChild("ESP_Slot_BG") or Instance.new("BillboardGui")
+        bg.Name = "ESP_Slot_BG"
+        bg.Size = UDim2.new(0, 250, 0, 60)
+        bg.AlwaysOnTop = true
+        bg.ExtentsOffset = Vector3.new(0, -2.5, 0) 
+        
+        local txt = bg:FindFirstChild("NameLabel") or Instance.new("TextLabel")
+        txt.Name = "NameLabel"
+        txt.Size = UDim2.new(1, 0, 1, 0)
+        txt.BackgroundTransparency = 1
+        txt.Text = text
+        txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+        txt.Font = Enum.Font.SourceSansBold
+        txt.TextSize = 14
+        txt.TextWrapped = true
+        txt.TextStrokeTransparency = 0.5
+        txt.Parent = bg
+        bg.Parent = root
+    end
+
+    while task.wait(1) do
+        if SlotEspToggle and SlotEspToggle.Value then
+            pcall(function()
+                for _, plr in ipairs(game.Players:GetPlayers()) do
+                    if plr.Character and plr ~= game.Players.LocalPlayer then
+                        local text = GetSlotText(plr.Character)
+                        if text then
+                            UpdateSlotESP(plr.Character, text)
+                        else
+                            local root = plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character.PrimaryPart or plr.Character:FindFirstChildWhichIsA("BasePart")
+                            if root and root:FindFirstChild("ESP_Slot_BG") then root.ESP_Slot_BG:Destroy() end
+                        end
+                    end
+                end
+
+                local playersFolder = workspace:FindFirstChild("Players") or (workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Players"))
+                if playersFolder then
+                    for _, bot in ipairs(playersFolder:GetChildren()) do
+                        if bot:IsA("Model") and bot ~= game.Players.LocalPlayer.Character then
+                            local text = GetSlotText(bot)
+                            if text then
+                                UpdateSlotESP(bot, text)
                             else
-                                -- ถ้า Value ไม่ตรง (เช่นกลายเป็น Done) ให้ลบ ESP ออก
-                                RemoveSpecificESP(model, "ESP_Puzzle")
+                                local root = bot:FindFirstChild("HumanoidRootPart") or bot.PrimaryPart or bot:FindFirstChildWhichIsA("BasePart")
+                                if root and root:FindFirstChild("ESP_Slot_BG") then root.ESP_Slot_BG:Destroy() end
                             end
                         end
                     end
                 end
             end)
         end
-        task.wait(1.5)
     end
 end)
+
+
 
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
