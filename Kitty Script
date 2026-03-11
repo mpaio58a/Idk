@@ -712,7 +712,7 @@ AntiTrapToggle:OnChanged(function()
     end
     end)
 
--Anti Logic
+-- Anti Logic
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local AntiLogicCache = {}
