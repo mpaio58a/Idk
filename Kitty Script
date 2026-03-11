@@ -780,7 +780,7 @@ AntiLogicToggle:OnChanged(function()
 end)
 
 --// 🔘 ส่วนของปุ่ม Fluent
-Tabs.Main:AddButton({
+Tabs.Misc2:AddButton({
     Title = "Fling Kitty Bot",
     Description = "Kitty Bot Only",
     Callback = function()
