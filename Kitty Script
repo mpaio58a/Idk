@@ -779,6 +779,114 @@ AntiLogicToggle:OnChanged(function()
     end
 end)
 
+--// 🔘 ส่วนของปุ่ม Fluent
+Tabs.Main:AddButton({
+    Title = "Fling Kitty Bot",
+    Description = "Kitty Bot Only",
+    Callback = function()
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local Player = Players.LocalPlayer
+        
+        -- ดึงข้อมูลใหม่ทุกครั้ง
+        local Character = Player.Character
+        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+        local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
+        
+        -- ค้นหา BOT
+        local Bot = nil
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v.Name == "BOT" and v:IsA("Model") then Bot = v break end
+        end
+
+        if not Bot or not Root or not Hum then
+            warn("❌ หา BOT ไม่เจอ หรือตัวละครไม่พร้อม!")
+            return 
+        end
+
+        local TPart = Bot:FindFirstChild("UpperTorso") or Bot:FindFirstChild("Torso") or Bot:FindFirstChild("HumanoidRootPart")
+        if not TPart then return end
+
+        task.spawn(function()
+            local success, err = pcall(function()
+                print("Fling is Started")
+                local OldPos = Root.CFrame
+                local OldFPDH = workspace.FallenPartsDestroyHeight
+                workspace.FallenPartsDestroyHeight = 0/0 
+
+                -- ล็อคกล้องแบบกระตุกตามแรง
+                workspace.CurrentCamera.CameraSubject = TPart
+
+                -- ตั้งค่าฟิสิกส์ระดับสูงสุด
+                Hum.PlatformStand = true
+                local BV = Instance.new("BodyVelocity")
+                BV.Parent = Root
+                BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                BV.Velocity = Vector3.new(0, 9e9, 0) -- แรงยกตัวมหาศาล
+
+                local StartTime = tick()
+                local Loop
+                
+                -- 🌪️ ลูปพายุคลั่ง (Chaos Spin Logic)
+                Loop = RunService.Heartbeat:Connect(function()
+                    if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent then
+                        Loop:Disconnect()
+                        return
+                    end
+                    
+                    -- Noclip แบบละเอียดทุกชิ้นส่วน
+                    for _, p in pairs(Character:GetDescendants()) do
+                        if p:IsA("BasePart") then p.CanCollide = false end
+                    end
+
+                    -- [[ จุดที่ทำให้พายุแรงขึ้น 10 เท่า ]]
+                    -- 1. เพิ่มความเร็วในการสุ่มมุมหมุน (ทุกแกน)
+                    local RndX = math.random(-360, 360)
+                    local RndY = math.random(-360, 360)
+                    local RndZ = math.random(-360, 360)
+                    
+                    -- 2. ขยายวงเหวี่ยงแบบสุ่มพิกัด (สั่นรัวๆ รอบตัว BOT)
+                    local Offset = Vector3.new(math.random(-2, 2), math.random(-2, 2), math.random(-2, 2))
+                    
+                    -- 3. สะบัด CFrame แบบพายุสว่านคลั่ง
+                    Root.CFrame = TPart.CFrame * CFrame.new(Offset) * CFrame.Angles(math.rad(RndX), math.rad(RndY), math.rad(RndZ))
+                    
+                    -- 4. อัดแรง Velocity ระดับ Max (Assembly เพื่อความเสถียร)
+                    Root.AssemblyLinearVelocity = Vector3.new(9e9, 9e9, 9e9)
+                    Root.AssemblyAngularVelocity = Vector3.new(9e9, 9e9, 9e9)
+                end)
+
+                task.wait(5)
+
+                -- 🧹 Cleanup
+                if Loop then Loop:Disconnect() end
+                if BV then BV:Destroy() end
+                Hum.PlatformStand = false
+                workspace.CurrentCamera.CameraSubject = Hum
+                workspace.FallenPartsDestroyHeight = OldFPDH
+                
+                Root.CFrame = OldPos
+                Root.AssemblyLinearVelocity = Vector3.new(0,0,0)
+                Root.AssemblyAngularVelocity = Vector3.new(0,0,0)
+                
+                print("Fling is Ended")
+
+                -- 🔄 Rejoin
+                local Ev = ReplicatedStorage:FindFirstChild("Events")
+                if Ev then
+                    local L = Ev:FindFirstChild("Leave")
+                    local J = Ev:FindFirstChild("Join")
+                    if L then L:FireServer() end
+                    task.wait(0.1)
+                    if J then J:FireServer() end
+                end
+            end)
+            if not success then warn("⚠️ Error: " .. tostring(err)) end
+        end)
+    end
+})
+
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
 do
     -- ตารางข้อมูลใหม่: {ชื่อที่โชว์บนปุ่ม, คำอธิบาย (Official Name + Cheese), ID Pastebin}
