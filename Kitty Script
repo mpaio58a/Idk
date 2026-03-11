@@ -956,7 +956,9 @@ Tabs.Misc2:AddButton({
             return 
         end
 
-        local TPart = Bot:FindFirstChild("UpperTorso") or Bot:FindFirstChild("Torso") or Bot:FindFirstChild("HumanoidRootPart")
+        local TPart = Bot:FindFirstChild("UpperTorso") or Bot:FindFirstChild("LowerTorso") or
+Bot:FindFirstChild("Torso") or
+Bot:FindFirstChild("HumanoidRootPart")
         if not TPart then return end
 
         task.spawn(function()
