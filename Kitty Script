@@ -1008,7 +1008,7 @@ Tabs.Misc2:AddButton({
                     Root.AssemblyAngularVelocity = Vector3.new(9e9, 9e9, 9e9)
                 end)
 
-                task.wait(5)
+                task.wait(3.1)
 
                 -- 🧹 Cleanup
                 if Loop then Loop:Disconnect() end
