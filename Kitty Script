@@ -883,7 +883,7 @@ Tabs.Misc2:AddButton({
 --// 🔘 ปุ่ม Execute (วางใน Tab ของพี่ได้เลย)
 Tabs.Misc2:AddButton({ -- อย่าลืมเปลี่ยน Tabs.Main เป็นชื่อตัวแปร Tab ของพี่
     Title = "Fling Kitty Bot",
-    Description = "Kitty Bot Only",
+    Description = "Kitty Bot Only Don't Spam This Button",
     Callback = function()
         local Player = game:GetService("Players").LocalPlayer
         local Character = Player.Character
