@@ -497,7 +497,125 @@ task.spawn(function()
     end
 end)
 
+-- Item ESP
+task.spawn(function()
+    while task.wait(1) do
+        if ItemEspToggle.Value then
+            pcall(function()
+                local targetFolder = GetTargetFolder("Tools") or GetTargetFolder("Items")
+                if targetFolder then
+                    for _, item in ipairs(targetFolder:GetChildren()) do
+                        if item:IsA("Model") or item:IsA("Tool") or item:IsA("BasePart") then
+                            CreateESP(item, Color3.fromRGB(255, 255, 255), "ESP_Item", item.Name)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
 
+-- Trap ESP
+task.spawn(function()
+    while task.wait(1) do
+        if TrapEspToggle.Value then
+            pcall(function()
+                local trapsFolder = GetTargetFolder("Traps")
+                if trapsFolder then
+                    for _, trap in ipairs(trapsFolder:GetChildren()) do
+                        if trap:IsA("Model") or trap:IsA("BasePart") then
+                            CreateESP(trap, Color3.fromRGB(255, 255, 0), "ESP_Trap", "Trap")
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Puzzle ESP Advanced
+task.spawn(function()
+    repeat task.wait(1) until PuzzleEspToggle ~= nil
+
+    -- ลิสต์รายชื่อ Status ที่เราต้องการ (พิมพ์ต้องเป๊ะตามนี้เลยนะครับ)
+    local validStatuses = {
+        ["PuzzlePut"] = true,
+        ["PuzzleLocked"] = true,
+        ["RecipePuzzle"] = true,
+        ["PuzzleExtractor"] = true,
+        ["PuzzleInfinite"] = true
+    }
+
+    local valueConnections = {}
+
+    local function RemoveSpecificESP(model, espName)
+        pcall(function()
+            if model:FindFirstChild(espName .. "_HL") then model[espName .. "_HL"]:Destroy() end
+
+            local root = model:IsA("Model") and (model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)) or model
+            if root and root:FindFirstChild(espName .. "_BG") then root[espName .. "_BG"]:Destroy() end
+
+            local function RestoreTrans(part)
+                if part:IsA("BasePart") then
+                    local orig = part:GetAttribute("OrigTrans_" .. espName)
+                    if orig then
+                        part.Transparency = orig
+                        part:SetAttribute("OrigTrans_" .. espName, nil)
+                    end
+                end
+            end
+
+            if model:IsA("BasePart") then RestoreTrans(model)
+            elseif model:IsA("Model") then
+                for _, p in ipairs(model:GetDescendants()) do RestoreTrans(p) end
+            end
+        end)
+    end
+
+    while true do
+        if PuzzleEspToggle.Value then
+            pcall(function()
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if not PuzzleEspToggle.Value then break end
+
+                    -- หา StringValue ที่ชื่อ "Status"
+                    if obj:IsA("StringValue") and obj.Name == "Status" then
+
+                        -- 🔥 หมัดเด็ด: ดึง Model หลักที่ครอบมันอยู่ ไม่ว่าจะอยู่ลึกแค่ไหน
+                        local model = obj:FindFirstAncestorWhichIsA("Model") 
+                        if not model then model = obj.Parent end -- สำรองไว้เผื่อมันไม่ได้อยู่ใน Model
+
+                        if model and (model:IsA("Model") or model:IsA("BasePart")) then
+
+                            -- เช็ค Value ว่าตรงกับในลิสต์ไหม
+                            if validStatuses[obj.Value] then
+                                -- ส่งไปสร้าง ESP
+                                CreateESP(model, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", model.Name)
+
+                                -- ดักฟังการเปลี่ยนแปลง Value (ถ้าคนไขพัซเซิลแล้ว ลบทิ้ง!)
+                                if not valueConnections[obj] then
+                                    valueConnections[obj] = obj:GetPropertyChangedSignal("Value"):Connect(function()
+                                        if not validStatuses[obj.Value] or not PuzzleEspToggle.Value then
+                                            RemoveSpecificESP(model, "ESP_Puzzle")
+                                            if valueConnections[obj] then
+                                                valueConnections[obj]:Disconnect()
+                                                valueConnections[obj] = nil
+                                            end
+                                        end
+                                    end)
+                                end
+                            else
+                                -- ถ้า Value ไม่ตรง (เช่นกลายเป็น Done) ให้ลบ ESP ออก
+                                RemoveSpecificESP(model, "ESP_Puzzle")
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(1.5)
+    end
+end)
 
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
