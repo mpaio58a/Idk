@@ -632,56 +632,6 @@ do
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
     end })
 
-local Misc = Tabs.Misc
-local ToolList = {}
-local ToolNames = {"Press Refresh"}
-
-local ToolDropdown = Misc:AddDropdown("ToolDropdown", {
-    Title = "Selected Item",
-    Values = ToolNames,
-    Multi = false
-})
-
-Misc:AddButton({
-    Title = "Refresh Items",
-    Callback = function()
-        ToolList = {}
-        ToolNames = {}
-        local nameCount = {}
-        local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
-
-        if tf then
-            for _, v in pairs(tf:GetChildren()) do
-                if v:IsA("Model") or v:IsA("Tool") or v:IsA("BasePart") then
-                    local oName = v.Name
-                    nameCount[oName] = (nameCount[oName] or 0) + 1
-                    local dName = oName .. " [" .. tostring(nameCount[oName]) .. "]"
-                    table.insert(ToolNames, dName)
-                    ToolList[dName] = v
-                end
-            end
-        end
-        table.sort(ToolNames)
-        ToolDropdown:SetValues(#ToolNames > 0 and ToolNames or {"No Items Found"})
-    end
-})
-
-Misc:AddButton({
-    Title = "Teleport to Item",
-    Description = "Error Try Refresh Items and Click This Button", 
-    Callback = function()
-
-        local target = ToolList[ToolDropdown.Value]
-        if target and game.Players.LocalPlayer.Character then
-            local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            local pos = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")) or target
-            if hrp and pos then 
-                hrp.CFrame = pos.CFrame + Vector3.new(0, 3, 0) 
-            end
-        end
-    end
-})
-
 -- [[ 1. สร้างปุ่ม Toggle ในหน้า Misc ]]
 local AutoSpamToggle = Tabs.Misc:AddToggle("AutoSpam", {
     Title = "Spam Interact Door Everything",
@@ -761,6 +711,75 @@ AntiTrapToggle:OnChanged(function()
         end
     end
     end)
+
+-Anti Logic
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local AntiLogicCache = {}
+
+local AntiLogicToggle = Tabs.Misc:AddToggle("AntiLogic", {Title = "Anti Logic (Break Invisible Wall)",     
+Description = "Not recommended, it's buggy.", 
+     Default = false})
+
+task.spawn(function()
+    repeat task.wait(1) until AntiLogicToggle ~= nil
+
+    while true do
+        if AntiLogicToggle.Value then
+            pcall(function()
+                -- ดึงตัวละครของเรา ณ ปัจจุบัน (เผื่อตายแล้วเกิดใหม่)
+                local myCharacter = LocalPlayer.Character
+
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if not AntiLogicToggle.Value then break end
+
+                    -- 🔥 หมัดเด็ด: ถ้า Part นี้เป็นชิ้นส่วนในร่างกายของเรา ให้ข้ามไปเลย ไม่ต้องทำอะไร!
+                    if myCharacter and obj:IsDescendantOf(myCharacter) then
+                        continue
+                    end
+
+                    -- กรองเฉพาะ ClassName เป็น "Part"
+                    if obj.ClassName == "Part" then
+
+                        -- บันทึกค่า CanCollide เดิมไว้ก่อน
+                        if AntiLogicCache[obj] == nil then
+                            AntiLogicCache[obj] = obj.CanCollide
+                        end
+
+                        -- เช็คเงื่อนไขความโปร่งใส
+                        if obj.Transparency >= 1 then
+                            -- ล่องหน = บังคับทะลุ
+                            if obj.CanCollide ~= false then
+                                obj.CanCollide = false
+                            end
+                        else
+                            -- ไม่ล่องหน = บังคับแข็ง
+                            if obj.CanCollide ~= true then
+                                obj.CanCollide = true
+                            end
+                        end
+
+                    end
+                end
+            end)
+        end
+        task.wait(2) -- สแกนทุก 2 วินาที
+    end
+end)
+
+-- ระบบคืนค่าเมื่อกดปิดปุ่ม
+AntiLogicToggle:OnChanged(function()
+    if not AntiLogicToggle.Value then
+        pcall(function()
+            for part, origCollide in pairs(AntiLogicCache) do
+                if part and part.Parent then
+                    part.CanCollide = origCollide
+                end
+            end
+            AntiLogicCache = {} -- ล้างความจำ
+        end)
+    end
+end)
 
     local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Attack Button", Default = false })
     AttackToggle:OnChanged(function()
@@ -861,74 +880,158 @@ Tabs.Misc2:AddButton({
     end
 })
 
---Anti Logic
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local AntiLogicCache = {}
-
-local AntiLogicToggle = Tabs.Misc2:AddToggle("AntiLogic", {Title = "Anti Logic (Break Invisible Wall)",     
-Description = "Not recommended, it's buggy.", 
-     Default = false})
-
-task.spawn(function()
-    repeat task.wait(1) until AntiLogicToggle ~= nil
-
-    while true do
-        if AntiLogicToggle.Value then
-            pcall(function()
-                -- ดึงตัวละครของเรา ณ ปัจจุบัน (เผื่อตายแล้วเกิดใหม่)
-                local myCharacter = LocalPlayer.Character
-
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    if not AntiLogicToggle.Value then break end
-
-                    -- 🔥 หมัดเด็ด: ถ้า Part นี้เป็นชิ้นส่วนในร่างกายของเรา ให้ข้ามไปเลย ไม่ต้องทำอะไร!
-                    if myCharacter and obj:IsDescendantOf(myCharacter) then
-                        continue
-                    end
-
-                    -- กรองเฉพาะ ClassName เป็น "Part"
-                    if obj.ClassName == "Part" then
-
-                        -- บันทึกค่า CanCollide เดิมไว้ก่อน
-                        if AntiLogicCache[obj] == nil then
-                            AntiLogicCache[obj] = obj.CanCollide
-                        end
-
-                        -- เช็คเงื่อนไขความโปร่งใส
-                        if obj.Transparency >= 1 then
-                            -- ล่องหน = บังคับทะลุ
-                            if obj.CanCollide ~= false then
-                                obj.CanCollide = false
-                            end
-                        else
-                            -- ไม่ล่องหน = บังคับแข็ง
-                            if obj.CanCollide ~= true then
-                                obj.CanCollide = true
-                            end
-                        end
-
-                    end
-                end
-            end)
+--// 🔘 ปุ่ม Execute (วางใน Tab ของพี่ได้เลย)
+Tabs.Misc2:AddButton({ -- อย่าลืมเปลี่ยน Tabs.Main เป็นชื่อตัวแปร Tab ของพี่
+    Title = "Fling Kitty Bot",
+    Description = "Kitty Bot Only",
+    Callback = function()
+        local Player = game:GetService("Players").LocalPlayer
+        local Character = Player.Character
+        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+        local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
+        
+        -- 🔍 ค้นหาเป้าหมายชื่อ "BOT"
+        local Bot = nil
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v.Name == "BOT" and v:IsA("Model") then Bot = v break end
         end
-        task.wait(2) -- สแกนทุก 2 วินาที
-    end
-end)
 
--- ระบบคืนค่าเมื่อกดปิดปุ่ม
-AntiLogicToggle:OnChanged(function()
-    if not AntiLogicToggle.Value then
-        pcall(function()
-            for part, origCollide in pairs(AntiLogicCache) do
-                if part and part.Parent then
-                    part.CanCollide = origCollide
+        if not Bot or not Root or not Hum then
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Error",
+                Text = "หา BOT ไม่เจอ หรือตัวละครไม่พร้อม!",
+                Duration = 3
+            })
+            return 
+        end
+
+        -- 🎯 ล็อคเป้าหมาย 2 ส่วนหลัก
+        local Upper = Bot:FindFirstChild("UpperTorso") or Bot:FindFirstChild("Torso")
+        local Lower = Bot:FindFirstChild("LowerTorso") or Bot:FindFirstChild("HumanoidRootPart")
+
+        task.spawn(function()
+            local OldPos = Root.CFrame
+            local OldFPDH = workspace.FallenPartsDestroyHeight
+            workspace.FallenPartsDestroyHeight = 0/0 -- กันตกแมพตาย
+
+            -- 🎥 ล็อคกล้องแบบสั่นสะเทือน
+            workspace.CurrentCamera.CameraSubject = Upper or Lower
+
+            -- 🌀 ตั้งค่าฟิสิกส์ Overdrive (แรงขึ้น 100 เท่า)
+            Hum.PlatformStand = true
+            local BV = Instance.new("BodyVelocity")
+            BV.Parent = Root
+            BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            BV.Velocity = Vector3.new(9e18, 9e18, 9e18) -- แรงดีดระดับมหาศาล
+
+            local StartTime = tick()
+            local Connection
+            
+            Connection = game:GetService("RunService").Heartbeat:Connect(function()
+                if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent then
+                    if Connection then Connection:Disconnect() end
+                    return
                 end
+                
+                -- 🚫 ระบบ Noclip ขั้นสูง (บังคับทะลุ 100%)
+                for _, part in pairs(Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+
+                -- [[ 💯X GOD LOGIC: Micro-Teleport ]]
+                -- สุ่มเป้าหมาย Upper/Lower และมุมสะบัดแบบ Chaos (36000 องศา)
+                local TargetPart = (math.random(1, 2) == 1) and Upper or Lower
+                local ChaosRot = CFrame.Angles(
+                    math.rad(math.random(-36000, 36000)), 
+                    math.rad(math.random(-36000, 36000)), 
+                    math.rad(math.random(-36000, 36000))
+                )
+                
+                -- วาร์ปสิงร่างแบบถี่ยิบ (Offset สุ่มรอบตัว)
+                local ChaosOff = Vector3.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
+                Root.CFrame = TargetPart.CFrame * CFrame.new(ChaosOff) * ChaosRot
+                
+                -- ยัดแรง Assembly ระดับ Max Power
+                Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
+                Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
+            end)
+
+            task.wait(3.1)
+
+            -- 🧹 Cleanup (ล้างค่าทั้งหมดให้รันซ้ำได้)
+            if Connection then Connection:Disconnect() end
+            if BV then BV:Destroy() end
+             Hum.PlatformStand = false
+            workspace.CurrentCamera.CameraSubject = Hum
+            workspace.FallenPartsDestroyHeight = OldFPDH
+            
+            Root.CFrame = OldPos
+            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+
+            -- 🔄 ส่วน Rejoin
+            local RS = game:GetService("ReplicatedStorage")
+            local Ev = RS:FindFirstChild("Events")
+            if Ev then
+                if Ev:FindFirstChild("Leave") then Ev.Leave:FireServer() end
+                task.wait(0.1)
+                if Ev:FindFirstChild("Join") then Ev.Join:FireServer() end
             end
-            AntiLogicCache = {} -- ล้างความจำ
         end)
     end
-end)
+})
+
+local Misc = Tabs.Misc2
+local ToolList = {}
+local ToolNames = {"Press Refresh"}
+
+local ToolDropdown = Misc:AddDropdown("ToolDropdown", {
+    Title = "Selected Item",
+    Values = ToolNames,
+    Multi = false
+})
+
+Misc:AddButton({
+    Title = "Refresh Items",
+    Callback = function()
+        ToolList = {}
+        ToolNames = {}
+        local nameCount = {}
+        local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
+
+        if tf then
+            for _, v in pairs(tf:GetChildren()) do
+                if v:IsA("Model") or v:IsA("Tool") or v:IsA("BasePart") then
+                    local oName = v.Name
+                    nameCount[oName] = (nameCount[oName] or 0) + 1
+                    local dName = oName .. " [" .. tostring(nameCount[oName]) .. "]"
+                    table.insert(ToolNames, dName)
+                    ToolList[dName] = v
+                end
+            end
+        end
+        table.sort(ToolNames)
+        ToolDropdown:SetValues(#ToolNames > 0 and ToolNames or {"No Items Found"})
+    end
+})
+
+Misc:AddButton({
+    Title = "Teleport to Item",
+    Description = "Error Try Refresh Items and Click This Button", 
+    Callback = function()
+
+        local target = ToolList[ToolDropdown.Value]
+        if target and game.Players.LocalPlayer.Character then
+            local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local pos = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")) or target
+            if hrp and pos then 
+                hrp.CFrame = pos.CFrame + Vector3.new(0, 3, 0) 
+            end
+        end
+    end
+})
 
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
 do
