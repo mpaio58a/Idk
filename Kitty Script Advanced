@@ -1,5 +1,5 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/DenDenZZZ/Kavo-UI-Library/main/Kavo.lua"))()
-local Window = Library.CreateLib("Kitty Gui Advanced", "LightTheme")
+local Window = Library.CreateLib("Kitty Advanced by Askwjwjnsns", "LightTheme")
 
 local Tab = Window:NewTab("Main")
 local Section = Tab:NewSection("Codes From Game Kitty")
@@ -126,24 +126,9 @@ end)
 Section:NewButton("[Fixed] Evil Mouse", "", function()
     loadstring(game:HttpGet("https://pastebin.com/raw/KAAXHi1h"))()
 end)
-   
-local Tab = Window:NewTab("Keybinds")
-local Section = Tab:NewSection("Keyboard Press F = Hide/Show")
 
-Section:NewButton("Keyboard For Mobile ", "keyboard for mobile", function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/advxzivhsjjdhxhsidifvsh/mobkeyboard/main/main.txt", true))()
-end)
-
-Section:NewButton("Custom Keyboard & Search For Mobile", "Keyboard for Mobile", function()
-    loadstring(game:HttpGet("https://gist.githubusercontent.com/RedZenXYZ/4d80bfd70ee27000660e4bfa7509c667/raw/da903c570249ab3c0c1a74f3467260972c3d87e6/KeyBoard%2520From%2520Ohio%2520Fr%2520Fr"))()
-end)
-
-Section:NewKeybind("Keybinds", "...", Enum.KeyCode.F, function()
-	Library:ToggleUI()
-end)
-
-local Tab = Window:NewTab("Op?")
-local Section = Tab:NewSection("Revive Lobby Work Party Mode&Chapters")
+local Tab = Window:NewTab("Misc")
+local Section = Tab:NewSection("Idk")
 
 Section:NewButton("Revive", "Code : Leave From Spectator", function()
     game:GetService("ReplicatedStorage").Events.Leave:FireServer()
@@ -217,44 +202,12 @@ local Section = Tab:NewSection("1.4.0")
 local Section = Tab:NewSection("1.5.0")
 
 local Tab = Window:NewTab("Credits & Others")
-local Section = Tab:NewSection("Credit To Owner - Unknown")
+local Section = Tab:NewSection("Credit To Owner - Random_200Df But Change Account To Askwjwjnsns")
 
 local Section = Tab:NewSection("Free Bobux Enter Down")
 
 Section:NewTextBox("Enter Password", "i clickbait", function(txt)
 game.Players.LocalPlayer:Kick("i Clickbait Lol")
-end)
-
-local Section = Tab:NewSection("Change Themes")
-
-Section:NewButton("Light Theme", "Code :  ", function()
-
-loadstring(game:HttpGet("https://pastebin.com/raw/Jn98qkRc"))()
-end)
-
-Section:NewButton("Dark Theme", "  ", function()
-
-loadstring(game:HttpGet("https://pastebin.com/raw/cBDsu1UJ"))()
-end)
-
-Section:NewButton("Grape Theme", " 🍇🍇🍇", function()
-
-loadstring(game:HttpGet("https://pastebin.com/raw/bvHy9ssW"))()
-end)
-
-Section:NewButton("Blood Theme", "Code :  ", function()
-
-loadstring(game:HttpGet("https://pastebin.com/raw/9HJ59LPp"))()
-end)
-
-Section:NewButton("Ocean Theme", "Code :  ", function()
-
-loadstring(game:HttpGet("https://pastebin.com/raw/bng6ikdy"))()
-end)
-
-Section:NewButton("Midnight Theme", "Code :  ", function()
-
-loadstring(game:HttpGet("https://pastebin.com/raw/2qzspqTL"))()
 end)
 
 local gui = Instance.new("ScreenGui")
