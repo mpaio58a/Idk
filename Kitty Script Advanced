@@ -45,11 +45,7 @@ Section:NewButton("Kitty Gui", "Op Script", function()
 end)
 
 Section:NewButton("Kitty Gui Chapter 1", "Work in Chapter 1", function()
-    loadstring(game:HttpGet("https://pastebin.com/raw/MwXkxRam"))()
-end)
-
-Section:NewButton("Tp Items Gui", "Op Teleport Items", function()
-    loadstring(game:HttpGet(('https://pastebin.com/raw/Z0DPwpNh'),true))()
+    loadstring(game:HttpGet("https://pastebin.com/raw/8VFixf7R"))()
 end)
 
 Section:NewButton("Simple Script", "Old Version", function()
