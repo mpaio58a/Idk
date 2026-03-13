@@ -890,14 +890,14 @@ Tabs.Misc2:AddButton({
 --// 🔘 ปุ่ม Execute (วางใน Tab ของพี่)
 Tabs.Misc2:AddButton({
     Title = "Fling Kitty Bot",
-    Description = "Kitty Don't Get Fling Try Again But Don't Spam",
+    Description = "Kitty Don't Get Fling Try Again but Don't Spam",
     Callback = function()
         local Player = game:GetService("Players").LocalPlayer
         local Character = Player.Character
         local Root = Character and Character:FindFirstChild("HumanoidRootPart")
         local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
         
-        -- 🔍 ค้นหาเป้าหมายชื่อ "BOT"
+        -- 🔍 ค้นหา BOT
         local Bot = nil
         for _, v in pairs(workspace:GetDescendants()) do
             if v.Name == "BOT" and v:IsA("Model") then Bot = v break end
@@ -912,19 +912,20 @@ Tabs.Misc2:AddButton({
             return 
         end
 
-        -- 🎯 ล็อคเป้าหมาย 2 ส่วน
+        -- 🎯 ล็อคเป้าหมาย
         local Upper = Bot:FindFirstChild("UpperTorso") or Bot:FindFirstChild("Torso")
         local Lower = Bot:FindFirstChild("LowerTorso") or Bot:FindFirstChild("HumanoidRootPart")
+        
+        -- ใช้ RootPart ของ BOT เป็นตัวกำหนด "ด้านหน้า" เพื่อไม่ให้แกว่งตามแอนิเมชันเดิน
+        local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Lower
 
         task.spawn(function()
             local OldPos = Root.CFrame
             local OldFPDH = workspace.FallenPartsDestroyHeight
-            workspace.FallenPartsDestroyHeight = 0/0 -- กันตกแมพตาย
+            workspace.FallenPartsDestroyHeight = 0/0 
 
-            -- 🎥 ล็อคกล้อง
             workspace.CurrentCamera.CameraSubject = Upper or Lower
 
-            -- 🌀 ตั้งค่าฟิสิกส์ 100X
             Hum.PlatformStand = true
             local BV = Instance.new("BodyVelocity")
             BV.Parent = Root
@@ -940,36 +941,31 @@ Tabs.Misc2:AddButton({
                     return
                 end
                 
-                -- 🚫 ทะลุร่าง (Noclip)
+                -- Noclip
                 for _, part in pairs(Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
+                    if part:IsA("BasePart") then part.CanCollide = false end
                 end
 
-                -- [[ 💯X TRACKING LOGIC: ดักหน้า BOT ]]
-                local TargetPart = (math.random(1, 2) == 1) and Upper or Lower
-                
-                -- สุ่มมุมหมุนพายุ
+                -- สุ่มพิกัดมุมแบบพายุ 100X
                 local ChaosRot = CFrame.Angles(
                     math.rad(math.random(-36000, 36000)), 
                     math.rad(math.random(-36000, 36000)), 
                     math.rad(math.random(-36000, 36000))
                 )
                 
-                -- 📍 คำนวณจุดดักหน้า (แกน Z ติดลบ = ด้านหน้าเป้าหมาย)
-                -- สุ่มระยะแกน X, Y เล็กน้อยเพื่อกระจายแรงปะทะ
-                -- สุ่มแกน Z ที่ -1.5 ถึง -3.5 เพื่อให้อยู่ข้างหน้า BOT ตลอดเวลาที่มันเดิน
+                -- [[ จุดแก้บัค: สลับแกนและใช้ BotRoot ]]
+                -- สลับเป็นค่าบวก (15 ถึง 35) เพื่อพลิกมาด้านหน้าของ BOT ที่โมเดลกลับด้าน
+                -- อ้างอิงทิศทางจาก BotRoot เพื่อไม่ให้พายุหมุนไปอยู่ข้างหลังตอนมันเดิน
                 local FrontOffset = CFrame.new(
-                    math.random(-10, 10) / 10,  -- ซ้าย/ขวา (-1 ถึง 1)
-                    math.random(-10, 10) / 10,  -- บน/ล่าง (-1 ถึง 1)
-                    -math.random(15, 35) / 10   -- ด้านหน้าเป้าหมาย (-1.5 ถึง -3.5)
+                    math.random(-10, 10) / 10,  -- สุ่มขยับซ้าย/ขวาเล็กน้อย
+                    math.random(-10, 10) / 10,  -- สุ่มขยับขึ้น/ลงเล็กน้อย
+                    math.random(15, 35) / 10    -- แกน Z สลับมาเป็น + (บวก)
                 )
                 
-                -- ย้ายพายุไปดักหน้า BOT เสมอ ไม่ว่ามันจะหันไปทางไหนหรือเดินเร็วแค่ไหน
-                Root.CFrame = TargetPart.CFrame * FrontOffset * ChaosRot
+                -- วาร์ปดักหน้าตลอดเวลา
+                Root.CFrame = BotRoot.CFrame * FrontOffset * ChaosRot
                 
-                -- ยัดแรงฟิสิกส์
+                -- ยัดแรงฟิสิกส์ 100X
                 Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
                 Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
             end)
