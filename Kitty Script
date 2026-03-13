@@ -888,7 +888,7 @@ Tabs.Misc2:AddButton({
 })
 
 --// 🔘 ปุ่ม Execute (วางใน Tab ของพี่)
-Tabs.Main:AddButton({
+Tabs.Misc2:AddButton({
     Title = "Fling Kitty Bot",
     Description = "Kitty Don't Get Fling Try Again But Don't Spam",
     Callback = function()
