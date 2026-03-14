@@ -816,9 +816,6 @@ end
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-local playEmoteRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("PlayEmote")
-local modelAnimRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("ModelAnimation")
-
 local selectedType = "Mouse"
 local selectedNum = "1"
 local currentTrack = nil
@@ -879,6 +876,15 @@ local EmoteObjects = {
     ["MouseEmote46"] = { uuid = [[EMP12345678901234567890_67comun]], part = "RightHand" }
 }
 
+-- ฟังก์ชันค้นหา Remote แบบปลอดภัย (ไม่ทำให้สคริปต์ค้าง)
+local function getRemotes()
+    local events = ReplicatedStorage:FindFirstChild("Events")
+    if events then
+        return events:FindFirstChild("PlayEmote"), events:FindFirstChild("ModelAnimation")
+    end
+    return nil, nil
+end
+
 local function stopEmote()
     local char = Players.LocalPlayer.Character
     if currentTrack then 
@@ -886,7 +892,8 @@ local function stopEmote()
         currentTrack = nil 
     end
     
-    if activeObject and char then
+    local _, modelAnimRemote = getRemotes()
+    if activeObject and char and modelAnimRemote then
         modelAnimRemote:FireServer(1, activeObject.uuid, activeObject.part, char)
         activeObject = nil
     end
@@ -899,10 +906,14 @@ local function playEmote()
     local char = Players.LocalPlayer.Character
     if not char then return end
     
-    playEmoteRemote:FireServer(emoteName)
+    local playEmoteRemote, modelAnimRemote = getRemotes()
+    
+    if playEmoteRemote then
+        playEmoteRemote:FireServer(emoteName)
+    end
     
     local objData = EmoteObjects[emoteName]
-    if objData then
+    if objData and modelAnimRemote then
         modelAnimRemote:FireServer(0, objData.uuid, objData.part, char)
         activeObject = objData 
     end
@@ -926,7 +937,7 @@ local function playEmote()
 end
 
 -- =========================================================================
--- ⚠️ นำ 4 บล็อกนี้ไปวางใน Tab ของคุณ (เปลี่ยน 'YourTab' เป็นชื่อ Tab ของคุณ)
+-- ⚠️ เปลี่ยน 'YourTab' ให้ตรงกับตัวแปร Tab ของคุณด้วยนะครับ (เช่น Tabs.Main)
 -- =========================================================================
 
 local numList = {}
