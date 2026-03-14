@@ -888,7 +888,7 @@ Tabs.Misc2:AddButton({
 })
 
 --// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
-Tabs.Misc2:AddButton({ -- ชี้ไปที่แท็บ Misc2
+Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
     Description = "Don't Get Fling Try Again but Don't Spam",
     Callback = function()
@@ -950,15 +950,15 @@ Tabs.Misc2:AddButton({ -- ชี้ไปที่แท็บ Misc2
                     math.rad(math.random(-36000, 36000))
                 )
                 
-                -- 🔥 ดักหลังระยะ 5 (ส่ายนิดๆ เพื่อเพิ่มแรงกระแทก)
-                local BackOffset = CFrame.new(
+                -- 🔥 จุดเปลี่ยน: ดักหน้า (แกน Z ติดลบ)
+                local FrontOffset = CFrame.new(
                     math.random(-5, 5) / 10,  
                     math.random(-5, 5) / 10,  
-                    -5                         -- ระยะ 5 Studs ข้างหลังเป๊ะๆ
+                    -5  -- เปลี่ยนเป็น -5 เพื่อให้พายุไปดักอยู่ "ด้านหน้า" ของ BOT
                 )
                 
-                -- วาร์ปเกาะหลังตลอดเวลา
-                Root.CFrame = BotRoot.CFrame * BackOffset * ChaosRot
+                -- วาร์ปดักหน้าตลอดเวลา
+                Root.CFrame = BotRoot.CFrame * FrontOffset * ChaosRot
                 
                 -- ยัดแรงฟิสิกส์สะบัดระดับ 100X
                 Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
