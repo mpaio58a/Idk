@@ -954,7 +954,7 @@ Tabs.Misc2:AddButton({ -- ชี้ไปที่แท็บ Misc2
                 local BackOffset = CFrame.new(
                     math.random(-5, 5) / 10,  
                     math.random(-5, 5) / 10,  
-                    5                         -- ระยะ 5 Studs ข้างหลังเป๊ะๆ
+                    -5                         -- ระยะ 5 Studs ข้างหลังเป๊ะๆ
                 )
                 
                 -- วาร์ปเกาะหลังตลอดเวลา
