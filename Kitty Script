@@ -1053,7 +1053,7 @@ Tabs.Misc2:AddButton({
 --// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
-    Description = "Don't Get Fling Try Again but Don't Spam (ดักหน้า 2.5)",
+    Description = "Bot Don't Get Fling Try Again",
     Callback = function()
         local Player = game:GetService("Players").LocalPlayer
         local Character = Player.Character
@@ -1075,29 +1075,40 @@ Tabs.Misc2:AddButton({
             return 
         end
 
-        -- 🎯 ล็อคเป้าหมาย (ใช้ RootPart เพื่อความแม่นยำ)
         local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso")
 
         task.spawn(function()
             local OldPos = Root.CFrame
             local OldFPDH = workspace.FallenPartsDestroyHeight
-            workspace.FallenPartsDestroyHeight = 0/0 
+            
+            -- แก้บัค 0/0 ที่ทำให้แมพพัง เปลี่ยนเป็นให้ตกได้ลึกๆ แทน
+            workspace.FallenPartsDestroyHeight = -50000 
 
-            workspace.CurrentCamera.CameraSubject = BotRoot
+            -- ปล่อยกล้องไว้ที่ตัวเราเหมือนเดิม จะได้ไม่บัคค้างบนฟ้า
+            workspace.CurrentCamera.CameraSubject = Hum
 
-            -- 🌀 ปรับฟิสิกส์ 100X
+            -- 🌀 ปรับฟิสิกส์
             Hum.PlatformStand = true
             local BV = Instance.new("BodyVelocity")
             BV.Parent = Root
             BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            BV.Velocity = Vector3.new(9e18, 9e18, 9e18)
+            BV.Velocity = Vector3.new(0, 0, 0) -- ไม่ต้องให้ตัวเราลอยขึ้นเอง
 
             local StartTime = tick()
             local Connection
+            local HasFlung = false
             
             Connection = game:GetService("RunService").Heartbeat:Connect(function()
-                if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent then
+                -- ถ้าเวลาเกิน 3 วิ หรือ BOT โดนดีดปลิวไปแล้ว ให้ตัดการทำงานทันที
+                if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent or HasFlung then
                     if Connection then Connection:Disconnect() end
+                    return
+                end
+                
+                -- [[ 🔥 ANTI-VOID LOGIC: เช็คว่า BOT ปลิวหรือยัง ]]
+                -- ถ้าความเร็ว BOT มากกว่า 200 (แปลว่าโดนดีดแล้ว) ให้หยุดวาร์ปตาม!
+                if BotRoot.AssemblyLinearVelocity.Magnitude > 200 then
+                    HasFlung = true
                     return
                 end
                 
@@ -1106,37 +1117,37 @@ Tabs.Misc2:AddButton({
                     if part:IsA("BasePart") then part.CanCollide = false end
                 end
 
-                -- มุมหมุนพายุ 100X แบบ Chaos
                 local ChaosRot = CFrame.Angles(
                     math.rad(math.random(-36000, 36000)), 
                     math.rad(math.random(-36000, 36000)), 
                     math.rad(math.random(-36000, 36000))
                 )
                 
-                -- 🔥 ล็อคระยะ 2.5 Studs ตามสูตรเป๊ะๆ
+                -- ดักหน้าระยะ 2.5 Studs
                 local FrontOffset = CFrame.new(
-                    math.random(-5, 5) / 10,  -- ส่ายซ้ายขวานิดๆ สร้างแรงกระแทก
-                    math.random(-5, 5) / 10,  -- ส่ายบนล่างนิดๆ
-                    -2.5                      -- ล็อคเป้าดักหน้าที่ 2.5 Studs ถ้วน!
+                    math.random(-5, 5) / 10,  
+                    math.random(-5, 5) / 10,  
+                    -2.5                      
                 )
                 
                 -- วาร์ปดักหน้า
                 Root.CFrame = BotRoot.CFrame * FrontOffset * ChaosRot
                 
-                -- ยัดแรงฟิสิกส์สะบัดระดับ 100X
+                -- ยัดแรงฟิสิกส์ระดับสูงสุด
                 Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
                 Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
             end)
 
             task.wait(3.1)
 
-            -- 🧹 Cleanup ล้างค่า
+            -- 🧹 Cleanup ล้างค่าทั้งหมด
             if Connection then Connection:Disconnect() end
             if BV then BV:Destroy() end
             Hum.PlatformStand = false
             workspace.CurrentCamera.CameraSubject = Hum
             workspace.FallenPartsDestroyHeight = OldFPDH
             
+            -- วาร์ปกลับมาที่เดิมตอนก่อนกดปุ่ม
             Root.CFrame = OldPos
             Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
             Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
