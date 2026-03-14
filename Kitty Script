@@ -124,6 +124,9 @@ do
     Tabs.Main:AddSlider("JumpPower", { Title = "JumpPower", Default = 50, Min = 50, Max = 250, Rounding = 0, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = v end) end })
     Tabs.Main:AddInput("JPInput", { Title = "JumpPower TextBox", Numeric = true, Finished = true, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = tonumber(v) end) end })
 
+Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
+end
+
     local InfJumpToggle = Tabs.Main:AddToggle("InfJump", {Title = "Infinite Jump", Default = false })
     game:GetService("UserInputService").JumpRequest:Connect(function()
         if InfJumpToggle.Value then pcall(function() game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping") end) end
@@ -156,9 +159,6 @@ NoclipToggle:OnChanged(function()
         end
     end
 end)
-
-    Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
-end
 
 local Visual = Tabs.Visual
 
@@ -976,80 +976,6 @@ Tabs.Misc2:AddButton({
     end
 })
 
-local EmoteScriptData = ""
-
-Tabs.Misc2:AddInput("EmoteInputBox", {
-    Title = "Emote Script",
-    Default = "",
-    Placeholder = "Paste your script here...",
-    Numeric = false,
-    Finished = false,
-    Callback = function(Value)
-        EmoteScriptData = Value
-    end
-})
-
-Tabs.Misc2:AddButton({
-    Title = "Run Emote",
-    Callback = function()
-        task.spawn(function()
-            local Players = game:GetService("Players")
-            local ReplicatedStorage = game:GetService("ReplicatedStorage")
-            local Player = Players.LocalPlayer
-            local Character = Player.Character or Player.CharacterAdded:Wait()
-
-            if not Character then return end
-            if EmoteScriptData == "" then 
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Warning", 
-                    Text = "Please paste script first!", 
-                    Duration = 3
-                })
-                return 
-            end
-
-            pcall(function()
-                local events = ReplicatedStorage:WaitForChild("Events", 3)
-                if events then
-                    local modelAnim = events:WaitForChild("ModelAnimation", 3)
-                    if modelAnim then
-
-                        local executedCount = 0
-
-                        -- [[ ลูปหาชิ้นส่วนและส่ง "ชื่อ" ไปให้ Server ทีละชื่อ ]]
-                        for _, part in ipairs(Character:GetDescendants()) do
-                            -- กรองเอาเฉพาะ Part, MeshPart หรือ UnionOperation
-                            if part:IsA("BasePart") or part.ClassName == "UnionOperation" then
-
-                                local args = {
-                                    [1] = 0,
-                                    [2] = EmoteScriptData,
-                                    [3] = part.Name,   -- 🔥 หมัดเด็ด! ส่ง "ชื่อ (String)" ไปเหมือนในคลิปเป๊ะๆ
-                                    [4] = Character
-                                }
-
-                                -- ยิงข้อมูลเข้า Server
-                                modelAnim:FireServer(unpack(args))
-                                executedCount = executedCount + 1
-
-                                task.wait() -- ใส่หน่วงเวลานิดนึงกันเกมเตะเพราะส่งข้อมูลรัวไป
-                            end
-                        end
-
-                        -- แจ้งเตือนเมื่อยิงครบทุกชิ้น
-                        game:GetService("StarterGui"):SetCore("SendNotification", {
-                            Title = "Success", 
-                            Text = "Emote fired on " .. executedCount .. " parts!", 
-                            Duration = 3
-                        })
-
-                    end
-                end
-            end)
-        end)
-    end
-})
-
 --// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
@@ -1149,6 +1075,80 @@ Tabs.Misc2:AddButton({
                 task.wait(0.1)
                 if Ev:FindFirstChild("Join") then Ev.Join:FireServer() end
             end
+        end)
+    end
+})
+
+local EmoteScriptData = ""
+
+Tabs.Misc2:AddInput("EmoteInputBox", {
+    Title = "Emote Script",
+    Default = "",
+    Placeholder = "Paste your script here...",
+    Numeric = false,
+    Finished = false,
+    Callback = function(Value)
+        EmoteScriptData = Value
+    end
+})
+
+Tabs.Misc2:AddButton({
+    Title = "Run Emote",
+    Callback = function()
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            local Player = Players.LocalPlayer
+            local Character = Player.Character or Player.CharacterAdded:Wait()
+
+            if not Character then return end
+            if EmoteScriptData == "" then 
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Warning", 
+                    Text = "Please paste script first!", 
+                    Duration = 3
+                })
+                return 
+            end
+
+            pcall(function()
+                local events = ReplicatedStorage:WaitForChild("Events", 3)
+                if events then
+                    local modelAnim = events:WaitForChild("ModelAnimation", 3)
+                    if modelAnim then
+
+                        local executedCount = 0
+
+                        -- [[ ลูปหาชิ้นส่วนและส่ง "ชื่อ" ไปให้ Server ทีละชื่อ ]]
+                        for _, part in ipairs(Character:GetDescendants()) do
+                            -- กรองเอาเฉพาะ Part, MeshPart หรือ UnionOperation
+                            if part:IsA("BasePart") or part.ClassName == "UnionOperation" then
+
+                                local args = {
+                                    [1] = 0,
+                                    [2] = EmoteScriptData,
+                                    [3] = part.Name,   -- 🔥 หมัดเด็ด! ส่ง "ชื่อ (String)" ไปเหมือนในคลิปเป๊ะๆ
+                                    [4] = Character
+                                }
+
+                                -- ยิงข้อมูลเข้า Server
+                                modelAnim:FireServer(unpack(args))
+                                executedCount = executedCount + 1
+
+                                task.wait() -- ใส่หน่วงเวลานิดนึงกันเกมเตะเพราะส่งข้อมูลรัวไป
+                            end
+                        end
+
+                        -- แจ้งเตือนเมื่อยิงครบทุกชิ้น
+                        game:GetService("StarterGui"):SetCore("SendNotification", {
+                            Title = "Success", 
+                            Text = "Emote fired on " .. executedCount .. " parts!", 
+                            Duration = 3
+                        })
+
+                    end
+                end
+            end)
         end)
     end
 })
