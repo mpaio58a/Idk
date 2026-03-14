@@ -827,6 +827,7 @@ local EmoteObjects = {
     ["KittyEmote12"] = { uuid = [[oisç4omdña´lIlIllIIIIIII``+`+40dkkKSo]], part = "RightHand" },
     ["KittyEmote13"] = { uuid = [[34255899999ss541223okfkkllp`´´çllIIIllllIIIIII]], part = "HumanoidRootPart" },
     ["KittyEmote14"] = { uuid = [[sksññççççkskskkIIlllIllllIIIIIIIIl99928840ÇÑ]], part = "HumanoidRootPart" },
+    ["KittyEmote15"] = { uuid = [[kkiIIIlIIIIllllIlIIl99388800382ddmJJDNj-ñ]], part = "LowerTorso" },
     ["KittyEmote17"] = { uuid = [[393929b98291c901141allllIIllLllllllIIIIIIIIIIIIIIIIIII]], part = "HumanoidRootPart" },
     ["KittyEmote18"] = { uuid = [[a93990d390013251clllllllIllIIIIIIIIIlllllI_sillon]], part = "HumanoidRootPart" },
     ["KittyEmote19"] = { uuid = [[byol++k8r810a4373´´`´ñÑÑ_columpio]], part = "HumanoidRootPart" },
