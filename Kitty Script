@@ -813,6 +813,157 @@ end)
     end)
 end
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+local playEmoteRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("PlayEmote")
+local modelAnimRemote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("ModelAnimation")
+
+local selectedType = "Mouse"
+local selectedNum = "1"
+local currentTrack = nil
+local activeObject = nil 
+
+local EmoteObjects = {
+    -- Kitty
+    ["KittyEmote11"] = { uuid = [[Kd`+`çoIlIlIIIllIIll333999ççççç4817859dfjnTA]], part = "RightHand" },
+    ["KittyEmote12"] = { uuid = [[oisç4omdña´lIlIllIIIIIII``+`+40dkkKSo]], part = "RightHand" },
+    ["KittyEmote13"] = { uuid = [[34255899999ss541223okfkkllp`´´çllIIIllllIIIIII]], part = "HumanoidRootPart" },
+    ["KittyEmote14"] = { uuid = [[sksññççççkskskkIIlllIllllIIIIIIIIl99928840ÇÑ]], part = "HumanoidRootPart" },
+    ["KittyEmote17"] = { uuid = [[393929b98291c901141allllIIllLllllllIIIIIIIIIIIIIIIIIII]], part = "HumanoidRootPart" },
+    ["KittyEmote18"] = { uuid = [[a93990d390013251clllllllIllIIIIIIIIIlllllI_sillon]], part = "HumanoidRootPart" },
+    ["KittyEmote19"] = { uuid = [[byol++k8r810a4373´´`´ñÑÑ_columpio]], part = "HumanoidRootPart" },
+    ["KittyEmote20"] = { uuid = [[9b12s89llllIIlII3la190﷽_checkmark]], part = "RightHand" },
+    ["KittyEmote21"] = { uuid = [[𒈙⸻0﷽꧅_interrogacion]], part = "RightHand" },
+    ["KittyEmote23"] = { uuid = [[f7adc1f2-55de-4201-a6e9-bf8b6bd5661c_television]], part = "HumanoidRootPart" },
+    ["KittyEmote27"] = { uuid = [[91391ba9-7bbf-4009-9f8e-962a88901836_sombrilla]], part = "HumanoidRootPart" },
+    ["KittyEmote31"] = { uuid = [[e0799b10-35d4-4a8a-a574-b49c56397946_sillagamer]], part = "HumanoidRootPart" },
+    ["KittyEmote33"] = { uuid = [[caminadora_27b3cf74-e4e3-4414-b14f-50427df3c96e]], part = "HumanoidRootPart" },
+    ["KittyEmote34"] = { uuid = [[cama_9f4ebfe0-b6a1-4ade-a636-76e2c417b98e]], part = "HumanoidRootPart" },
+    ["KittyEmote35"] = { uuid = [[escobaKitty_d1b25fa5-1a98-43c9-8b7e-f54b096d7f47]], part = "LowerTorso" },
+    ["KittyEmote36"] = { uuid = [[bicicletaKitty_3eb38253-ba16-4489-96e4-285b1e2f35ac]], part = "LowerTorso" },
+    ["KittyEmote37"] = { uuid = [[saxophoneKitty_e1a0394b-c8d2-4817-9a01-37b6982535fd]], part = "RightHand" },
+    ["KittyEmote38"] = { uuid = [[florKitty_c2c3159d-213a-426e-ba5e-c79dd507a0ee]], part = "RightHand" },
+    ["KittyEmote39"] = { uuid = [[basket_6ea167e0-f018-4373-9b70-20cd46a6349b]], part = "HumanoidRootPart" },
+    ["KittyEmote40"] = { uuid = [[fish_9881ae13-5c06-4a3c-8b79-e7d52473e238]], part = "RightHand" },
+    ["KittyEmote41"] = { uuid = [[football_f7d85b8c-8836-4fdf-8cfb-4fbda9cb535e]], part = "HumanoidRootPart" },
+    ["KittyEmote42"] = { uuid = [[reno_c78c29b7-d7f4-40e7-97be-5a34b6098c49]], part = "HumanoidRootPart" },
+    ["KittyEmote44"] = { uuid = [[pesasKitty_b7bbef8a-2a39-44d6-87c2-f6bf5c94efd2]], part = "HumanoidRootPart" },
+
+    -- Mouse
+    ["MouseEmote12"] = { uuid = [[sssssIlIlIlIIlllIIIIlIIIIAAAA9931117395dSSSlw]], part = "RightHand" },
+    ["MouseEmote13"] = { uuid = [[sssssIlIlIlIlllIIIIlIIIIAAAA9931117395dSSSlw]], part = "HumanoidRootPart" },
+    ["MouseEmote14"] = { uuid = [[ttIIlllII2886393llIIllllllIIIIIIf´´ññ´ç]], part = "RightHand" },
+    ["MouseEmote15"] = { uuid = [[kkiIIIlIIIIllllIlIIl99388800382ddmJJDNj]], part = "HumanoidRootPart" },
+    ["MouseEmote16"] = { uuid = [[99482´lkñs783579lllIIIllllllllIIIIIIIIIIIII```´´´]], part = "HumanoidRootPart" },
+    ["MouseEmote17"] = { uuid = [[9b12s89llllIIlII3la190﷽_checkmark]], part = "RightHand" },
+    ["MouseEmote18"] = { uuid = [[93266o022b99a1ds0234olllIIIIIIllllIlOO]], part = "HumanoidRootPart" },
+    ["MouseEmote19"] = { uuid = [[c9sslllIIIIlllIIi035990a191679c_cosadeboxear]], part = "HumanoidRootPart" },
+    ["MouseEmote20"] = { uuid = [[85t5969c98528ñ53242allllllIIIIIlIiilLLIiiiii]], part = "HumanoidRootPart" },
+    ["MouseEmote21"] = { uuid = [[𒈙⸻0﷽꧅_interrogacion]], part = "RightHand" },
+    ["MouseEmote23"] = { uuid = [[070ba8e1-e042-46e7-a387-44997666fa4f_globo]], part = "HumanoidRootPart" },
+    ["MouseEmote24"] = { uuid = [[95c33ceb-e20d-40dd-bec0-3ef987fef7a8_helicoptero]], part = "HumanoidRootPart" },
+    ["MouseEmote27"] = { uuid = [[6927a58d-927f-43f0-883e-c52bf38a5d80_flor]], part = "RightHand" },
+    ["MouseEmote28"] = { uuid = [[09499468-4a59-4786-82d7-34e698449173_carritochocon]], part = "HumanoidRootPart" },
+    ["MouseEmote34"] = { uuid = [[mouseCaminadora_27b3cf74-e4e3-4414-b14f-50427df3c96e]], part = "HumanoidRootPart" },
+    ["MouseEmote35"] = { uuid = [[99482´lkñs783579lllIIIllllllllIIIIIIIIIIIII```´´´_calabaza]], part = "HumanoidRootPart" },
+    ["MouseEmote36"] = { uuid = [[escobaMouse_22152a92-489e-49a8-bf7e-215411654bee]], part = "LowerTorso" },
+    ["MouseEmote37"] = { uuid = [[bicicletaMouse_0f256a27-1209-4055-9afc-317c32d481b2]], part = "LowerTorso" },
+    ["MouseEmote38"] = { uuid = [[cartelQueso_fd245610-9e8a-40e2-b013-75ca8819f4b2]], part = "RightHand" },
+    ["MouseEmote39"] = { uuid = [[saxophone_1f44b9ff-41a5-40d7-bd84-c9c149de356f]], part = "RightHand" },
+    ["MouseEmote40"] = { uuid = [[camaMouse_342d1773-8cb5-48f0-92e5-86ab703a0b19]], part = "HumanoidRootPart" },
+    ["MouseEmote41"] = { uuid = [[avioneta_288a21c3-27ee-48ab-8ce4-3a4461e84b53]], part = "HumanoidRootPart" },
+    ["MouseEmote42"] = { uuid = [[trineo_38b6598c-02cb-46f1-aa4b-7db9b4a1b7fa]], part = "HumanoidRootPart" },
+    ["MouseEmote44"] = { uuid = [[sombrillaMouse_2ff69fcd-b853-4155-bf5d-3005220ac28e]], part = "HumanoidRootPart" },
+    ["MouseEmote45"] = { uuid = [[sillaMouse_d129f58f-2ef0-47cb-92fa-fc667bc0e30c]], part = "HumanoidRootPart" },
+    ["MouseEmote46"] = { uuid = [[EMP12345678901234567890_67comun]], part = "RightHand" }
+}
+
+local function stopEmote()
+    local char = Players.LocalPlayer.Character
+    if currentTrack then 
+        currentTrack:Stop() 
+        currentTrack = nil 
+    end
+    
+    if activeObject and char then
+        modelAnimRemote:FireServer(1, activeObject.uuid, activeObject.part, char)
+        activeObject = nil
+    end
+end
+
+local function playEmote()
+    stopEmote()
+    
+    local emoteName = selectedType .. "Emote" .. selectedNum
+    local char = Players.LocalPlayer.Character
+    if not char then return end
+    
+    playEmoteRemote:FireServer(emoteName)
+    
+    local objData = EmoteObjects[emoteName]
+    if objData then
+        modelAnimRemote:FireServer(0, objData.uuid, objData.part, char)
+        activeObject = objData 
+    end
+    
+    local anim = nil
+    for _, v in pairs(game:GetDescendants()) do
+        if v.Name == emoteName and v:IsA("Animation") then 
+            anim = v 
+            break 
+        end
+    end
+    
+    if anim then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            currentTrack = hum:LoadAnimation(anim)
+            currentTrack.Looped = true
+            currentTrack:Play()
+        end
+    end
+end
+
+-- =========================================================================
+-- ⚠️ นำ 4 บล็อกนี้ไปวางใน Tab ของคุณ (เปลี่ยน 'YourTab' เป็นชื่อ Tab ของคุณ)
+-- =========================================================================
+
+local numList = {}
+for i = 1, 46 do table.insert(numList, tostring(i)) end
+
+Misc2:AddDropdown("TypeSelect", {
+    Title = "Character Type",
+    Values = {"Mouse", "Kitty"},
+    Multi = false,
+    Default = 1,
+}):OnChanged(function(Value)
+    selectedType = Value
+end)
+
+Misc2:AddDropdown("NumSelect", {
+    Title = "Emote Number",
+    Values = numList,
+    Multi = false,
+    Default = 1,
+}):OnChanged(function(Value)
+    selectedNum = Value
+end)
+
+Misc2:AddButton({
+    Title = "Play Emote",
+    Callback = function()
+        playEmote()
+    end
+})
+
+Misc2:AddButton({
+    Title = "Stop Emote",
+    Callback = function()
+        stopEmote()
+    end
+})
+
 local EmoteScriptData = ""
 
 Tabs.Misc2:AddInput("EmoteInputBox", {
