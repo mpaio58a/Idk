@@ -936,14 +936,15 @@ local function playEmote()
     end
 end
 
--- =========================================================================
--- ⚠️ เปลี่ยน 'YourTab' ให้ตรงกับตัวแปร Tab ของคุณด้วยนะครับ (เช่น Tabs.Main)
--- =========================================================================
+-- =========================================================
+-- ส่วนนี้คือส่วนที่คุณต้องแก้ชื่อ Tab ให้ตรงกับของตุณ
+-- =========================================================
 
 local numList = {}
 for i = 1, 46 do table.insert(numList, tostring(i)) end
 
-Misc2:AddDropdown("TypeSelect", {
+-- เปลี่ยน YourTab เป็น Tabs.Misc2 (หรือชื่อที่คุณตั้งไว้)
+Tabs.Misc2:AddDropdown("TypeSelect", {
     Title = "Character Type",
     Values = {"Mouse", "Kitty"},
     Multi = false,
@@ -952,7 +953,7 @@ Misc2:AddDropdown("TypeSelect", {
     selectedType = Value
 end)
 
-Misc2:AddDropdown("NumSelect", {
+Tabs.Misc2:AddDropdown("NumSelect", {
     Title = "Emote Number",
     Values = numList,
     Multi = false,
@@ -961,14 +962,14 @@ Misc2:AddDropdown("NumSelect", {
     selectedNum = Value
 end)
 
-Misc2:AddButton({
+Tabs.Misc2:AddButton({
     Title = "Play Emote",
     Callback = function()
         playEmote()
     end
 })
 
-Misc2:AddButton({
+Tabs.Misc2:AddButton({
     Title = "Stop Emote",
     Callback = function()
         stopEmote()
