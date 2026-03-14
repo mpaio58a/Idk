@@ -1053,7 +1053,7 @@ Tabs.Misc2:AddButton({
 --// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
-    Description = "Don't Get Fling Try Again but Don't Spam",
+    Description = "Don't Get Fling Try Again but Don't Spam (ดักหน้า 2.5)",
     Callback = function()
         local Player = game:GetService("Players").LocalPlayer
         local Character = Player.Character
@@ -1069,13 +1069,13 @@ Tabs.Misc2:AddButton({
         if not Bot or not Root or not Hum then
             game:GetService("StarterGui"):SetCore("SendNotification", {
                 Title = "Error",
-                Text = "หา BOT ไม่เจอ หรือตัวละครไม่พร้อม!",
+                Text = "Not Found Bot",
                 Duration = 3
             })
             return 
         end
 
-        -- 🎯 ล็อคเป้าหมาย (ใช้ RootPart เพื่อความแม่นยำของทิศทางหันหน้า)
+        -- 🎯 ล็อคเป้าหมาย (ใช้ RootPart เพื่อความแม่นยำ)
         local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso")
 
         task.spawn(function()
@@ -1101,7 +1101,7 @@ Tabs.Misc2:AddButton({
                     return
                 end
                 
-                -- Noclip ทะลุ 100%
+                -- Noclip 100%
                 for _, part in pairs(Character:GetDescendants()) do
                     if part:IsA("BasePart") then part.CanCollide = false end
                 end
@@ -1113,14 +1113,14 @@ Tabs.Misc2:AddButton({
                     math.rad(math.random(-36000, 36000))
                 )
                 
-                -- 🔥 จุดเปลี่ยน: ดักหน้า (แกน Z ติดลบ) ระยะ 10 Studs
+                -- 🔥 ล็อคระยะ 2.5 Studs ตามสูตรเป๊ะๆ
                 local FrontOffset = CFrame.new(
-                    math.random(-5, 5) / 10,  -- ส่ายซ้ายขวานิดๆ สร้างแรงปะทะ
+                    math.random(-5, 5) / 10,  -- ส่ายซ้ายขวานิดๆ สร้างแรงกระแทก
                     math.random(-5, 5) / 10,  -- ส่ายบนล่างนิดๆ
-                    -10  -- เลข -10 คือระยะดักหน้า 10 Studs เป๊ะๆ
+                    -2.5                      -- ล็อคเป้าดักหน้าที่ 2.5 Studs ถ้วน!
                 )
                 
-                -- วาร์ปดักหน้าตลอดเวลา
+                -- วาร์ปดักหน้า
                 Root.CFrame = BotRoot.CFrame * FrontOffset * ChaosRot
                 
                 -- ยัดแรงฟิสิกส์สะบัดระดับ 100X
@@ -1130,7 +1130,7 @@ Tabs.Misc2:AddButton({
 
             task.wait(3.1)
 
-            -- 🧹 Cleanup ล้างค่าเพื่อให้กดซ้ำได้
+            -- 🧹 Cleanup ล้างค่า
             if Connection then Connection:Disconnect() end
             if BV then BV:Destroy() end
             Hum.PlatformStand = false
