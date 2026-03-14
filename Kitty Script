@@ -887,10 +887,10 @@ Tabs.Misc2:AddButton({
     end
 })
 
---// 🔘 ปุ่ม Execute (วางใน Tab ของพี่)
-Tabs.Misc2:AddButton({
+--// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
+Tabs.Misc2:AddButton({ -- ชี้ไปที่แท็บ Misc2
     Title = "Fling Kitty Bot",
-    Description = "Don't Get Fling Try Again But Don't Spam",
+    Description = "Don't Get Fling Try Again but Don't Spam",
     Callback = function()
         local Player = game:GetService("Players").LocalPlayer
         local Character = Player.Character
@@ -906,13 +906,13 @@ Tabs.Misc2:AddButton({
         if not Bot or not Root or not Hum then
             game:GetService("StarterGui"):SetCore("SendNotification", {
                 Title = "Error",
-                Text = "Not Found Bot",
+                Text = "หา BOT ไม่เจอ หรือตัวละครไม่พร้อม!",
                 Duration = 3
             })
             return 
         end
 
-        -- 🎯 ล็อคเป้าหมาย
+        -- 🎯 ล็อคเป้าหมาย (ใช้ RootPart เพื่อความแม่นยำของทิศทาง)
         local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso")
 
         task.spawn(function()
@@ -938,36 +938,36 @@ Tabs.Misc2:AddButton({
                     return
                 end
                 
-                -- Noclip 100%
+                -- Noclip ทะลุ 100%
                 for _, part in pairs(Character:GetDescendants()) do
                     if part:IsA("BasePart") then part.CanCollide = false end
                 end
 
-                -- สุ่มพิกัดมุมแบบพายุ 100X
+                -- มุมหมุนพายุ 100X แบบ Chaos
                 local ChaosRot = CFrame.Angles(
                     math.rad(math.random(-36000, 36000)), 
                     math.rad(math.random(-36000, 36000)), 
                     math.rad(math.random(-36000, 36000))
                 )
                 
-                -- [[ จุดเปลี่ยน: ดักหลังความเร็ว/ระยะ 15 ]]
+                -- 🔥 ดักหลังระยะ 5 (ส่ายนิดๆ เพื่อเพิ่มแรงกระแทก)
                 local BackOffset = CFrame.new(
-                    math.random(-5, 5) / 10,  -- ส่ายซ้ายขวานิดหน่อยเพื่อสร้างแรงเหวี่ยง
-                    math.random(-5, 5) / 10,  -- ส่ายบนล่างนิดหน่อย
-                    5                      -- ล็อคแกน Z เป็น -15 (ดักหลัง BOT เป๊ะๆ ตามที่ขอ)
+                    math.random(-5, 5) / 10,  
+                    math.random(-5, 5) / 10,  
+                    5                         -- ระยะ 5 Studs ข้างหลังเป๊ะๆ
                 )
                 
-                -- วาร์ปตามหลังตลอดเวลา
+                -- วาร์ปเกาะหลังตลอดเวลา
                 Root.CFrame = BotRoot.CFrame * BackOffset * ChaosRot
                 
-                -- ยัดแรงฟิสิกส์ 100X
+                -- ยัดแรงฟิสิกส์สะบัดระดับ 100X
                 Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
                 Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
             end)
 
             task.wait(3.1)
 
-            -- 🧹 Cleanup
+            -- 🧹 Cleanup ล้างค่าเพื่อให้กดซ้ำได้
             if Connection then Connection:Disconnect() end
             if BV then BV:Destroy() end
             Hum.PlatformStand = false
