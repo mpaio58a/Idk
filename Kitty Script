@@ -906,7 +906,7 @@ Tabs.Misc2:AddButton({ -- ชี้ไปที่แท็บ Misc2
         if not Bot or not Root or not Hum then
             game:GetService("StarterGui"):SetCore("SendNotification", {
                 Title = "Error",
-                Text = "หา BOT ไม่เจอ หรือตัวละครไม่พร้อม!",
+                Text = "Not Found Bot",
                 Duration = 3
             })
             return 
