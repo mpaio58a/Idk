@@ -1069,13 +1069,13 @@ Tabs.Misc2:AddButton({
         if not Bot or not Root or not Hum then
             game:GetService("StarterGui"):SetCore("SendNotification", {
                 Title = "Error",
-                Text = "Not Found Bot",
+                Text = "หา BOT ไม่เจอ หรือตัวละครไม่พร้อม!",
                 Duration = 3
             })
             return 
         end
 
-        -- 🎯 ล็อคเป้าหมาย (ใช้ RootPart เพื่อความแม่นยำของทิศทาง)
+        -- 🎯 ล็อคเป้าหมาย (ใช้ RootPart เพื่อความแม่นยำของทิศทางหันหน้า)
         local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso")
 
         task.spawn(function()
@@ -1113,11 +1113,11 @@ Tabs.Misc2:AddButton({
                     math.rad(math.random(-36000, 36000))
                 )
                 
-                -- 🔥 จุดเปลี่ยน: ดักหน้า (แกน Z ติดลบ)
+                -- 🔥 จุดเปลี่ยน: ดักหน้า (แกน Z ติดลบ) ระยะ 10 Studs
                 local FrontOffset = CFrame.new(
-                    math.random(-5, 5) / 10,  
-                    math.random(-5, 5) / 10,  
-                    -5  -- เปลี่ยนเป็น -5 เพื่อให้พายุไปดักอยู่ "ด้านหน้า" ของ BOT
+                    math.random(-5, 5) / 10,  -- ส่ายซ้ายขวานิดๆ สร้างแรงปะทะ
+                    math.random(-5, 5) / 10,  -- ส่ายบนล่างนิดๆ
+                    -10  -- เลข -10 คือระยะดักหน้า 10 Studs เป๊ะๆ
                 )
                 
                 -- วาร์ปดักหน้าตลอดเวลา
