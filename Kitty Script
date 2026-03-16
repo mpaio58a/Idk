@@ -1136,10 +1136,10 @@ Tabs.Misc2:AddButton({
     end
 })
 
---// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
+--// 🔘 ปุ่ม Fling Kitty Bot (ฉบับแก้บัคกล้องลอยฟ้า)
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
-    Description = "Don't Get Fling Try Again but Don't Spam",
+    Description = "Kitty Bot Don't Get Fling Try Again",
     Callback = function()
         local Player = game:GetService("Players").LocalPlayer
         local Character = Player.Character
@@ -1161,80 +1161,70 @@ Tabs.Misc2:AddButton({
             return 
         end
 
-        -- 🎯 ล็อคเป้าหมาย (ใช้ RootPart เพื่อความแม่นยำของทิศทาง)
-        local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso")
+        local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso") or Bot:FindFirstChild("Torso")
+        if not BotRoot then return end
 
         task.spawn(function()
             local OldPos = Root.CFrame
-            local OldFPDH = workspace.FallenPartsDestroyHeight
-            workspace.FallenPartsDestroyHeight = 0/0 
+            
+            -- ปิด Noclip เพื่อไม่ให้เราติดสิ่งก่อสร้าง
+            for _, part in pairs(Character:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
 
-            workspace.CurrentCamera.CameraSubject = BotRoot
-
-            -- 🌀 ปรับฟิสิกส์ 100X
             Hum.PlatformStand = true
-            local BV = Instance.new("BodyVelocity")
-            BV.Parent = Root
-            BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            BV.Velocity = Vector3.new(9e18, 9e18, 9e18)
+
+            -- [[ 🔥 วิธีแก้: ใช้พายุหมุนแทนการพุ่งชน ]]
+            -- 1. สร้างตัวหมุน (ทำให้เราเป็นสว่าน)
+            local Spin = Instance.new("BodyAngularVelocity")
+            Spin.Name = "FlingSpin"
+            Spin.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            Spin.AngularVelocity = Vector3.new(0, 999999, 0) -- หมุนด้วยความเร็วสูงสุด
+            Spin.Parent = Root
+
+            -- 2. สร้างตัวล็อคพิกัด (ไม่ให้ตัวเราปลิวขึ้นฟ้า)
+            local Thrust = Instance.new("BodyVelocity")
+            Thrust.Name = "FlingThrust"
+            Thrust.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            Thrust.Velocity = Vector3.new(0, 0, 0) -- ล็อคความเร็วการพุ่งเป็น 0
+            Thrust.Parent = Root
 
             local StartTime = tick()
             local Connection
             
             Connection = game:GetService("RunService").Heartbeat:Connect(function()
-                if tick() - StartTime > 5 or not Bot.Parent or not Character.Parent then
+                if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent then
                     if Connection then Connection:Disconnect() end
                     return
                 end
                 
-                -- Noclip ทะลุ 100%
+                -- ล็อค Noclip ซ้ำกันเหนียว
                 for _, part in pairs(Character:GetDescendants()) do
                     if part:IsA("BasePart") then part.CanCollide = false end
                 end
 
-                -- มุมหมุนพายุ 100X แบบ Chaos
-                local ChaosRot = CFrame.Angles(
-                    math.rad(math.random(-36000, 36000)), 
-                    math.rad(math.random(-36000, 36000)), 
-                    math.rad(math.random(-36000, 36000))
-                )
-                
-                -- 🔥 จุดเปลี่ยน: ดักหน้า (แกน Z ติดลบ)
-                local FrontOffset = CFrame.new(
-                    math.random(-5, 5) / 10,  
-                    math.random(-5, 5) / 10,  
-                    -5  -- เปลี่ยนเป็น -5 เพื่อให้พายุไปดักอยู่ "ด้านหน้า" ของ BOT
-                )
-                
-                -- วาร์ปดักหน้าตลอดเวลา
-                Root.CFrame = BotRoot.CFrame * FrontOffset * ChaosRot
-                
-                -- ยัดแรงฟิสิกส์สะบัดระดับ 100X
-                Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
-                Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
+                -- วาร์ปไปซ้อนทับตรงกลางตัว BOT พอดีเป๊ะ
+                -- การหมุน + การซ้อนทับโมเดล จะทำให้เกมดีด BOT ออกไปเอง (เราจะไม่ปลิว)
+                Root.CFrame = BotRoot.CFrame
             end)
 
-            task.wait(5)
+            task.wait(3)
 
-            -- 🧹 Cleanup ล้างค่าเพื่อให้กดซ้ำได้
+            -- 🧹 Cleanup ล้างค่าทั้งหมด คืนสภาพตัวละคร
             if Connection then Connection:Disconnect() end
-            if BV then BV:Destroy() end
-            Hum.PlatformStand = false
-            workspace.CurrentCamera.CameraSubject = Hum
-            workspace.FallenPartsDestroyHeight = OldFPDH
+            if Spin then Spin:Destroy() end
+            if Thrust then Thrust:Destroy() end
             
+            Hum.PlatformStand = false
+            
+            -- คืนค่าความเร็วให้เป็น 0 ป้องกันอาการไหล
+            Root.Velocity = Vector3.new(0, 0, 0)
+            Root.RotVelocity = Vector3.new(0, 0, 0)
+            
+            -- วาร์ปกลับจุดที่กดยืนอยู่
             Root.CFrame = OldPos
-            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-
-            -- 🔄 Rejoin
-            local RS = game:GetService("ReplicatedStorage")
-            local Ev = RS:FindFirstChild("Events")
-            if Ev then
-                if Ev:FindFirstChild("Leave") then Ev.Leave:FireServer() end
-                task.wait(0.1)
-                if Ev:FindFirstChild("Join") then Ev.Join:FireServer() end
-            end
+            
+            -- (ถ้ามีระบบ Revive/Leave Join ของแมพ ใส่ต่อตรงนี้ได้เลยครับ)
         end)
     end
 })
