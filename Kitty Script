@@ -1136,74 +1136,60 @@ Tabs.Misc2:AddButton({
     end
 })
 
---// 🔘 ปุ่ม Fling Kitty Bot
+--// 🔘 ปุ่ม Fling Kitty Bot (ฉบับโคตรไว ไร้ดีเลย์)
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
-    Description = "หมุนสว่านดักหน้า 5 Studs + พลัง 9e18 + Revive",
+    Description = "Don't Get Fling Try Again but Don't Spam (No Delay)",
     Callback = function()
-        -- 🚀 ครอบ task.spawn ไว้ชั้นนอกสุดเลย ป้องกันสคริปต์ค้าง (UI จะได้ไม่ค้างด้วย)
         task.spawn(function()
             local Players = game:GetService("Players")
             local RunService = game:GetService("RunService")
             local ReplicatedStorage = game:GetService("ReplicatedStorage")
             local LocalPlayer = Players.LocalPlayer
             
-            -- ใช้ FindFirstChild แทน WaitForChild เพื่อไม่ให้สคริปต์ค้างถ้าหาไม่เจอ
             local Events = ReplicatedStorage:FindFirstChild("Events")
 
-            -- [[ 🟢 1. รัน Untransformed ก่อนเริ่ม ]]
+            -- [[ 🟢 1. คืนร่างแบบแสงไฟ (0 วิ) ]]
             if Events then
                 local HASTransform = Events:FindFirstChild("HASTransform")
                 if HASTransform then
-                    print("🔄 กำลังคืนร่าง (Untransformed)...")
-                    -- ใช้ task.spawn แยกอีกชั้นเพื่อไม่ให้ InvokeServer ทำให้สคริปต์หยุดรอ
+                    -- โยนเข้าเธรดแยกแล้วปล่อยผ่านเลย ไม่ต้องรอแม้แต่ 0.1 วิ
                     task.spawn(function()
                         pcall(function()
-                            HASTransform:InvokeServer("Untransformed")
+                            if HASTransform:IsA("RemoteFunction") then
+                                HASTransform:InvokeServer("Untransformed")
+                            elseif HASTransform:IsA("RemoteEvent") then
+                                HASTransform:FireServer("Untransformed")
+                            end
                         end)
                     end)
-                    task.wait(0.5) -- รอตัวละครโหลดร่างใหม่ให้เสร็จ
                 end
             end
 
-            -- [[ 🎯 2. อัปเดตข้อมูลตัวละคร "หลัง" คืนร่าง (ป้องกันบัคหาตัวไม่เจอ) ]]
-            local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-            local Root = Character:WaitForChild("HumanoidRootPart", 3)
-            local Hum = Character:WaitForChild("Humanoid", 3)
+            -- [[ 🎯 2. หาตัวละครเราและเดินหน้าลุยทันที ]]
+            local Character = LocalPlayer.Character
+            local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+            local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
             
-            if not Root or not Hum then
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Error",
-                    Text = "ตัวละครโหลดไม่สมบูรณ์หลังคืนร่าง!",
-                    Duration = 3
-                })
-                return 
-            end
-
             -- 🔍 ค้นหา BOT
             local Bot = nil
             for _, v in pairs(workspace:GetDescendants()) do
                 if v.Name == "BOT" and v:IsA("Model") then Bot = v break end
             end
 
-            if not Bot then
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Error",
-                    Text = "หา BOT ไม่เจอ!",
-                    Duration = 3
-                })
-                return 
+            if not Bot or not Root or not Hum then
+                return -- ถ้าไม่เจอให้ตัดจบเงียบๆ ไม่ต้องแจ้งเตือนให้รกจอ
             end
 
             local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso") or Bot:FindFirstChild("Torso")
             if not BotRoot then return end
 
-            -- [[ 🌪️ 3. เริ่มกระบวนการ Fling ]]
+            -- [[ 🌪️ 3. เริ่ม Fling ดักหน้า 5 Studs ทันที ]]
             local OldPos = Root.CFrame
             local OldFPDH = workspace.FallenPartsDestroyHeight
-            workspace.FallenPartsDestroyHeight = -50000 -- กันแมพพัง
+            workspace.FallenPartsDestroyHeight = -50000 
 
-            workspace.CurrentCamera.CameraSubject = Hum
+            workspace.CurrentCamera.CameraSubject = BotRoot
             Hum.PlatformStand = true
 
             local StartTime = tick()
@@ -1216,7 +1202,7 @@ Tabs.Misc2:AddButton({
                     return
                 end
                 
-                -- Anti-Void ป้องกันกล้องลอยฟ้า
+                -- Anti-Void: ถ้าบอทปลิวแล้ว หยุดเลย
                 if BotRoot.AssemblyLinearVelocity.Magnitude > 250 then
                     HasFlung = true
                     return
@@ -1227,13 +1213,14 @@ Tabs.Misc2:AddButton({
                     if part:IsA("BasePart") then part.CanCollide = false end
                 end
 
-                -- หมุนสว่าน + ดักหน้า 5 Studs
+                -- ดักหน้า 5 Studs
                 local FrontOffset = CFrame.new(
                     math.random(-2, 2) / 10,  
                     math.random(-2, 2) / 10,  
                     -5  
                 )
                 
+                -- หมุนสว่าน
                 local SpinRot = CFrame.Angles(
                     math.rad(math.random(-360, 360)), 
                     math.rad(tick() * 50000), 
@@ -1258,12 +1245,15 @@ Tabs.Misc2:AddButton({
             Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
             Root.CFrame = OldPos
 
-            -- [[ ✨ 4. รัน Revive ตอนจบ ]]
+            -- [[ ✨ 4. ชุบชีวิต (Revive) ทันทีหลังจบ 3 วิ ]]
             if Events then
-                print("✨ กำลังฟื้นฟู (Revive)...")
                 local Revive = Events:FindFirstChild("Revive")
                 if Revive then
-                    Revive:FireServer()
+                    if Revive:IsA("RemoteEvent") then
+                        Revive:FireServer()
+                    elseif Revive:IsA("RemoteFunction") then
+                        task.spawn(function() pcall(function() Revive:InvokeServer() end) end)
+                    end
                 else
                     local Leave = Events:FindFirstChild("Leave")
                     local Join = Events:FindFirstChild("Join")
