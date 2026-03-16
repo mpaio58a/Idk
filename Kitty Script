@@ -1136,10 +1136,10 @@ Tabs.Misc2:AddButton({
     end
 })
 
---// 🔘 ปุ่ม Fling Kitty Bot (ฉบับโคตรไว ไร้ดีเลย์)
+--// 🔘 ปุ่ม Fling Kitty Bot (เวอร์ชันเสถียร แก้เกมบัค CFrame)
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
-    Description = "Don't Get Fling Try Again but Don't Spam (No Delay)",
+    Description = "Don't Get Fling Try Again but Don't Spam",
     Callback = function()
         task.spawn(function()
             local Players = game:GetService("Players")
@@ -1149,42 +1149,38 @@ Tabs.Misc2:AddButton({
             
             local Events = ReplicatedStorage:FindFirstChild("Events")
 
-            -- [[ 🟢 1. คืนร่างแบบแสงไฟ (0 วิ) ]]
-            if Events then
-                local HASTransform = Events:FindFirstChild("HASTransform")
-                if HASTransform then
-                    -- โยนเข้าเธรดแยกแล้วปล่อยผ่านเลย ไม่ต้องรอแม้แต่ 0.1 วิ
-                    task.spawn(function()
-                        pcall(function()
-                            if HASTransform:IsA("RemoteFunction") then
-                                HASTransform:InvokeServer("Untransformed")
-                            elseif HASTransform:IsA("RemoteEvent") then
-                                HASTransform:FireServer("Untransformed")
-                            end
-                        end)
-                    end)
+            -- [[ 🟢 1. คืนร่าง (ยอมรอ 0.2 วิ เพื่อไม่ให้เกมพัง) ]]
+            if Events and Events:FindFirstChild("HASTransform") then
+                pcall(function()
+                    Events.HASTransform:InvokeServer("Untransformed")
+                end)
+                task.wait(0.2) -- ตรงนี้สำคัญมาก! ขาดไม่ได้ ไม่งั้นขึ้น Error แดงแบบในภาพ
+            end
+
+            -- [[ 🎯 2. หาตัวละครอย่างปลอดภัย ]]
+            local Character = LocalPlayer.Character
+            if not Character then return end
+            
+            local Root = Character:FindFirstChild("HumanoidRootPart")
+            local Hum = Character:FindFirstChildOfClass("Humanoid")
+            if not Root or not Hum then return end
+            
+            -- 🔍 ค้นหา BOT แบบเซฟตี้
+            local Bot = nil
+            local BotRoot = nil
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "BOT" and v:IsA("Model") then 
+                    BotRoot = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Torso")
+                    if BotRoot then
+                        Bot = v
+                        break 
+                    end
                 end
             end
 
-            -- [[ 🎯 2. หาตัวละครเราและเดินหน้าลุยทันที ]]
-            local Character = LocalPlayer.Character
-            local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-            local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
-            
-            -- 🔍 ค้นหา BOT
-            local Bot = nil
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "BOT" and v:IsA("Model") then Bot = v break end
-            end
+            if not Bot or not BotRoot then return end
 
-            if not Bot or not Root or not Hum then
-                return -- ถ้าไม่เจอให้ตัดจบเงียบๆ ไม่ต้องแจ้งเตือนให้รกจอ
-            end
-
-            local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso") or Bot:FindFirstChild("Torso")
-            if not BotRoot then return end
-
-            -- [[ 🌪️ 3. เริ่ม Fling ดักหน้า 5 Studs ทันที ]]
+            -- [[ 🌪️ 3. เริ่ม Fling ดักหน้า 5 Studs ]]
             local OldPos = Root.CFrame
             local OldFPDH = workspace.FallenPartsDestroyHeight
             workspace.FallenPartsDestroyHeight = -50000 
@@ -1197,39 +1193,33 @@ Tabs.Misc2:AddButton({
             local HasFlung = false
             
             Connection = RunService.Heartbeat:Connect(function()
-                if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent or HasFlung then
+                -- ถ้าชิ้นส่วนใดหายไป ให้หยุดทันทีเพื่อกันเกม Error
+                if tick() - StartTime > 3 or not Bot.Parent or not BotRoot.Parent or not Character.Parent or not Root.Parent or HasFlung then
                     if Connection then Connection:Disconnect() end
                     return
                 end
                 
-                -- Anti-Void: ถ้าบอทปลิวแล้ว หยุดเลย
                 if BotRoot.AssemblyLinearVelocity.Magnitude > 250 then
                     HasFlung = true
                     return
                 end
                 
-                -- Noclip
                 for _, part in pairs(Character:GetDescendants()) do
                     if part:IsA("BasePart") then part.CanCollide = false end
                 end
 
                 -- ดักหน้า 5 Studs
-                local FrontOffset = CFrame.new(
-                    math.random(-2, 2) / 10,  
-                    math.random(-2, 2) / 10,  
-                    -5  
-                )
+                local FrontOffset = CFrame.new(0, 0, -5) 
                 
-                -- หมุนสว่าน
-                local SpinRot = CFrame.Angles(
-                    math.rad(math.random(-360, 360)), 
-                    math.rad(tick() * 50000), 
-                    math.rad(math.random(-360, 360))
-                )
+                -- หมุนสว่านแกน Y แกนเดียวให้มันเสถียรที่สุด
+                local SpinRot = CFrame.Angles(0, math.rad(tick() * 50000), 0)
 
-                Root.CFrame = BotRoot.CFrame * FrontOffset * SpinRot
-                Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
-                Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
+                -- ใช้ pcall ครอบไว้ เผื่อเกมมันลบตัวละครทิ้งกลางอากาศ สคริปต์เราจะได้ไม่เอ๋อ
+                pcall(function()
+                    Root.CFrame = BotRoot.CFrame * FrontOffset * SpinRot
+                    Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
+                    Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
+                end)
             end)
 
             task.wait(3.1)
@@ -1241,26 +1231,15 @@ Tabs.Misc2:AddButton({
             workspace.CurrentCamera.CameraSubject = Hum
             workspace.FallenPartsDestroyHeight = OldFPDH
             
-            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-            Root.CFrame = OldPos
+            if Root and Root.Parent then
+                Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                Root.CFrame = OldPos
+            end
 
-            -- [[ ✨ 4. ชุบชีวิต (Revive) ทันทีหลังจบ 3 วิ ]]
-            if Events then
-                local Revive = Events:FindFirstChild("Revive")
-                if Revive then
-                    if Revive:IsA("RemoteEvent") then
-                        Revive:FireServer()
-                    elseif Revive:IsA("RemoteFunction") then
-                        task.spawn(function() pcall(function() Revive:InvokeServer() end) end)
-                    end
-                else
-                    local Leave = Events:FindFirstChild("Leave")
-                    local Join = Events:FindFirstChild("Join")
-                    if Leave then Leave:FireServer() end
-                    task.wait(0.1)
-                    if Join then Join:FireServer() end
-                end
+            -- [[ ✨ 4. ชุบชีวิต (Revive) ]]
+            if Events and Events:FindFirstChild("Revive") then
+                pcall(function() Events.Revive:FireServer() end)
             end
         end)
     end
