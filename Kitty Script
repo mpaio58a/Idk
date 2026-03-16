@@ -1139,55 +1139,71 @@ Tabs.Misc2:AddButton({
 --// 🔘 ปุ่ม Fling Kitty Bot
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
-    Description = "Don't Get Fling Try Again",
+    Description = "หมุนสว่านดักหน้า 5 Studs + พลัง 9e18 + Revive",
     Callback = function()
-        local Players = game:GetService("Players")
-        local RunService = game:GetService("RunService")
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local LocalPlayer = Players.LocalPlayer
-        
-        local Events = ReplicatedStorage:WaitForChild("Events")
-
-        -- [[ 🟢 1. รัน Untransformed ก่อนเริ่ม ]]
-        print("🔄 กำลังคืนร่าง (Untransformed)...")
-        local HASTransform = Events:FindFirstChild("HASTransform")
-        if HASTransform then
-            pcall(function()
-                HASTransform:InvokeServer("Untransformed")
-            end)
-            task.wait(0.3) -- รอตัวละครโหลดแป๊บนึง
-        end
-
-        local Character = LocalPlayer.Character
-        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-        local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
-        
-        -- 🔍 ค้นหา BOT
-        local Bot = nil
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v.Name == "BOT" and v:IsA("Model") then Bot = v break end
-        end
-
-        if not Bot or not Root or not Hum then
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "Error",
-                Text = "Not Found Bot",
-                Duration = 3
-            })
-            return 
-        end
-
-        local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso")
-        if not BotRoot then return end
-
+        -- 🚀 ครอบ task.spawn ไว้ชั้นนอกสุดเลย ป้องกันสคริปต์ค้าง (UI จะได้ไม่ค้างด้วย)
         task.spawn(function()
+            local Players = game:GetService("Players")
+            local RunService = game:GetService("RunService")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            local LocalPlayer = Players.LocalPlayer
+            
+            -- ใช้ FindFirstChild แทน WaitForChild เพื่อไม่ให้สคริปต์ค้างถ้าหาไม่เจอ
+            local Events = ReplicatedStorage:FindFirstChild("Events")
+
+            -- [[ 🟢 1. รัน Untransformed ก่อนเริ่ม ]]
+            if Events then
+                local HASTransform = Events:FindFirstChild("HASTransform")
+                if HASTransform then
+                    print("🔄 กำลังคืนร่าง (Untransformed)...")
+                    -- ใช้ task.spawn แยกอีกชั้นเพื่อไม่ให้ InvokeServer ทำให้สคริปต์หยุดรอ
+                    task.spawn(function()
+                        pcall(function()
+                            HASTransform:InvokeServer("Untransformed")
+                        end)
+                    end)
+                    task.wait(0.5) -- รอตัวละครโหลดร่างใหม่ให้เสร็จ
+                end
+            end
+
+            -- [[ 🎯 2. อัปเดตข้อมูลตัวละคร "หลัง" คืนร่าง (ป้องกันบัคหาตัวไม่เจอ) ]]
+            local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+            local Root = Character:WaitForChild("HumanoidRootPart", 3)
+            local Hum = Character:WaitForChild("Humanoid", 3)
+            
+            if not Root or not Hum then
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Error",
+                    Text = "ตัวละครโหลดไม่สมบูรณ์หลังคืนร่าง!",
+                    Duration = 3
+                })
+                return 
+            end
+
+            -- 🔍 ค้นหา BOT
+            local Bot = nil
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "BOT" and v:IsA("Model") then Bot = v break end
+            end
+
+            if not Bot then
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Error",
+                    Text = "หา BOT ไม่เจอ!",
+                    Duration = 3
+                })
+                return 
+            end
+
+            local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso") or Bot:FindFirstChild("Torso")
+            if not BotRoot then return end
+
+            -- [[ 🌪️ 3. เริ่มกระบวนการ Fling ]]
             local OldPos = Root.CFrame
             local OldFPDH = workspace.FallenPartsDestroyHeight
             workspace.FallenPartsDestroyHeight = -50000 -- กันแมพพัง
 
-            -- ล็อคกล้องไว้ที่ตัวเรา
             workspace.CurrentCamera.CameraSubject = Hum
-
             Hum.PlatformStand = true
 
             local StartTime = tick()
@@ -1200,66 +1216,61 @@ Tabs.Misc2:AddButton({
                     return
                 end
                 
-                -- เช็คถ้าเป้าหมายปลิวแล้วให้หยุดเลย (กันกล้องลอยฟ้า)
+                -- Anti-Void ป้องกันกล้องลอยฟ้า
                 if BotRoot.AssemblyLinearVelocity.Magnitude > 250 then
                     HasFlung = true
                     return
                 end
                 
-                -- Noclip 100%
+                -- Noclip
                 for _, part in pairs(Character:GetDescendants()) do
                     if part:IsA("BasePart") then part.CanCollide = false end
                 end
 
-                -- [[ 🔥 2. ระบบหมุนสว่าน + ดักหน้า 5 Studs ]]
-                -- ส่ายตำแหน่งเล็กน้อยเพื่อกระตุ้นฟิสิกส์ให้ชนแรงขึ้น
+                -- หมุนสว่าน + ดักหน้า 5 Studs
                 local FrontOffset = CFrame.new(
                     math.random(-2, 2) / 10,  
                     math.random(-2, 2) / 10,  
-                    -5  -- ล็อคดักหน้า 5 Studs
+                    -5  
                 )
                 
-                -- สั่งให้ตัวเราหมุนรอบตัวเองเป็นสว่านด้วยความเร็วสูง
                 local SpinRot = CFrame.Angles(
                     math.rad(math.random(-360, 360)), 
-                    math.rad(tick() * 50000), -- หมุนแกน Y แบบสว่าน
+                    math.rad(tick() * 50000), 
                     math.rad(math.random(-360, 360))
                 )
 
-                -- นำพิกัดมารวมกัน: ยึด BOT เป็นหลัก -> ดักหน้า 5 Studs -> หมุนสว่าน
                 Root.CFrame = BotRoot.CFrame * FrontOffset * SpinRot
-                
-                -- ยัดแรงฟิสิกส์อัดหน้า
                 Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
                 Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
             end)
 
             task.wait(3.1)
 
-            -- 🧹 Cleanup ล้างค่า คืนสภาพตัวละคร
+            -- 🧹 Cleanup ล้างค่า
             if Connection then Connection:Disconnect() end
             
             Hum.PlatformStand = false
             workspace.CurrentCamera.CameraSubject = Hum
             workspace.FallenPartsDestroyHeight = OldFPDH
             
-            -- คืนค่าฟิสิกส์ให้ตัวเองหยุดนิ่ง
             Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
             Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
             Root.CFrame = OldPos
 
-            -- [[ ✨ 3. รัน Revive ตอนจบ ]]
-            print("✨ กำลังฟื้นฟู (Revive)...")
-            local Revive = Events:FindFirstChild("Revive")
-            if Revive then
-                Revive:FireServer()
-            else
-                -- สำรองไว้เผื่อใช้ชื่อ Leave/Join
-                local Leave = Events:FindFirstChild("Leave")
-                local Join = Events:FindFirstChild("Join")
-                if Leave then Leave:FireServer() end
-                task.wait(0.1)
-                if Join then Join:FireServer() end
+            -- [[ ✨ 4. รัน Revive ตอนจบ ]]
+            if Events then
+                print("✨ กำลังฟื้นฟู (Revive)...")
+                local Revive = Events:FindFirstChild("Revive")
+                if Revive then
+                    Revive:FireServer()
+                else
+                    local Leave = Events:FindFirstChild("Leave")
+                    local Join = Events:FindFirstChild("Join")
+                    if Leave then Leave:FireServer() end
+                    task.wait(0.1)
+                    if Join then Join:FireServer() end
+                end
             end
         end)
     end
