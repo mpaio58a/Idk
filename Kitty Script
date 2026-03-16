@@ -940,40 +940,28 @@ AntiLogicToggle:OnChanged(function()
     end
 end)
 
-local attackGui -- ประกาศตัวแปรไว้ด้านนอกเพื่อให้ Toggle เปิด/ปิดเข้าถึงได้
-
 local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Attack Button", Default = false })
 AttackToggle:OnChanged(function()
     if AttackToggle.Value then
         if not attackGui then
-            -- 1. สร้าง ScreenGui แบบเดียวกับปุ่ม K
-            attackGui = Instance.new("ScreenGui")
-            attackGui.Name = "AttackScreenGui"
-            attackGui.Parent = game:GetService("CoreGui")
-
-            local btn = Instance.new("TextButton")
-            local c = Instance.new("UICorner")
-
-            -- 2. จัดโครงสร้าง Button และตั้งค่าตามต้นแบบ K Button
-            btn.Name = "AttackButton"
-            btn.Parent = attackGui
-            btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- ใช้สีพื้นหลังเดียวกับ K
-            btn.Position = UDim2.new(0.5, -60, 0.8, 0) -- คงตำแหน่ง Attack ไว้ที่เดิม
-            btn.Size = UDim2.new(0, 120, 0, 50)
-            btn.Font = Enum.Font.SourceSansBold
-            btn.Text = "ATTACK"
-            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            btn.TextSize = 20
+            attackGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+            local btn = Instance.new("TextButton", attackGui)
+            local c = Instance.new("UICorner", btn)
             
-            -- 3. ส่วนขยับ (Draggable)
+            -- คงดีไซน์ดั้งเดิมของปุ่ม Attack ไว้ทั้งหมด
+            btn.Size = UDim2.new(0, 120, 0, 50)
+            btn.Position = UDim2.new(0.5, -60, 0.8, 0)
+            btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            btn.Text = "Attack"
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.Font = Enum.Font.SourceSansBold
+            btn.TextSize = 20
+            c.CornerRadius = UDim.new(0, 12)
+            
+            -- ใส่เฉพาะระบบขยับ (ดึงคุณสมบัติ Active คู่กับ Draggable เพื่อให้ลากได้อย่างสมบูรณ์)
             btn.Active = true
-            btn.Draggable = true 
-
-            -- 4. จัดการขอบโค้ง (UICorner)
-            c.CornerRadius = UDim.new(0, 10) -- ใช้มุมโค้งเบอร์ 10 เท่าปุ่ม K
-            c.Parent = btn
-
-            -- 5. คำสั่งเมื่อกดปุ่ม
+            btn.Draggable = true
+            
             btn.MouseButton1Click:Connect(function() 
                 game:GetService("ReplicatedStorage").Events.Attack:FireServer() 
             end)
