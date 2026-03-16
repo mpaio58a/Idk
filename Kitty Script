@@ -1139,17 +1139,23 @@ Tabs.Misc2:AddButton({
 --// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
-    Description = "Don't Get Fling Try Again",
+    Description = "Don't Get Fling Try Again but Don't Spam",
     Callback = function()
         local Player = game:GetService("Players").LocalPlayer
         local Character = Player.Character
         local Root = Character and Character:FindFirstChild("HumanoidRootPart")
         local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
         
-        -- 🔍 ค้นหา BOT
-        local Bot = nil
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v.Name == "BOT" and v:IsA("Model") then Bot = v break end
+        -- 🔍 ค้นหา BOT (ปรับปรุงให้หาเร็วขึ้นถ้าบอทอยู่หน้า workspace)
+        local Bot = workspace:FindFirstChild("BOT") 
+        if not (Bot and Bot:IsA("Model")) then
+            -- ถ้าหาไม่เจอในหน้าแรก ค่อยวนลูปหาทั้งหมด (สำรองไว้)
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "BOT" and v:IsA("Model") then 
+                    Bot = v 
+                    break 
+                end
+            end
         end
 
         if not Bot or not Root or not Hum then
@@ -1192,8 +1198,7 @@ Tabs.Misc2:AddButton({
                 end
                 
                 -- [[ 🔥 ANTI-VOID LOGIC: เช็คว่า BOT ปลิวหรือยัง ]]
-                -- ถ้าความเร็ว BOT มากกว่า 200 (แปลว่าโดนดีดแล้ว) ให้หยุดวาร์ปตาม!
-                if BotRoot.AssemblyLinearVelocity.Magnitude > 200 then
+                if BotRoot and BotRoot.AssemblyLinearVelocity.Magnitude > 200 then
                     HasFlung = true
                     return
                 end
@@ -1209,22 +1214,24 @@ Tabs.Misc2:AddButton({
                     math.rad(math.random(-36000, 36000))
                 )
                 
-                -- ดักหน้าระยะ 2.5 Studs
+                -- 🎯 แก้ไข: ดักหน้าระยะ 5 Studs
                 local FrontOffset = CFrame.new(
-                    math.random(-5, 5) / 10,  
-                    math.random(-5, 5) / 10,  
-                    -2.5                      
+                    math.random(-5, 5) / 10,  -- สุ่มขยับซ้ายขวานิดหน่อย (0.5 studs)
+                    math.random(-5, 5) / 10,  -- สุ่มขยับบนล่างนิดหน่อย (0.5 studs)
+                    -5                        -- เปลี่ยนเป็น -5 เพื่อระยะดักหน้า 5 studs
                 )
                 
                 -- วาร์ปดักหน้า
-                Root.CFrame = BotRoot.CFrame * FrontOffset * ChaosRot
+                if BotRoot then
+                    Root.CFrame = BotRoot.CFrame * FrontOffset * ChaosRot
+                end
                 
                 -- ยัดแรงฟิสิกส์ระดับสูงสุด
                 Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
                 Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
             end)
 
-            task.wait(3.1)
+            task.wait(3)
 
             -- 🧹 Cleanup ล้างค่าทั้งหมด
             if Connection then Connection:Disconnect() end
