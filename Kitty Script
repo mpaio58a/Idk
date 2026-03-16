@@ -954,6 +954,7 @@ end)
                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
                 btn.Font = Enum.Font.SourceSansBold
                 btn.TextSize = 20
+                btn.Active = true
                 btn.Draggable = true
                 c.CornerRadius = UDim.new(0, 12)
                 btn.MouseButton1Click:Connect(function() game:GetService("ReplicatedStorage").Events.Attack:FireServer() end)
