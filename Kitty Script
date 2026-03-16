@@ -778,7 +778,6 @@ end)
 
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
-do
     Tabs.Misc:AddButton({ Title = "Revive", Callback = function() 
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
         game:GetService("ReplicatedStorage").Events.Join:FireServer() 
