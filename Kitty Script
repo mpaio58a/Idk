@@ -1136,11 +1136,14 @@ Tabs.Misc2:AddButton({
     end
 })
 
---// 🔘 ปุ่ม Fling Kitty Bot (เวอร์ชันเสถียร แก้เกมบัค CFrame)
+--// 🔘 ปุ่ม Fling Kitty Bot (เวอร์ชันเครื่องสแกนหาจุดบัค)
 Tabs.Misc2:AddButton({ 
-    Title = "Fling Kitty Bot",
-    Description = "Don't Get Fling Try Again but Don't Spam",
+    Title = "Fling Kitty Bot (DEBUG)",
+    Description = "กดแล้วเปิด F9 ดูเลยว่ามันค้างที่ไหน",
     Callback = function()
+        print("====================================")
+        print("🚀 [1] เริ่มรันสคริปต์: Fling Kitty Bot")
+        
         task.spawn(function()
             local Players = game:GetService("Players")
             local RunService = game:GetService("RunService")
@@ -1148,39 +1151,58 @@ Tabs.Misc2:AddButton({
             local LocalPlayer = Players.LocalPlayer
             
             local Events = ReplicatedStorage:FindFirstChild("Events")
-
-            -- [[ 🟢 1. คืนร่าง (ยอมรอ 0.2 วิ เพื่อไม่ให้เกมพัง) ]]
-            if Events and Events:FindFirstChild("HASTransform") then
-                pcall(function()
-                    Events.HASTransform:InvokeServer("Untransformed")
-                end)
-                task.wait(0.2) -- ตรงนี้สำคัญมาก! ขาดไม่ได้ ไม่งั้นขึ้น Error แดงแบบในภาพ
+            if not Events then
+                warn("❌ [DEBUG] หาโฟลเดอร์ Events ใน ReplicatedStorage ไม่เจอ!")
+            else
+                print("✅ [2] เจอโฟลเดอร์ Events แล้ว")
+                local HASTransform = Events:FindFirstChild("HASTransform")
+                if HASTransform then
+                    print("🔄 [2.1] เจอ HASTransform กำลังสั่งคืนร่าง...")
+                    pcall(function() HASTransform:InvokeServer("Untransformed") end)
+                    task.wait(0.2)
+                else
+                    warn("⚠️ [DEBUG] หา Remote 'HASTransform' ไม่เจอ (ข้ามไปทำขั้นตอนต่อไป)")
+                end
             end
 
-            -- [[ 🎯 2. หาตัวละครอย่างปลอดภัย ]]
             local Character = LocalPlayer.Character
-            if not Character then return end
+            if not Character then 
+                warn("❌ [DEBUG] สคริปต์มองไม่เห็นตัวละครของคุณ! (อาจจะตายอยู่หรือกำลังโหลด)")
+                return 
+            end
             
             local Root = Character:FindFirstChild("HumanoidRootPart")
             local Hum = Character:FindFirstChildOfClass("Humanoid")
-            if not Root or not Hum then return end
+            if not Root or not Hum then 
+                warn("❌ [DEBUG] หา HumanoidRootPart หรือ Humanoid ของคุณไม่เจอ!")
+                return 
+            end
+            print("✅ [3] โหลดตัวละครของคุณสำเร็จ")
             
-            -- 🔍 ค้นหา BOT แบบเซฟตี้
+            -- 🔍 ค้นหา BOT แบบสแกนละเอียด
+            print("🔍 [4] กำลังสแกนหา BOT ในแมพ...")
             local Bot = nil
             local BotRoot = nil
             for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "BOT" and v:IsA("Model") then 
-                    BotRoot = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Torso")
-                    if BotRoot then
+                -- ลองเช็คว่ามีตัวไหนชื่อ BOT หรือมีคำว่า BOT รวมอยู่ด้วย
+                if v:IsA("Model") and string.find(string.lower(v.Name), "bot") then 
+                    local tempRoot = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Torso")
+                    if tempRoot then
                         Bot = v
+                        BotRoot = tempRoot
+                        print("✅ [4.1] เจอเป้าหมายแล้ว! ชื่อ: " .. v.Name)
                         break 
                     end
                 end
             end
 
-            if not Bot or not BotRoot then return end
+            if not Bot or not BotRoot then 
+                warn("❌ [DEBUG] หาโมเดลที่เป็น 'BOT' ไม่เจอเลยในแมพตอนนี้!")
+                return 
+            end
 
-            -- [[ 🌪️ 3. เริ่ม Fling ดักหน้า 5 Studs ]]
+            print("🌪️ [5] ข้อมูลครบถ้วน! กำลังพุ่งไป Fling!")
+            
             local OldPos = Root.CFrame
             local OldFPDH = workspace.FallenPartsDestroyHeight
             workspace.FallenPartsDestroyHeight = -50000 
@@ -1193,7 +1215,6 @@ Tabs.Misc2:AddButton({
             local HasFlung = false
             
             Connection = RunService.Heartbeat:Connect(function()
-                -- ถ้าชิ้นส่วนใดหายไป ให้หยุดทันทีเพื่อกันเกม Error
                 if tick() - StartTime > 3 or not Bot.Parent or not BotRoot.Parent or not Character.Parent or not Root.Parent or HasFlung then
                     if Connection then Connection:Disconnect() end
                     return
@@ -1208,13 +1229,9 @@ Tabs.Misc2:AddButton({
                     if part:IsA("BasePart") then part.CanCollide = false end
                 end
 
-                -- ดักหน้า 5 Studs
                 local FrontOffset = CFrame.new(0, 0, -5) 
-                
-                -- หมุนสว่านแกน Y แกนเดียวให้มันเสถียรที่สุด
                 local SpinRot = CFrame.Angles(0, math.rad(tick() * 50000), 0)
 
-                -- ใช้ pcall ครอบไว้ เผื่อเกมมันลบตัวละครทิ้งกลางอากาศ สคริปต์เราจะได้ไม่เอ๋อ
                 pcall(function()
                     Root.CFrame = BotRoot.CFrame * FrontOffset * SpinRot
                     Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
@@ -1223,10 +1240,9 @@ Tabs.Misc2:AddButton({
             end)
 
             task.wait(3.1)
+            print("🧹 [6] Fling เสร็จสิ้น กำลังคืนค่าเดิม...")
 
-            -- 🧹 Cleanup ล้างค่า
             if Connection then Connection:Disconnect() end
-            
             Hum.PlatformStand = false
             workspace.CurrentCamera.CameraSubject = Hum
             workspace.FallenPartsDestroyHeight = OldFPDH
@@ -1237,10 +1253,13 @@ Tabs.Misc2:AddButton({
                 Root.CFrame = OldPos
             end
 
-            -- [[ ✨ 4. ชุบชีวิต (Revive) ]]
             if Events and Events:FindFirstChild("Revive") then
+                print("✨ [7] กำลัง Revive กลับมา...")
                 pcall(function() Events.Revive:FireServer() end)
             end
+            
+            print("🎉 [8] จบการทำงานสมบูรณ์!")
+            print("====================================")
         end)
     end
 })
