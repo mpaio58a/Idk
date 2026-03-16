@@ -1136,13 +1136,29 @@ Tabs.Misc2:AddButton({
     end
 })
 
---// 🔘 ปุ่ม Fling Kitty Bot (ฉบับแก้บัคกล้องลอยฟ้า)
+--// 🔘 ปุ่ม Fling Kitty Bot
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
-    Description = "Kitty Bot Don't Get Fling Try Again",
+    Description = "Don't Get Fling Try Again",
     Callback = function()
-        local Player = game:GetService("Players").LocalPlayer
-        local Character = Player.Character
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local LocalPlayer = Players.LocalPlayer
+        
+        local Events = ReplicatedStorage:WaitForChild("Events")
+
+        -- [[ 🟢 1. รัน Untransformed ก่อนเริ่ม ]]
+        print("🔄 กำลังคืนร่าง (Untransformed)...")
+        local HASTransform = Events:FindFirstChild("HASTransform")
+        if HASTransform then
+            pcall(function()
+                HASTransform:InvokeServer("Untransformed")
+            end)
+            task.wait(0.3) -- รอตัวละครโหลดแป๊บนึง
+        end
+
+        local Character = LocalPlayer.Character
         local Root = Character and Character:FindFirstChild("HumanoidRootPart")
         local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
         
@@ -1161,70 +1177,90 @@ Tabs.Misc2:AddButton({
             return 
         end
 
-        local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso") or Bot:FindFirstChild("Torso")
+        local BotRoot = Bot:FindFirstChild("HumanoidRootPart") or Bot:FindFirstChild("LowerTorso")
         if not BotRoot then return end
 
         task.spawn(function()
             local OldPos = Root.CFrame
-            
-            -- ปิด Noclip เพื่อไม่ให้เราติดสิ่งก่อสร้าง
-            for _, part in pairs(Character:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
+            local OldFPDH = workspace.FallenPartsDestroyHeight
+            workspace.FallenPartsDestroyHeight = -50000 -- กันแมพพัง
+
+            -- ล็อคกล้องไว้ที่ตัวเรา
+            workspace.CurrentCamera.CameraSubject = Hum
 
             Hum.PlatformStand = true
 
-            -- [[ 🔥 วิธีแก้: ใช้พายุหมุนแทนการพุ่งชน ]]
-            -- 1. สร้างตัวหมุน (ทำให้เราเป็นสว่าน)
-            local Spin = Instance.new("BodyAngularVelocity")
-            Spin.Name = "FlingSpin"
-            Spin.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            Spin.AngularVelocity = Vector3.new(0, 999999, 0) -- หมุนด้วยความเร็วสูงสุด
-            Spin.Parent = Root
-
-            -- 2. สร้างตัวล็อคพิกัด (ไม่ให้ตัวเราปลิวขึ้นฟ้า)
-            local Thrust = Instance.new("BodyVelocity")
-            Thrust.Name = "FlingThrust"
-            Thrust.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            Thrust.Velocity = Vector3.new(0, 0, 0) -- ล็อคความเร็วการพุ่งเป็น 0
-            Thrust.Parent = Root
-
             local StartTime = tick()
             local Connection
+            local HasFlung = false
             
-            Connection = game:GetService("RunService").Heartbeat:Connect(function()
-                if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent then
+            Connection = RunService.Heartbeat:Connect(function()
+                if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent or HasFlung then
                     if Connection then Connection:Disconnect() end
                     return
                 end
                 
-                -- ล็อค Noclip ซ้ำกันเหนียว
+                -- เช็คถ้าเป้าหมายปลิวแล้วให้หยุดเลย (กันกล้องลอยฟ้า)
+                if BotRoot.AssemblyLinearVelocity.Magnitude > 250 then
+                    HasFlung = true
+                    return
+                end
+                
+                -- Noclip 100%
                 for _, part in pairs(Character:GetDescendants()) do
                     if part:IsA("BasePart") then part.CanCollide = false end
                 end
 
-                -- วาร์ปไปซ้อนทับตรงกลางตัว BOT พอดีเป๊ะ
-                -- การหมุน + การซ้อนทับโมเดล จะทำให้เกมดีด BOT ออกไปเอง (เราจะไม่ปลิว)
-                Root.CFrame = BotRoot.CFrame
+                -- [[ 🔥 2. ระบบหมุนสว่าน + ดักหน้า 5 Studs ]]
+                -- ส่ายตำแหน่งเล็กน้อยเพื่อกระตุ้นฟิสิกส์ให้ชนแรงขึ้น
+                local FrontOffset = CFrame.new(
+                    math.random(-2, 2) / 10,  
+                    math.random(-2, 2) / 10,  
+                    -5  -- ล็อคดักหน้า 5 Studs
+                )
+                
+                -- สั่งให้ตัวเราหมุนรอบตัวเองเป็นสว่านด้วยความเร็วสูง
+                local SpinRot = CFrame.Angles(
+                    math.rad(math.random(-360, 360)), 
+                    math.rad(tick() * 50000), -- หมุนแกน Y แบบสว่าน
+                    math.rad(math.random(-360, 360))
+                )
+
+                -- นำพิกัดมารวมกัน: ยึด BOT เป็นหลัก -> ดักหน้า 5 Studs -> หมุนสว่าน
+                Root.CFrame = BotRoot.CFrame * FrontOffset * SpinRot
+                
+                -- ยัดแรงฟิสิกส์อัดหน้า
+                Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
+                Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
             end)
 
-            task.wait(3)
+            task.wait(3.1)
 
-            -- 🧹 Cleanup ล้างค่าทั้งหมด คืนสภาพตัวละคร
+            -- 🧹 Cleanup ล้างค่า คืนสภาพตัวละคร
             if Connection then Connection:Disconnect() end
-            if Spin then Spin:Destroy() end
-            if Thrust then Thrust:Destroy() end
             
             Hum.PlatformStand = false
+            workspace.CurrentCamera.CameraSubject = Hum
+            workspace.FallenPartsDestroyHeight = OldFPDH
             
-            -- คืนค่าความเร็วให้เป็น 0 ป้องกันอาการไหล
-            Root.Velocity = Vector3.new(0, 0, 0)
-            Root.RotVelocity = Vector3.new(0, 0, 0)
-            
-            -- วาร์ปกลับจุดที่กดยืนอยู่
+            -- คืนค่าฟิสิกส์ให้ตัวเองหยุดนิ่ง
+            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
             Root.CFrame = OldPos
-            
-            -- (ถ้ามีระบบ Revive/Leave Join ของแมพ ใส่ต่อตรงนี้ได้เลยครับ)
+
+            -- [[ ✨ 3. รัน Revive ตอนจบ ]]
+            print("✨ กำลังฟื้นฟู (Revive)...")
+            local Revive = Events:FindFirstChild("Revive")
+            if Revive then
+                Revive:FireServer()
+            else
+                -- สำรองไว้เผื่อใช้ชื่อ Leave/Join
+                local Leave = Events:FindFirstChild("Leave")
+                local Join = Events:FindFirstChild("Join")
+                if Leave then Leave:FireServer() end
+                task.wait(0.1)
+                if Join then Join:FireServer() end
+            end
         end)
     end
 })
