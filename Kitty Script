@@ -1290,7 +1290,7 @@ Tabs.Misc2:AddButton({
                 local FrontOffset = CFrame.new(
                     math.random(-5, 5) / 10,  
                     math.random(-5, 5) / 10,  
-                    0                        
+                    5                        
                 )
 
                 -- วาร์ปดักหน้าชิ้นส่วนที่เล็งไว้
