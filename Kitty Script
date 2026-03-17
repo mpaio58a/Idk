@@ -957,6 +957,9 @@ AntiLogicToggle:OnChanged(function()
     end
 end)
 
+local UserInputService = game:GetService("UserInputService")
+-- อย่าลืมตรวจสอบว่ามีการประกาศ local attackGui ไว้ด้านบนของสคริปต์หลักแล้วนะครับ
+
 local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Attack Button", Default = false })
 AttackToggle:OnChanged(function()
     if AttackToggle.Value then
@@ -964,7 +967,7 @@ AttackToggle:OnChanged(function()
             attackGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
             local btn = Instance.new("TextButton", attackGui)
             local c = Instance.new("UICorner", btn)
-            
+
             -- คงดีไซน์ดั้งเดิมของปุ่ม Attack ไว้ทั้งหมด
             btn.Size = UDim2.new(0, 120, 0, 50)
             btn.Position = UDim2.new(0.5, -60, 0.8, 0)
@@ -974,11 +977,41 @@ AttackToggle:OnChanged(function()
             btn.Font = Enum.Font.SourceSansBold
             btn.TextSize = 20
             c.CornerRadius = UDim.new(0, 12)
-            
-            -- ใส่เฉพาะระบบขยับ (ดึงคุณสมบัติ Active คู่กับ Draggable เพื่อให้ลากได้อย่างสมบูรณ์)
+
             btn.Active = true
-            btn.Draggable = true
-            
+            -- เอา btn.Draggable = true ออกไปแล้วใช้ระบบ Custom ด้านล่างแทน
+
+            -- === ระบบลาก Custom Dragging ===
+            local dragging = false
+            local dragStart = nil
+            local startPos = nil
+
+            btn.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                    dragStart = input.Position
+                    startPos = btn.Position
+                end
+            end)
+
+            btn.InputChanged:Connect(function(input)
+                if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+                    local delta = input.Position - dragStart
+                    -- อัปเดตตำแหน่งตามระยะที่ลากไป
+                    btn.Position = UDim2.new(
+                        startPos.X.Scale, startPos.X.Offset + delta.X, 
+                        startPos.Y.Scale, startPos.Y.Offset + delta.Y
+                    )
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+            -- ===============================
+
             btn.MouseButton1Click:Connect(function() 
                 game:GetService("ReplicatedStorage").Events.Attack:FireServer() 
             end)
@@ -1257,7 +1290,7 @@ Tabs.Misc2:AddButton({
                 local FrontOffset = CFrame.new(
                     math.random(-5, 5) / 10,  
                     math.random(-5, 5) / 10,  
-                    -5                        
+                    0                        
                 )
 
                 -- วาร์ปดักหน้าชิ้นส่วนที่เล็งไว้
