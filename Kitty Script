@@ -195,7 +195,7 @@ end
 
 --// 🔘 ปุ่ม Execute Fling 
 Tabs.Gamemode:AddButton({
-    Title = "Execute Fling (Hide And Seek Only)",
+    Title = "Fling Target (Hide And Seek Only)",
     Callback = function()
         if not SelectedTarget then
             return -- ยกเลิกการทำงานหากไม่ได้เลือกเป้าหมาย โดยไม่มีข้อความเด้ง
@@ -969,7 +969,7 @@ AttackToggle:OnChanged(function()
             btn.Size = UDim2.new(0, 120, 0, 50)
             btn.Position = UDim2.new(0.5, -60, 0.8, 0)
             btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-            btn.Text = "Attack"
+            btn.Text = "ATTACK"
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             btn.Font = Enum.Font.SourceSansBold
             btn.TextSize = 20
