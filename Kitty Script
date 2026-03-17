@@ -86,13 +86,12 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
--- ตัวแปรเก็บชื่อเป้าหมาย
 local SelectedTarget = nil
 
---// 📋 1. สร้าง Dropdown เลือกล่าหัวผู้เล่น
+--// 📋 1. สร้าง Dropdown เลือกล่าหัว (นำ "All" กลับมาไว้ที่นี่)
 local PlayerDropdown = Tabs.Gamemode:AddDropdown("PlayerSelect", {
     Title = "Select Target",
-    Values = {},
+    Values = {"All"}, -- มี All เป็นตัวเลือกเริ่มต้น
     Multi = false,
     Default = nil,
 })
@@ -103,7 +102,7 @@ end)
 
 --// 🔄 2. ระบบ Auto-Refresh ดึงรายชื่อ
 local function UpdatePlayerList()
-    local playerList = {}
+    local playerList = {"All"} -- ให้ All อยู่บนสุดเสมอ
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             table.insert(playerList, player.Name)
@@ -116,119 +115,149 @@ UpdatePlayerList()
 Players.PlayerAdded:Connect(UpdatePlayerList)
 Players.PlayerRemoving:Connect(UpdatePlayerList)
 
---// 🔘 3. ปุ่ม Execute Fling (Untransform -> Fling -> Revive)
+--// ⚙️ ฟังก์ชันจัดการฟิสิกส์และการสลับกล้อง (วนลูปใช้)
+local function DoPhysicsFling(TargetPlayer)
+    if not TargetPlayer or not TargetPlayer.Character then return end
+    
+    local TargetRoot = TargetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local TargetHum = TargetPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+    local Character = LocalPlayer.Character
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
+
+    if not TargetRoot or not TargetHum or not Root or not Hum then return end
+
+    local OldPos = Root.CFrame
+    local OldFPDH = workspace.FallenPartsDestroyHeight
+    workspace.FallenPartsDestroyHeight = -50000
+
+    -- ✨ เปลี่ยนมุมกล้องไปที่เหยื่อ
+    workspace.CurrentCamera.CameraSubject = TargetHum
+
+    Hum.PlatformStand = true
+    local BV = Instance.new("BodyVelocity")
+    BV.Parent = Root
+    BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    BV.Velocity = Vector3.new(0, 0, 0)
+
+    local StartTime = tick()
+    local Connection
+    local HasFlung = false
+
+    Connection = RunService.Heartbeat:Connect(function()
+        if tick() - StartTime > 3 or not TargetPlayer.Character or not Character.Parent or HasFlung then
+            if Connection then Connection:Disconnect() end
+            return
+        end
+
+        -- เช็คเป้าหมายปลิว
+        if TargetRoot.AssemblyLinearVelocity.Magnitude > 250 then
+            HasFlung = true
+            return
+        end
+
+        for _, part in pairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+
+        local ChaosRot = CFrame.Angles(
+            math.rad(math.random(-36000, 36000)), 
+            math.rad(math.random(-36000, 36000)), 
+            math.rad(math.random(-36000, 36000))
+        )
+
+        Root.CFrame = TargetRoot.CFrame * ChaosRot
+        Root.AssemblyLinearVelocity = Vector3.new(9e30, 9e30, 9e30)
+        Root.AssemblyAngularVelocity = Vector3.new(9e30, 9e30, 9e30)
+    end)
+
+    local elapsed = 0
+    while elapsed < 3 do
+        if HasFlung or not TargetPlayer.Character or not TargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            break
+        end
+        elapsed = elapsed + task.wait(0.1)
+    end
+
+    -- 🧹 Cleanup คืนค่า
+    if Connection then Connection:Disconnect() end
+    if BV then BV:Destroy() end
+    Hum.PlatformStand = false
+    
+    workspace.CurrentCamera.CameraSubject = Hum
+    workspace.FallenPartsDestroyHeight = OldFPDH
+
+    Root.CFrame = OldPos
+    Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+end
+
+--// 🔘 ปุ่ม Execute Fling 
 Tabs.Gamemode:AddButton({
-    Title = "Fling Selected Player (Hide And Seek Only)",
+    Title = "Execute Fling (Hide And Seek Only)",
     Callback = function()
         if not SelectedTarget then
             game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "Error",
-                Text = "Please Select Target First",
-                Duration = 3
+                Title = "Error", Text = "Please Select Target First", Duration = 3
             })
             return
         end
 
-        local Events = ReplicatedStorage:WaitForChild("Events")
-
-        -- [[ 🟢 1. รัน Remote Untransformed ก่อนเริ่ม ]]
-        local transformArgs = { "Untransformed" }
-        local HASTransform = Events:FindFirstChild("HASTransform")
-        if HASTransform then
-            -- ใช้ pcall กันสคริปต์พังถ้า Remote รันไม่ผ่าน
-            pcall(function()
-                HASTransform:InvokeServer(unpack(transformArgs))
-            end)
-            task.wait(0.3) -- รอให้เกมโหลดตัวละครร่างปกติแป๊บนึง
-        end
-
-        -- [[ 🎯 2. ดึงข้อมูลตัวละครใหม่ (สำคัญมาก เพราะการคืนร่างอาจทำให้ Root เปลี่ยน) ]]
-        local TargetPlayer = Players:FindFirstChild(SelectedTarget)
-        local TargetRoot = TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChild("HumanoidRootPart")
-        
-        local Character = LocalPlayer.Character
-        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-        local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
-
-        if not TargetRoot or not Root or not Hum then
-            return
-        end
-
-        -- [[ 🌪️ 3. เริ่มกระบวนการ Fling ล่าสังหาร 9e30 ]]
         task.spawn(function()
-            local OldPos = Root.CFrame
-            local OldFPDH = workspace.FallenPartsDestroyHeight
-            workspace.FallenPartsDestroyHeight = -50000
+            local Events = ReplicatedStorage:WaitForChild("Events")
 
-            workspace.CurrentCamera.CameraSubject = Hum
+            -- [[ 🟢 ลำดับที่ 1: Transform (Untransformed) ]]
+            local HASTransform = Events:FindFirstChild("HASTransform")
+            if HASTransform then
+                pcall(function() HASTransform:InvokeServer("Untransformed") end)
+                task.wait(0.3)
+            end
 
-            Hum.PlatformStand = true
-            local BV = Instance.new("BodyVelocity")
-            BV.Parent = Root
-            BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            BV.Velocity = Vector3.new(0, 0, 0)
+            -- [[ 🛡️ ลำดับที่ 2: God Mode (Join -> wait -> Leave) ]]
+            local Join = Events:FindFirstChild("Join")
+            local Leave = Events:FindFirstChild("Leave")
+            if Join and Leave then
+                pcall(function()
+                    Join:FireServer()
+                    task.wait(0.1)
+                    Leave:FireServer()
+                end)
+                task.wait(0.2)
+            end
 
-            local StartTime = tick()
-            local Connection
-            local HasFlung = false
-            
-            Connection = RunService.Heartbeat:Connect(function()
-                if tick() - StartTime > 3 or not TargetPlayer.Character or not Character.Parent or HasFlung then
-                    if Connection then Connection:Disconnect() end
-                    return
+            -- [[ 🌪️ ลำดับที่ 3: Fling (แยกตามที่เลือกใน Dropdown) ]]
+            if SelectedTarget == "All" then
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Fling All Started", Text = "Flinging everyone...", Duration = 3
+                })
+
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer then
+                        DoPhysicsFling(player)
+                        task.wait(0.2) -- พักนิดหน่อยก่อนไปคนต่อไป
+                    end
                 end
-                
-                -- เช็คเป้าหมายปลิว (Anti-Void)
-                if TargetRoot.AssemblyLinearVelocity.Magnitude > 250 then
-                    HasFlung = true
-                    return
+            else
+                local TargetPlayer = Players:FindFirstChild(SelectedTarget)
+                if TargetPlayer then
+                    DoPhysicsFling(TargetPlayer)
                 end
-                
-                -- Noclip 100%
-                for _, part in pairs(Character:GetDescendants()) do
-                    if part:IsA("BasePart") then part.CanCollide = false end
-                end
+            end
 
-                -- หมุนปั่น Chaos
-                local ChaosRot = CFrame.Angles(
-                    math.rad(math.random(-36000, 36000)), 
-                    math.rad(math.random(-36000, 36000)), 
-                    math.rad(math.random(-36000, 36000))
-                )
-                
-                -- วาร์ปสิงร่างเป้าหมาย
-                Root.CFrame = TargetRoot.CFrame * ChaosRot
-                
-                -- ยัดแรงฟิสิกส์ 9e30
-                Root.AssemblyLinearVelocity = Vector3.new(9e30, 9e30, 9e30)
-                Root.AssemblyAngularVelocity = Vector3.new(9e30, 9e30, 9e30)
-            end)
-
-            task.wait(3)
-
-            -- 🧹 Cleanup
-            if Connection then Connection:Disconnect() end
-            if BV then BV:Destroy() end
-            Hum.PlatformStand = false
-            workspace.CurrentCamera.CameraSubject = Hum
-            workspace.FallenPartsDestroyHeight = OldFPDH
-            
-            Root.CFrame = OldPos
-            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-
-            -- [[ ✨ 4. รัน Remote Revive หลังจบงาน ]]
+            -- [[ 🏥 ลำดับที่ 4: Revive (จบท้ายสุด) ]]
             local ReviveRemote = Events:FindFirstChild("Revive")
             if ReviveRemote then
                 ReviveRemote:FireServer()
             else
-                -- สำรองไว้เผื่อแมพใช้ระบบ Leave/Join แทนคำว่า Revive
-                local Leave = Events:FindFirstChild("Leave")
-                local Join = Events:FindFirstChild("Join")
                 if Leave then Leave:FireServer() end
                 task.wait(0.1)
                 if Join then Join:FireServer() end
             end
+            
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Finished", Text = "Fling sequence completed!", Duration = 3
+            })
         end)
     end
 })
