@@ -88,10 +88,10 @@ local LocalPlayer = Players.LocalPlayer
 
 local SelectedTarget = nil
 
---// 📋 1. สร้าง Dropdown เลือกล่าหัว (นำ "All" กลับมาไว้ที่นี่)
+--// 📋 1. สร้าง Dropdown เลือกล่าหัว
 local PlayerDropdown = Tabs.Gamemode:AddDropdown("PlayerSelect", {
     Title = "Select Target",
-    Values = {"All"}, -- มี All เป็นตัวเลือกเริ่มต้น
+    Values = {"All"},
     Multi = false,
     Default = nil,
 })
@@ -102,7 +102,7 @@ end)
 
 --// 🔄 2. ระบบ Auto-Refresh ดึงรายชื่อ
 local function UpdatePlayerList()
-    local playerList = {"All"} -- ให้ All อยู่บนสุดเสมอ
+    local playerList = {"All"}
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             table.insert(playerList, player.Name)
@@ -198,10 +198,7 @@ Tabs.Gamemode:AddButton({
     Title = "Execute Fling (Hide And Seek Only)",
     Callback = function()
         if not SelectedTarget then
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "Error", Text = "Please Select Target First", Duration = 3
-            })
-            return
+            return -- ยกเลิกการทำงานหากไม่ได้เลือกเป้าหมาย โดยไม่มีข้อความเด้ง
         end
 
         task.spawn(function()
@@ -228,10 +225,6 @@ Tabs.Gamemode:AddButton({
 
             -- [[ 🌪️ ลำดับที่ 3: Fling (แยกตามที่เลือกใน Dropdown) ]]
             if SelectedTarget == "All" then
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Fling All Started", Text = "Flinging everyone...", Duration = 3
-                })
-
                 for _, player in ipairs(Players:GetPlayers()) do
                     if player ~= LocalPlayer then
                         DoPhysicsFling(player)
@@ -254,10 +247,6 @@ Tabs.Gamemode:AddButton({
                 task.wait(0.1)
                 if Join then Join:FireServer() end
             end
-            
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "Finished", Text = "Fling sequence completed!", Duration = 3
-            })
         end)
     end
 })
