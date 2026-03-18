@@ -371,7 +371,7 @@ for _, obj in ipairs(workspace:GetDescendants()) do
 end
 
 -- ==========================================================
--- 👁️ ฟังก์ชัน CreateESP (เวอร์ชัน: ซ่อน Hitbox ล่องหนในตัวผู้เล่น)
+-- 👁️ ฟังก์ชัน CreateESP (แก้ไข: ปรับ Transparency = 0 เฉพาะ Puzzle)
 -- ==========================================================
 local function CreateESP(target, color, espName, displayText)
     if not target or not target.Parent then return end
@@ -387,7 +387,7 @@ local function CreateESP(target, color, espName, displayText)
                 -- ข้อยกเว้นที่ 2: ห้ามยุ่งกับ Handle ที่เกมสั่งให้ล่องหน
                 if part.Name == "Handle" and part.Transparency >= 1 then return end
 
-                -- 🔥 ข้อยกเว้นที่ 3 (ใหม่ล่าสุด): ห้ามยุ่งกับ Part ล่องหนที่อยู่ในตัวละคร!
+                -- 🔥 ข้อยกเว้นที่ 3: ห้ามยุ่งกับ Part ล่องหนที่อยู่ในตัวละคร!
                 if part.Transparency >= 1 then
                     -- เช็คว่าชิ้นส่วนนี้อยู่ใน Model ที่มี Humanoid (ผู้เล่นหรือบอท) หรือไม่
                     local ancestorModel = part:FindFirstAncestorWhichIsA("Model")
@@ -404,12 +404,14 @@ local function CreateESP(target, color, espName, displayText)
             end
         end
 
-        -- นำระบบจัดการความโปร่งใสไปใช้กับเป้าหมาย
-        if target:IsA("BasePart") then
-            HandleTransparency(target)
-        elseif target:IsA("Model") then
-            for _, v in ipairs(target:GetDescendants()) do
-                HandleTransparency(v)
+        -- 🔥 แก้ไขตรงนี้: ให้ทำงานเฉพาะเมื่อ ESP นั้นคือ "ESP_Puzzle" เท่านั้น
+        if espName == "ESP_Puzzle" then
+            if target:IsA("BasePart") then
+                HandleTransparency(target)
+            elseif target:IsA("Model") then
+                for _, v in ipairs(target:GetDescendants()) do
+                    HandleTransparency(v)
+                end
             end
         end
 
