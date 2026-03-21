@@ -525,7 +525,7 @@ end
 do
     Tabs.Update:AddParagraph({ 
         Title = "Update Log v3.0", 
-        Content = "--- New UI Redesign\n--- Removed unnecessary menus and broken buttons\n--- Improved Main Tab layout\n--- Added Visual menu (Player & Bot, Items, Trap, Puzzles ESP)\n--- Anti Trap with Hide/Restore logic\n--- General system optimizations and improvements\n--- And More" 
+        Content = "--- New UI Redesign\n--- Removed unnecessary menus and broken buttons\n--- Improved Main Tab layout\n--- Added Visual menu (Player & Bot, Items ESP)\n--- Anti Trap with Hide/Restore logic\n--- General system optimizations and improvements\n--- And More" 
     })
 end
 
