@@ -353,7 +353,9 @@ do
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
         game:GetService("ReplicatedStorage").Events.Join:FireServer() 
     end })
-Tabs.Misc:AddButton({ Title = "Get out of jail (Fixed)", Description = Sorry For Problem, Callback = function() 
+Tabs.Misc:AddButton({ Title = "Get out of jail (Fixed)", 
+Description = "Sorry For Problem", 
+Callback = function() 
         game:GetService("ReplicatedStorage").Events.Leave:FireServer()
 game:GetService("ReplicatedStorage").Events.Leave:FireServer()     
 task.wait(0.1)
