@@ -74,12 +74,7 @@ end
 do
     local G = Tabs.Gamemode
 
-    -- ใช้ pcall คลุม Paragraph เพราะในรูปฟ้องว่า Nil (ถ้า Error จะได้ไม่พา Tab อื่นหาย)
-    pcall(function()
-        G:AddParagraph({
-            Title = "Hide And Seek Mode",
-        })
-    end)
+    local QuincySection = Tabs.Gamemode:AddSection("Hide And Seek Mode")
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
