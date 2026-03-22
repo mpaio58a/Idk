@@ -1493,10 +1493,33 @@ end
 
 -- [[ 6. UPDATE TAB ]]
 do
+Tabs.Update:AddParagraph({ 
+        Title = "Update Log v3.5 (Final Update In 2026)", 
+        Content = "--- Add New Tab Misc2\n--- Add Toggle Esp (Player Slots, Trap, Puzzles)\n--- Add Execute Emote And More" 
+    })
+
+Tabs.Update:AddButton({ Title = "You In This Version", Callback = function()  end })
+
     Tabs.Update:AddParagraph({ 
-        Title = "Update Log v3.0", 
+        Title = "Update Log v3.0 (2026)", 
         Content = "--- New UI Redesign\n--- Removed unnecessary menus and broken buttons\n--- Removed menu Guis\n--- Improved Main Tab layout\n--- Added Visual menu (Player & Bot, Items, Trap, Puzzles ESP)\n--- Anti Trap with Hide/Restore logic\n--- General system optimizations and improvements\n--- And More" 
     })
+
+Tabs.Update:AddButton({ Title = "Cannot Go To Version v3.0", Callback = function()  end })
+
+Tabs.Update:AddParagraph({ 
+        Title = "Update Log v2.0 (2024)", 
+        Content = "--- Op?\n--- New Function\n--- Close/Open Gui\n--- Delete Remote Spy\n--- New Theme and Change Themes in Credit" 
+    })
+
+Tabs.Update:AddButton({ Title = "want to try version v2.0?", Callback = function() loadstring(game:HttpGet("https://pastebin.com/raw/fPANNEz7"))() end })
+
+Tabs.Update:AddParagraph({ 
+        Title = "Update Log v1.0 (2023)", 
+        Content = "--- Fixed Mouse\n--- New Function\n--- New LocalPlayer\n--- +Hide And Seek\n--- Delete Toggles" 
+    })
+
+Tabs.Update:AddButton({ Title = "want to try version v1.0? (Not Recommend)", Callback = function() loadstring(game:HttpGet('https://pastebin.com/raw/MSE3iQSj'))() end })
 end
 
 -- [[ 7. SETTINGS ]]
