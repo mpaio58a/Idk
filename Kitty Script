@@ -1331,7 +1331,7 @@ local EmoteScriptData = ""
 Tabs.Misc2:AddInput("EmoteInputBox", {
     Title = "Emote Script",
     Default = "",
-    Placeholder = "Paste your script here...",
+    Placeholder = " i think you don't know what script?",
     Numeric = false,
     Finished = false,
     Callback = function(Value)
