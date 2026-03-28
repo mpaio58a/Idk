@@ -797,6 +797,13 @@ local attackGui = nil
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
         game:GetService("ReplicatedStorage").Events.Join:FireServer() 
     end })
+Tabs.Misc:AddButton({ Title = "Get out of jail",
+Callback = function() 
+        game:GetService("ReplicatedStorage").Events.Leave:FireServer()
+game:GetService("ReplicatedStorage").Events.Leave:FireServer()     
+task.wait(0.1)
+game:GetService("ReplicatedStorage").Events.Leave:FireServer() game:GetService("ReplicatedStorage").Events.Join:FireServer() 
+    end })
     Tabs.Misc:AddButton({ Title = "Leave", Callback = function() game:GetService("ReplicatedStorage").Events.Leave:FireServer()game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Leave"):FireServer()
  end })
     Tabs.Misc:AddButton({ Title = "God Mode (Not Recommended)", Callback = function() 
