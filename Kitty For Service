@@ -3,7 +3,7 @@ local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/d
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Kitty Script Alpha And under development",
+    Title = "Kitty Script 2026 [Fixed Lag]",
     SubTitle = "by Askwjwjnsns",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
@@ -57,6 +57,7 @@ local Tabs = {
     Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- ย้ายมาไว้ตรงนี้
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
+    Misc2 = Window:AddTab({ Title = "Misc 2", Icon = "wand" }),
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
     Update = Window:AddTab({ Title = "Update", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
@@ -73,12 +74,177 @@ end
 do
     local G = Tabs.Gamemode
 
-    -- ใช้ pcall คลุม Paragraph เพราะในรูปฟ้องว่า Nil (ถ้า Error จะได้ไม่พา Tab อื่นหาย)
-    pcall(function()
-        G:AddParagraph({
-            Title = "Hide And Seek Mode",
-        })
+    local QuincySection = Tabs.Gamemode:AddSection("Hide And Seek Mode")
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+local SelectedTarget = nil
+
+--// 📋 1. สร้าง Dropdown เลือกล่าหัว
+local PlayerDropdown = Tabs.Gamemode:AddDropdown("PlayerSelect", {
+    Title = "Select Target",
+    Values = {"All"},
+    Multi = false,
+    Default = nil,
+})
+
+PlayerDropdown:OnChanged(function(Value)
+    SelectedTarget = Value
+end)
+
+--// 🔄 2. ระบบ Auto-Refresh ดึงรายชื่อ
+local function UpdatePlayerList()
+    local playerList = {"All"}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(playerList, player.Name)
+        end
+    end
+    PlayerDropdown:SetValues(playerList)
+end
+
+UpdatePlayerList()
+Players.PlayerAdded:Connect(UpdatePlayerList)
+Players.PlayerRemoving:Connect(UpdatePlayerList)
+
+--// ⚙️ ฟังก์ชันจัดการฟิสิกส์และการสลับกล้อง (วนลูปใช้)
+local function DoPhysicsFling(TargetPlayer)
+    if not TargetPlayer or not TargetPlayer.Character then return end
+
+    local TargetRoot = TargetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local TargetHum = TargetPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+    local Character = LocalPlayer.Character
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
+
+    if not TargetRoot or not TargetHum or not Root or not Hum then return end
+
+    local OldPos = Root.CFrame
+    local OldFPDH = workspace.FallenPartsDestroyHeight
+    workspace.FallenPartsDestroyHeight = -50000
+
+    -- ✨ เปลี่ยนมุมกล้องไปที่เหยื่อ
+    workspace.CurrentCamera.CameraSubject = TargetHum
+
+    Hum.PlatformStand = true
+    local BV = Instance.new("BodyVelocity")
+    BV.Parent = Root
+    BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    BV.Velocity = Vector3.new(0, 0, 0)
+
+    local StartTime = tick()
+    local Connection
+    local HasFlung = false
+
+    Connection = RunService.Heartbeat:Connect(function()
+        if tick() - StartTime > 3 or not TargetPlayer.Character or not Character.Parent or HasFlung then
+            if Connection then Connection:Disconnect() end
+            return
+        end
+
+        -- เช็คเป้าหมายปลิว
+        if TargetRoot.AssemblyLinearVelocity.Magnitude > 250 then
+            HasFlung = true
+            return
+        end
+
+        for _, part in pairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+
+        local ChaosRot = CFrame.Angles(
+            math.rad(math.random(-36000, 36000)), 
+            math.rad(math.random(-36000, 36000)), 
+            math.rad(math.random(-36000, 36000))
+        )
+
+        Root.CFrame = TargetRoot.CFrame * ChaosRot
+        Root.AssemblyLinearVelocity = Vector3.new(9e30, 9e30, 9e30)
+        Root.AssemblyAngularVelocity = Vector3.new(9e30, 9e30, 9e30)
     end)
+
+    local elapsed = 0
+    while elapsed < 3 do
+        if HasFlung or not TargetPlayer.Character or not TargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            break
+        end
+        elapsed = elapsed + task.wait(0.1)
+    end
+
+    -- 🧹 Cleanup คืนค่า
+    if Connection then Connection:Disconnect() end
+    if BV then BV:Destroy() end
+    Hum.PlatformStand = false
+
+    workspace.CurrentCamera.CameraSubject = Hum
+    workspace.FallenPartsDestroyHeight = OldFPDH
+
+    Root.CFrame = OldPos
+    Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+end
+
+--// 🔘 ปุ่ม Execute Fling 
+Tabs.Gamemode:AddButton({
+    Title = "Fling Target (Hide And Seek Only)",
+    Callback = function()
+        if not SelectedTarget then
+            return -- ยกเลิกการทำงานหากไม่ได้เลือกเป้าหมาย โดยไม่มีข้อความเด้ง
+        end
+
+        task.spawn(function()
+            local Events = ReplicatedStorage:WaitForChild("Events")
+
+            -- [[ 🟢 ลำดับที่ 1: Transform (Untransformed) ]]
+            local HASTransform = Events:FindFirstChild("HASTransform")
+            if HASTransform then
+                pcall(function() HASTransform:InvokeServer("Untransformed") end)
+                task.wait(0.3)
+            end
+
+            -- [[ 🛡️ ลำดับที่ 2: God Mode (Join -> wait -> Leave) ]]
+            local Join = Events:FindFirstChild("Join")
+            local Leave = Events:FindFirstChild("Leave")
+            if Join and Leave then
+                pcall(function()
+                    Join:FireServer()
+                    task.wait(0.1)
+                    Leave:FireServer()
+                end)
+                task.wait(0.2)
+            end
+
+            -- [[ 🌪️ ลำดับที่ 3: Fling (แยกตามที่เลือกใน Dropdown) ]]
+            if SelectedTarget == "All" then
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer then
+                        DoPhysicsFling(player)
+                        task.wait(0.2) -- พักนิดหน่อยก่อนไปคนต่อไป
+                    end
+                end
+            else
+                local TargetPlayer = Players:FindFirstChild(SelectedTarget)
+                if TargetPlayer then
+                    DoPhysicsFling(TargetPlayer)
+                end
+            end
+
+            -- [[ 🏥 ลำดับที่ 4: Revive (จบท้ายสุด) ]]
+            local ReviveRemote = Events:FindFirstChild("Revive")
+            if ReviveRemote then
+                ReviveRemote:FireServer()
+            else
+                if Leave then Leave:FireServer() end
+                task.wait(0.1)
+                if Join then Join:FireServer() end
+            end
+        end)
+    end
+})
 
     -- --- Transform ---
     G:AddButton({
@@ -110,7 +276,7 @@ do
     task.spawn(function()
         while true do
             if CSpam.Value then RunHNS("Clone") end
-            task.wait(0.1)
+            task.wait(0)
         end
     end)
 end
@@ -122,6 +288,9 @@ do
 
     Tabs.Main:AddSlider("JumpPower", { Title = "JumpPower", Default = 50, Min = 50, Max = 250, Rounding = 0, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = v end) end })
     Tabs.Main:AddInput("JPInput", { Title = "JumpPower TextBox", Numeric = true, Finished = true, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = tonumber(v) end) end })
+
+Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
+end
 
     local InfJumpToggle = Tabs.Main:AddToggle("InfJump", {Title = "Infinite Jump", Default = false })
     game:GetService("UserInputService").JumpRequest:Connect(function()
@@ -156,14 +325,13 @@ NoclipToggle:OnChanged(function()
     end
 end)
 
-    Tabs.Main:AddButton({ Title = "Infinite Yield", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
-end
-
 local Visual = Tabs.Visual
 
--- [[ สร้างปุ่ม Toggle ]]
 local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty ESP", Default = false})
+local SlotEspToggle = Visual:AddToggle("SlotEsp", {Title = "Player Slot ESP", Default = false})
 local ItemEspToggle = Visual:AddToggle("ItemEsp", {Title = "Items ESP", Default = false})
+local TrapEspToggle = Visual:AddToggle("TrapEsp", {Title = "Trap ESP", Default = false})
+local PuzzleEspToggle = Visual:AddToggle("PuzzleEsp", {Title = "Puzzle ESP", Default = false})
 
 -- [[ 1. ระบบจำโฟลเดอร์ (ลดอาการแลคจากการค้นหา) ]]
 local FolderCache = {}
@@ -198,7 +366,7 @@ for _, obj in ipairs(workspace:GetDescendants()) do
 end
 
 -- ==========================================================
--- 👁️ ฟังก์ชัน CreateESP (เวอร์ชัน: ซ่อน Hitbox ล่องหนในตัวผู้เล่น)
+-- 👁️ ฟังก์ชัน CreateESP (แก้ไข: ปรับ Transparency = 0 เฉพาะ Puzzle)
 -- ==========================================================
 local function CreateESP(target, color, espName, displayText)
     if not target or not target.Parent then return end
@@ -214,7 +382,7 @@ local function CreateESP(target, color, espName, displayText)
                 -- ข้อยกเว้นที่ 2: ห้ามยุ่งกับ Handle ที่เกมสั่งให้ล่องหน
                 if part.Name == "Handle" and part.Transparency >= 1 then return end
 
-                -- 🔥 ข้อยกเว้นที่ 3 (ใหม่ล่าสุด): ห้ามยุ่งกับ Part ล่องหนที่อยู่ในตัวละคร!
+                -- 🔥 ข้อยกเว้นที่ 3: ห้ามยุ่งกับ Part ล่องหนที่อยู่ในตัวละคร!
                 if part.Transparency >= 1 then
                     -- เช็คว่าชิ้นส่วนนี้อยู่ใน Model ที่มี Humanoid (ผู้เล่นหรือบอท) หรือไม่
                     local ancestorModel = part:FindFirstAncestorWhichIsA("Model")
@@ -231,12 +399,14 @@ local function CreateESP(target, color, espName, displayText)
             end
         end
 
-        -- นำระบบจัดการความโปร่งใสไปใช้กับเป้าหมาย
-        if target:IsA("BasePart") then
-            HandleTransparency(target)
-        elseif target:IsA("Model") then
-            for _, v in ipairs(target:GetDescendants()) do
-                HandleTransparency(v)
+        -- 🔥 แก้ไขตรงนี้: ให้ทำงานเฉพาะเมื่อ ESP นั้นคือ "ESP_Puzzle" เท่านั้น
+        if espName == "ESP_Puzzle" then
+            if target:IsA("BasePart") then
+                HandleTransparency(target)
+            elseif target:IsA("Model") then
+                for _, v in ipairs(target:GetDescendants()) do
+                    HandleTransparency(v)
+                end
             end
         end
 
@@ -295,9 +465,44 @@ local function RemoveESP(espName)
     end)
 end
 
--- ผูกการลบเข้ากับปุ่ม (ถ้าปุ่มถูกปิด ให้สั่งลบทิ้ง)
-PlayerEspToggle:OnChanged(function() if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end end)
-ItemEspToggle:OnChanged(function() if not ItemEspToggle.Value then RemoveESP("ESP_Item") end end)
+-- ==========================================
+-- [[ 2. ผูกคำสั่งลบ ESP เมื่อกดปิดปุ่ม ]]
+-- ==========================================
+PlayerEspToggle:OnChanged(function() 
+    if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end 
+end)
+
+SlotEspToggle:OnChanged(function() 
+    if not SlotEspToggle.Value then 
+        pcall(function()
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v.Name == "ESP_Slot_BG" then v:Destroy() end
+            end
+        end)
+    end 
+end)
+
+ItemEspToggle:OnChanged(function() 
+    if not ItemEspToggle.Value then RemoveESP("ESP_Item") end 
+end)
+
+TrapEspToggle:OnChanged(function() 
+    if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end 
+end)
+
+PuzzleEspToggle:OnChanged(function() 
+    if not PuzzleEspToggle.Value then 
+        RemoveESP("ESP_Puzzle")
+        -- โค้ดลบ Puzzle พิเศษของคุณ
+        pcall(function()
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "ESP_Puzzle_HL" or v.Name == "ESP_Puzzle_BG" or v.Name == "ESP_Puzzle_Box" then
+                    v:Destroy()
+                end
+            end
+        end)
+    end 
+end)
 
 -- [[ 4. ลูปการทำงานของ ESP ]]
 -- Player & Bot ESP
@@ -305,6 +510,7 @@ task.spawn(function()
     while task.wait(1) do
         if PlayerEspToggle.Value then
             pcall(function()
+                -- สแกนผู้เล่น
                 for _, plr in ipairs(game.Players:GetPlayers()) do
                     if plr.Character and plr ~= game.Players.LocalPlayer then
                         local isKiller = plr.Character:FindFirstChild("Weapon", true)
@@ -313,6 +519,7 @@ task.spawn(function()
                     end
                 end
 
+                -- สแกนบอท (Kitty)
                 local playersFolder = GetTargetFolder("Players")
                 if playersFolder then
                     for _, bot in ipairs(playersFolder:GetChildren()) do
@@ -320,6 +527,142 @@ task.spawn(function()
                             local isKiller = bot:FindFirstChild("Weapon", true)
                             local espColor = isKiller and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
                             CreateESP(bot, espColor, "ESP_Player", bot.Name)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ⚪ ส่วนที่ 3: ระบบ Slot ESP (เวอร์ชันปลดล็อคข้อจำกัด หาเจอแน่นอน)
+task.spawn(function()
+    local function GetSlotText(entity)
+        local slotsFolder = entity:FindFirstChild("Slots", true) or entity:FindFirstChild("slots", true)
+
+        if not slotsFolder then
+            local plr = game.Players:GetPlayerFromCharacter(entity)
+            if plr then slotsFolder = plr:FindFirstChild("Slots", true) or plr:FindFirstChild("slots", true) end
+        end
+
+        if not slotsFolder then return nil end
+
+        local slotsData = {}
+
+        for i = 1, 10 do
+            local s = slotsFolder:FindFirstChild("Slot" .. i) or slotsFolder:FindFirstChild("Slot " .. i)
+            if s then
+                local success, rawValue = pcall(function() return s.Value end)
+                if success then
+                    local val = "None"
+                    if typeof(rawValue) == "Instance" then
+                        val = rawValue.Name
+                    elseif rawValue ~= nil then
+                        val = tostring(rawValue)
+                    end
+
+                    if val == "" or val == "nil" or val:match("^%s*$") then val = "None" end
+                    table.insert(slotsData, "Slot " .. i .. " : " .. val)
+                end
+            end
+        end
+
+        if #slotsData == 0 then return nil end
+
+        local line1, line2 = {}, {}
+        for i, text in ipairs(slotsData) do
+            if i <= 2 then table.insert(line1, text) else table.insert(line2, text) end
+        end
+
+        local finalText = table.concat(line1, "   ")
+        if #line2 > 0 then finalText = finalText .. "\n" .. table.concat(line2, "   ") end
+
+        local equippedTool = entity:FindFirstChildOfClass("Tool")
+        if equippedTool then
+            finalText = finalText .. "\n[ Holding : " .. equippedTool.Name .. " ]"
+        end
+
+        return finalText
+    end
+
+    local function UpdateSlotESP(target, text)
+        if not target or not target.Parent then return end
+
+        local root = target:FindFirstChild("HumanoidRootPart") or target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")
+        if not root then return end
+
+        local bg = root:FindFirstChild("ESP_Slot_BG") or Instance.new("BillboardGui")
+        bg.Name = "ESP_Slot_BG"
+        bg.Size = UDim2.new(0, 300, 0, 70) 
+        bg.AlwaysOnTop = true
+
+        bg.ExtentsOffsetWorldSpace = Vector3.new(0, -4.5, 0)
+        bg.StudsOffset = Vector3.new(0, 0, 0) 
+
+        local txt = bg:FindFirstChild("NameLabel") or Instance.new("TextLabel")
+        txt.Name = "NameLabel"
+        txt.Size = UDim2.new(1, 0, 1, 0)
+        txt.BackgroundTransparency = 1
+        txt.Text = text
+        txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+        txt.Font = Enum.Font.SourceSansBold
+        txt.TextSize = 14
+        txt.TextWrapped = true
+        txt.TextStrokeTransparency = 0.6
+
+        txt.AnchorPoint = Vector2.new(0.5, 0)
+        txt.Position = UDim2.new(0.5, 0, 0, 0)
+
+        txt.Parent = bg
+        bg.Parent = root
+    end
+
+    while task.wait(1) do
+        if SlotEspToggle and SlotEspToggle.Value then
+            pcall(function()
+                -- สแกนผู้เล่น
+                for _, plr in ipairs(game.Players:GetPlayers()) do
+                    if plr.Character and plr ~= game.Players.LocalPlayer then
+                        local char = plr.Character
+
+                        -- 🔥 เงื่อนไขใหม่: เช็คว่าในตัวมี Weapon ไหม
+                        if char:FindFirstChild("Weapon", true) then
+                            -- ถ้าเป็นฆาตกร (มี Weapon) ให้ลบป้ายสล็อตทิ้งเลย
+                            local root = char:FindFirstChild("HumanoidRootPart") or char.PrimaryPart or char:FindFirstChildWhichIsA("BasePart")
+                            if root and root:FindFirstChild("ESP_Slot_BG") then root.ESP_Slot_BG:Destroy() end
+                        else
+                            -- ถ้าไม่ใช่ฆาตกร ถึงจะดึงสล็อตมาโชว์
+                            local text = GetSlotText(char)
+                            if text then
+                                UpdateSlotESP(char, text)
+                            else
+                                local root = char:FindFirstChild("HumanoidRootPart") or char.PrimaryPart or char:FindFirstChildWhichIsA("BasePart")
+                                if root and root:FindFirstChild("ESP_Slot_BG") then root.ESP_Slot_BG:Destroy() end
+                            end
+                        end
+                    end
+                end
+
+                -- สแกนบอท
+                local playersFolder = workspace:FindFirstChild("Players") or (workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Players"))
+                if playersFolder then
+                    for _, bot in ipairs(playersFolder:GetChildren()) do
+                        if bot:IsA("Model") and bot ~= game.Players.LocalPlayer.Character then
+
+                            -- 🔥 เงื่อนไขใหม่: เช็คบอทว่ามี Weapon ไหม
+                            if bot:FindFirstChild("Weapon", true) then
+                                local root = bot:FindFirstChild("HumanoidRootPart") or bot.PrimaryPart or bot:FindFirstChildWhichIsA("BasePart")
+                                if root and root:FindFirstChild("ESP_Slot_BG") then root.ESP_Slot_BG:Destroy() end
+                            else
+                                local text = GetSlotText(bot)
+                                if text then
+                                    UpdateSlotESP(bot, text)
+                                else
+                                    local root = bot:FindFirstChild("HumanoidRootPart") or bot.PrimaryPart or bot:FindFirstChildWhichIsA("BasePart")
+                                    if root and root:FindFirstChild("ESP_Slot_BG") then root.ESP_Slot_BG:Destroy() end
+                                end
+                            end
+
                         end
                     end
                 end
@@ -346,15 +689,115 @@ task.spawn(function()
     end
 end)
 
+-- Trap ESP
+task.spawn(function()
+    while task.wait(1) do
+        if TrapEspToggle.Value then
+            pcall(function()
+                local trapsFolder = GetTargetFolder("Traps")
+                if trapsFolder then
+                    for _, trap in ipairs(trapsFolder:GetChildren()) do
+                        if trap:IsA("Model") or trap:IsA("BasePart") then
+                            CreateESP(trap, Color3.fromRGB(255, 255, 0), "ESP_Trap", "Trap")
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Puzzle ESP Advanced
+task.spawn(function()
+    repeat task.wait(1) until PuzzleEspToggle ~= nil
+
+    -- ลิสต์รายชื่อ Status ที่เราต้องการ (พิมพ์ต้องเป๊ะตามนี้เลยนะครับ)
+    local validStatuses = {
+        ["PuzzlePut"] = true,
+        ["PuzzleLocked"] = true,
+        ["RecipePuzzle"] = true,
+        ["PuzzleExtractor"] = true,
+        ["PuzzleInfinite"] = true
+    }
+
+    local valueConnections = {}
+
+    local function RemoveSpecificESP(model, espName)
+        pcall(function()
+            if model:FindFirstChild(espName .. "_HL") then model[espName .. "_HL"]:Destroy() end
+
+            local root = model:IsA("Model") and (model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)) or model
+            if root and root:FindFirstChild(espName .. "_BG") then root[espName .. "_BG"]:Destroy() end
+
+            local function RestoreTrans(part)
+                if part:IsA("BasePart") then
+                    local orig = part:GetAttribute("OrigTrans_" .. espName)
+                    if orig then
+                        part.Transparency = orig
+                        part:SetAttribute("OrigTrans_" .. espName, nil)
+                    end
+                end
+            end
+
+            if model:IsA("BasePart") then RestoreTrans(model)
+            elseif model:IsA("Model") then
+                for _, p in ipairs(model:GetDescendants()) do RestoreTrans(p) end
+            end
+        end)
+    end
+
+    while true do
+        if PuzzleEspToggle.Value then
+            pcall(function()
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if not PuzzleEspToggle.Value then break end
+
+                    -- หา StringValue ที่ชื่อ "Status"
+                    if obj:IsA("StringValue") and obj.Name == "Status" then
+
+                        -- 🔥 หมัดเด็ด: ดึง Model หลักที่ครอบมันอยู่ ไม่ว่าจะอยู่ลึกแค่ไหน
+                        local model = obj:FindFirstAncestorWhichIsA("Model") 
+                        if not model then model = obj.Parent end -- สำรองไว้เผื่อมันไม่ได้อยู่ใน Model
+
+                        if model and (model:IsA("Model") or model:IsA("BasePart")) then
+
+                            -- เช็ค Value ว่าตรงกับในลิสต์ไหม
+                            if validStatuses[obj.Value] then
+                                -- ส่งไปสร้าง ESP
+                                CreateESP(model, Color3.fromRGB(0, 200, 255), "ESP_Puzzle", model.Name)
+
+                                -- ดักฟังการเปลี่ยนแปลง Value (ถ้าคนไขพัซเซิลแล้ว ลบทิ้ง!)
+                                if not valueConnections[obj] then
+                                    valueConnections[obj] = obj:GetPropertyChangedSignal("Value"):Connect(function()
+                                        if not validStatuses[obj.Value] or not PuzzleEspToggle.Value then
+                                            RemoveSpecificESP(model, "ESP_Puzzle")
+                                            if valueConnections[obj] then
+                                                valueConnections[obj]:Disconnect()
+                                                valueConnections[obj] = nil
+                                            end
+                                        end
+                                    end)
+                                end
+                            else
+                                -- ถ้า Value ไม่ตรง (เช่นกลายเป็น Done) ให้ลบ ESP ออก
+                                RemoveSpecificESP(model, "ESP_Puzzle")
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(1.5)
+    end
+end)
+
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
-do
     Tabs.Misc:AddButton({ Title = "Revive", Callback = function() 
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
         game:GetService("ReplicatedStorage").Events.Join:FireServer() 
     end })
-Tabs.Misc:AddButton({ Title = "Get out of jail (Fixed)", 
-Description = "Sorry For Problem", 
+Tabs.Misc:AddButton({ Title = "Get out of jail",
 Callback = function() 
         game:GetService("ReplicatedStorage").Events.Leave:FireServer()
 game:GetService("ReplicatedStorage").Events.Leave:FireServer()     
@@ -369,7 +812,602 @@ game:GetService("ReplicatedStorage").Events.Leave:FireServer() game:GetService("
         game:GetService("ReplicatedStorage").Events.Leave:FireServer() 
     end })
 
-local Misc = Tabs.Misc
+-- [[ 1. สร้างปุ่ม Toggle ในหน้า Misc ]]
+local AutoSpamToggle = Tabs.Misc:AddToggle("AutoSpam", {
+    Title = "Spam Interact Door Everything",
+Description = "Troll Spam Door", 
+    Default = false
+})
+
+-- [[ 2. ตัวระบบทำงาน (Logic) ]]
+task.spawn(function()
+    -- ดึง Remote มาเก็บไว้ก่อน
+    local success, interactRemote = pcall(function()
+        return game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Interact")
+    end)
+
+    while true do
+        -- เช็คทั้งตัวแปร success และค่า Toggle
+        if success and AutoSpamToggle.Value then
+            pcall(function()
+                local map = workspace:FindFirstChild("Map")
+                if map then
+                    -- วนหา Interacts ทุกห้อง
+                    for _, room in pairs(map:GetChildren()) do
+                        local interacts = room:FindFirstChild("Interacts")
+                        if interacts then
+                            for _, obj in pairs(interacts:GetChildren()) do
+                                -- ถ้ากดปิดปุ่ม ให้หยุดวนลูปทันที
+                                if not AutoSpamToggle.Value then break end
+                                interactRemote:FireServer(obj)
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(0.5) -- ความเร็วมาตรฐาน ไม่ทำให้เครื่องค้าง
+    end
+end)
+
+    -- Anti Trap Toggle (Updated with Hide/Restore Logic)
+    local AntiTrapToggle = Tabs.Misc:AddToggle("AntiTrap", {
+        Title = "Anti Trap", 
+        Description = "Walking into traps will have no effect while this script is enabled.", 
+        Default = false 
+    })
+
+local AntiTrapConnection -- ประกาศไว้ข้างบน OnChanged
+
+AntiTrapToggle:OnChanged(function()
+    if AntiTrapToggle.Value then
+        -- 1. จัดการของเก่าที่มีอยู่แล้ว
+        local function DisableTrap(obj)
+            if obj:IsA("BasePart") and obj.Name == "Center" and obj.Parent and obj.Parent.Name:lower():find("trap") then
+                obj.CanTouch = false
+                obj.Transparency = 1 
+            end
+        end
+
+        for _, v in pairs(workspace:GetDescendants()) do
+            DisableTrap(v)
+        end
+
+        -- 2. ดักจับของใหม่ที่เกิดมาระหว่างเกม (วางแทนที่อันเก่าได้เลย)
+        AntiTrapConnection = workspace.DescendantAdded:Connect(function(descendant)
+            if AntiTrapToggle.Value then
+                task.wait(0.2) -- รอให้โมเดลโหลดเสร็จ
+                DisableTrap(descendant)
+            end
+        end)
+    else
+        -- 3. คืนค่าเมื่อปิดปุ่ม
+        if AntiTrapConnection then AntiTrapConnection:Disconnect() end
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and v.Name == "Center" and v.Parent and v.Parent.Name:lower():find("trap") then
+                v.CanTouch = true
+                v.Transparency = 1 
+            end
+        end
+    end
+    end)
+
+-- Anti Logic
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local AntiLogicCache = {}
+
+local AntiLogicToggle = Tabs.Misc:AddToggle("AntiLogic", {Title = "Anti Logic (Break Invisible Wall)",     
+Description = "Not recommended, it's buggy.", 
+     Default = false})
+
+task.spawn(function()
+    repeat task.wait(1) until AntiLogicToggle ~= nil
+
+    while true do
+        if AntiLogicToggle.Value then
+            pcall(function()
+                -- ดึงตัวละครของเรา ณ ปัจจุบัน (เผื่อตายแล้วเกิดใหม่)
+                local myCharacter = LocalPlayer.Character
+
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if not AntiLogicToggle.Value then break end
+
+                    -- 🔥 หมัดเด็ด: ถ้า Part นี้เป็นชิ้นส่วนในร่างกายของเรา ให้ข้ามไปเลย ไม่ต้องทำอะไร!
+                    if myCharacter and obj:IsDescendantOf(myCharacter) then
+                        continue
+                    end
+
+                    -- กรองเฉพาะ ClassName เป็น "Part"
+                    if obj.ClassName == "Part" then
+
+                        -- บันทึกค่า CanCollide เดิมไว้ก่อน
+                        if AntiLogicCache[obj] == nil then
+                            AntiLogicCache[obj] = obj.CanCollide
+                        end
+
+                        -- เช็คเงื่อนไขความโปร่งใส
+                        if obj.Transparency >= 1 then
+                            -- ล่องหน = บังคับทะลุ
+                            if obj.CanCollide ~= false then
+                                obj.CanCollide = false
+                            end
+                        else
+                            -- ไม่ล่องหน = บังคับแข็ง
+                            if obj.CanCollide ~= true then
+                                obj.CanCollide = true
+                            end
+                        end
+
+                    end
+                end
+            end)
+        end
+        task.wait(2) -- สแกนทุก 2 วินาที
+    end
+end)
+
+-- ระบบคืนค่าเมื่อกดปิดปุ่ม
+AntiLogicToggle:OnChanged(function()
+    if not AntiLogicToggle.Value then
+        pcall(function()
+            for part, origCollide in pairs(AntiLogicCache) do
+                if part and part.Parent then
+                    part.CanCollide = origCollide
+                end
+            end
+            AntiLogicCache = {} -- ล้างความจำ
+        end)
+    end
+end)
+
+local UserInputService = game:GetService("UserInputService")
+-- อย่าลืมตรวจสอบว่ามีการประกาศ local attackGui ไว้ด้านบนของสคริปต์หลักแล้วนะครับ
+
+local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Attack Button", Default = false })
+AttackToggle:OnChanged(function()
+    if AttackToggle.Value then
+        if not attackGui then
+            attackGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+            local btn = Instance.new("TextButton", attackGui)
+            local c = Instance.new("UICorner", btn)
+
+            -- คงดีไซน์ดั้งเดิมของปุ่ม Attack ไว้ทั้งหมด
+            btn.Size = UDim2.new(0, 120, 0, 50)
+            btn.Position = UDim2.new(0.5, -60, 0.8, 0)
+            btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            btn.Text = "ATTACK"
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.Font = Enum.Font.SourceSansBold
+            btn.TextSize = 20
+            c.CornerRadius = UDim.new(0, 12)
+
+            btn.Active = true
+            -- เอา btn.Draggable = true ออกไปแล้วใช้ระบบ Custom ด้านล่างแทน
+
+            -- === ระบบลาก Custom Dragging ===
+            local dragging = false
+            local dragStart = nil
+            local startPos = nil
+
+            btn.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                    dragStart = input.Position
+                    startPos = btn.Position
+                end
+            end)
+
+            btn.InputChanged:Connect(function(input)
+                if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+                    local delta = input.Position - dragStart
+                    -- อัปเดตตำแหน่งตามระยะที่ลากไป
+                    btn.Position = UDim2.new(
+                        startPos.X.Scale, startPos.X.Offset + delta.X, 
+                        startPos.Y.Scale, startPos.Y.Offset + delta.Y
+                    )
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+            -- ===============================
+
+            btn.MouseButton1Click:Connect(function() 
+                game:GetService("ReplicatedStorage").Events.Attack:FireServer() 
+            end)
+        end
+        attackGui.Enabled = true
+    else
+        if attackGui then 
+            attackGui.Enabled = false 
+        end
+    end
+end)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+local selectedType = "Mouse"
+local selectedNum = "1"
+local currentTrack = nil
+local activeObject = nil 
+
+local EmoteObjects = {
+    -- Kitty
+    ["KittyEmote11"] = { uuid = [[Kd`+`çoIlIlIIIllIIll333999ççççç4817859dfjnTA]], part = "RightHand" },
+    ["KittyEmote12"] = { uuid = [[oisç4omdña´lIlIllIIIIIII``+`+40dkkKSo]], part = "RightHand" },
+    ["KittyEmote13"] = { uuid = [[34255899999ss541223okfkkllp`´´çllIIIllllIIIIII]], part = "HumanoidRootPart" },
+    ["KittyEmote14"] = { uuid = [[sksññççççkskskkIIlllIllllIIIIIIIIl99928840ÇÑ]], part = "HumanoidRootPart" },
+    ["KittyEmote17"] = { uuid = [[393929b98291c901141allllIIllLllllllIIIIIIIIIIIIIIIIIII]], part = "HumanoidRootPart" },
+    ["KittyEmote18"] = { uuid = [[a93990d390013251clllllllIllIIIIIIIIIlllllI_sillon]], part = "HumanoidRootPart" },
+    ["KittyEmote19"] = { uuid = [[byol++k8r810a4373´´`´ñÑÑ_columpio]], part = "HumanoidRootPart" },
+    ["KittyEmote20"] = { uuid = [[9b12s89llllIIlII3la190﷽_checkmark]], part = "RightHand" },
+    ["KittyEmote21"] = { uuid = [[𒈙⸻0﷽꧅_interrogacion]], part = "RightHand" },
+    ["KittyEmote23"] = { uuid = [[f7adc1f2-55de-4201-a6e9-bf8b6bd5661c_television]], part = "HumanoidRootPart" },
+    ["KittyEmote27"] = { uuid = [[91391ba9-7bbf-4009-9f8e-962a88901836_sombrilla]], part = "HumanoidRootPart" },
+    ["KittyEmote31"] = { uuid = [[e0799b10-35d4-4a8a-a574-b49c56397946_sillagamer]], part = "HumanoidRootPart" },
+    ["KittyEmote33"] = { uuid = [[caminadora_27b3cf74-e4e3-4414-b14f-50427df3c96e]], part = "HumanoidRootPart" },
+    ["KittyEmote34"] = { uuid = [[cama_9f4ebfe0-b6a1-4ade-a636-76e2c417b98e]], part = "HumanoidRootPart" },
+    ["KittyEmote35"] = { uuid = [[escobaKitty_d1b25fa5-1a98-43c9-8b7e-f54b096d7f47]], part = "LowerTorso" },
+    ["KittyEmote36"] = { uuid = [[bicicletaKitty_3eb38253-ba16-4489-96e4-285b1e2f35ac]], part = "LowerTorso" },
+    ["KittyEmote37"] = { uuid = [[saxophoneKitty_e1a0394b-c8d2-4817-9a01-37b6982535fd]], part = "RightHand" },
+    ["KittyEmote38"] = { uuid = [[florKitty_c2c3159d-213a-426e-ba5e-c79dd507a0ee]], part = "RightHand" },
+    ["KittyEmote39"] = { uuid = [[basket_6ea167e0-f018-4373-9b70-20cd46a6349b]], part = "HumanoidRootPart" },
+    ["KittyEmote40"] = { uuid = [[fish_9881ae13-5c06-4a3c-8b79-e7d52473e238]], part = "RightHand" },
+    ["KittyEmote41"] = { uuid = [[football_f7d85b8c-8836-4fdf-8cfb-4fbda9cb535e]], part = "HumanoidRootPart" },
+    ["KittyEmote42"] = { uuid = [[reno_c78c29b7-d7f4-40e7-97be-5a34b6098c49]], part = "HumanoidRootPart" },
+    ["KittyEmote44"] = { uuid = [[pesasKitty_b7bbef8a-2a39-44d6-87c2-f6bf5c94efd2]], part = "HumanoidRootPart" },
+
+    -- Mouse
+    ["MouseEmote12"] = { uuid = [[sssssIlIlIlIIlllIIIIlIIIIAAAA9931117395dSSSlw]], part = "RightHand" },
+    ["MouseEmote13"] = { uuid = [[sssssIlIlIlIlllIIIIlIIIIAAAA9931117395dSSSlw]], part = "RightHand" },
+    ["MouseEmote14"] = { uuid = [[ttIIlllII2886393llIIllllllIIIIIIf´´ññ´ç]], part = "RightHand" },
+    ["MouseEmote15"] = { uuid = [[kkiIIIlIIIIllllIlIIl99388800382ddmJJDNj-ñ]], part = "LowerTorso" },
+    ["MouseEmote16"] = { uuid = [[99482´lkñs783579lllIIIllllllllIIIIIIIIIIIII```´´´]], part = "HumanoidRootPart" },
+    ["MouseEmote17"] = { uuid = [[9b12s89llllIIlII3la190﷽_checkmark]], part = "RightHand" },
+    ["MouseEmote18"] = { uuid = [[93266o022b99a1ds0234olllIIIIIIllllIlOO]], part = "UpperTorso" },
+    ["MouseEmote19"] = { uuid = [[c9sslllIIIIlllIIi035990a191679c_cosadeboxear]], part = "HumanoidRootPart" },
+    ["MouseEmote20"] = { uuid = [[85t5969c98528ñ53242allllllIIIIIlIiilLLIiiiii]], part = "HumanoidRootPart" },
+    ["MouseEmote21"] = { uuid = [[𒈙⸻0﷽꧅_interrogacion]], part = "RightHand" },
+    ["MouseEmote23"] = { uuid = [[070ba8e1-e042-46e7-a387-44997666fa4f_globo]], part = "UpperTorso" },
+    ["MouseEmote24"] = { uuid = [[95c33ceb-e20d-40dd-bec0-3ef987fef7a8_helicoptero]], part = "HumanoidRootPart" },
+    ["MouseEmote27"] = { uuid = [[6927a58d-927f-43f0-883e-c52bf38a5d80_flor]], part = "RightHand" },
+    ["MouseEmote28"] = { uuid = [[09499468-4a59-4786-82d7-34e698449173_carritochocon]], part = "HumanoidRootPart" },
+    ["MouseEmote34"] = { uuid = [[mouseCaminadora_27b3cf74-e4e3-4414-b14f-50427df3c96e]], part = "HumanoidRootPart" },
+    ["MouseEmote35"] = { uuid = [[99482´lkñs783579lllIIIllllllllIIIIIIIIIIIII```´´´_calabaza]], part = "HumanoidRootPart" },
+    ["MouseEmote36"] = { uuid = [[escobaMouse_22152a92-489e-49a8-bf7e-215411654bee]], part = "LowerTorso" },
+    ["MouseEmote37"] = { uuid = [[bicicletaMouse_0f256a27-1209-4055-9afc-317c32d481b2]], part = "LowerTorso" },
+    ["MouseEmote38"] = { uuid = [[cartelQueso_fd245610-9e8a-40e2-b013-75ca8819f4b2]], part = "RightHand" },
+    ["MouseEmote39"] = { uuid = [[saxophone_1f44b9ff-41a5-40d7-bd84-c9c149de356f]], part = "RightHand" },
+    ["MouseEmote40"] = { uuid = [[camaMouse_342d1773-8cb5-48f0-92e5-86ab703a0b19]], part = "HumanoidRootPart" },
+    ["MouseEmote41"] = { uuid = [[avioneta_288a21c3-27ee-48ab-8ce4-3a4461e84b53]], part = "LowerTorso" },
+    ["MouseEmote42"] = { uuid = [[trineo_38b6598c-02cb-46f1-aa4b-7db9b4a1b7fa]], part = "HumanoidRootPart" },
+    ["MouseEmote44"] = { uuid = [[sombrillaMouse_2ff69fcd-b853-4155-bf5d-3005220ac28e]], part = "HumanoidRootPart" },
+    ["MouseEmote45"] = { uuid = [[sillaMouse_d129f58f-2ef0-47cb-92fa-fc667bc0e30c]], part = "HumanoidRootPart" },
+    ["MouseEmote46"] = { uuid = [[EMP12345678901234567890_67comun]], part = "RightHand" }
+}
+
+-- ฟังก์ชันค้นหา Remote แบบปลอดภัย (ไม่ทำให้สคริปต์ค้าง)
+local function getRemotes()
+    local events = ReplicatedStorage:FindFirstChild("Events")
+    if events then
+        return events:FindFirstChild("PlayEmote"), events:FindFirstChild("ModelAnimation")
+    end
+    return nil, nil
+end
+
+local function stopEmote()
+    local char = Players.LocalPlayer.Character
+    if currentTrack then 
+        currentTrack:Stop() 
+        currentTrack = nil 
+    end
+
+    local _, modelAnimRemote = getRemotes()
+    if activeObject and char and modelAnimRemote then
+        modelAnimRemote:FireServer(1, activeObject.uuid, activeObject.part, char)
+        activeObject = nil
+    end
+end
+
+local function playEmote()
+    stopEmote()
+
+    local emoteName = selectedType .. "Emote" .. selectedNum
+    local char = Players.LocalPlayer.Character
+    if not char then return end
+
+    local playEmoteRemote, modelAnimRemote = getRemotes()
+
+    if playEmoteRemote then
+        playEmoteRemote:FireServer(emoteName)
+    end
+
+    local objData = EmoteObjects[emoteName]
+    if objData and modelAnimRemote then
+        modelAnimRemote:FireServer(0, objData.uuid, objData.part, char)
+        activeObject = objData 
+    end
+
+    local anim = nil
+    for _, v in pairs(game:GetDescendants()) do
+        if v.Name == emoteName and v:IsA("Animation") then 
+            anim = v 
+            break 
+        end
+    end
+
+    if anim then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            currentTrack = hum:LoadAnimation(anim)
+            currentTrack.Looped = true
+            currentTrack:Play()
+        end
+    end
+end
+
+-- =========================================================
+-- ส่วนนี้คือส่วนที่คุณต้องแก้ชื่อ Tab ให้ตรงกับของตุณ
+-- =========================================================
+
+local numList = {}
+for i = 1, 46 do table.insert(numList, tostring(i)) end
+
+-- เปลี่ยน YourTab เป็น Tabs.Misc2 (หรือชื่อที่คุณตั้งไว้)
+Tabs.Misc2:AddDropdown("TypeSelect", {
+    Title = "Character Type",
+    Values = {"Mouse", "Kitty"},
+    Multi = false,
+    Default = 1,
+}):OnChanged(function(Value)
+    selectedType = Value
+end)
+
+Tabs.Misc2:AddDropdown("NumSelect", {
+    Title = "Emote Number",
+    Values = numList,
+    Multi = false,
+    Default = 1,
+}):OnChanged(function(Value)
+    selectedNum = Value
+end)
+
+Tabs.Misc2:AddButton({
+    Title = "Play Emote",
+    Callback = function()
+        playEmote()
+    end
+})
+
+Tabs.Misc2:AddButton({
+    Title = "Stop Emote",
+    Callback = function()
+        stopEmote()
+    end
+})
+
+--// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
+Tabs.Misc2:AddButton({ 
+    Title = "Fling Kitty Bot",
+    Description = "Don't Get Fling Try Again but Don't Spam",
+    Callback = function()
+        local Player = game:GetService("Players").LocalPlayer
+        local Character = Player.Character
+        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+        local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
+
+        -- 🔍 ค้นหา BOT
+        local Bot = workspace:FindFirstChild("BOT") 
+        if not (Bot and Bot:IsA("Model")) then
+            -- วนลูปหาถ้าไม่เจอหน้าแรก
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "BOT" and v:IsA("Model") then 
+                    Bot = v 
+                    break 
+                end
+            end
+        end
+
+        if not Bot or not Root or not Hum then
+            -- 💬 แจ้งเตือนเฉพาะตอนหาบอทไม่เจอ
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Error",
+                Text = "Not Found Bot",
+                Duration = 3
+            })
+            return 
+        end
+
+        -- 🎯 เตรียมหาชิ้นส่วนของ BOT
+        local BotHum = Bot:FindFirstChildOfClass("Humanoid")
+        local LowerTorso = Bot:FindFirstChild("LowerTorso")
+        local UpperTorso = Bot:FindFirstChild("UpperTorso")
+        local FallbackPart = Bot:FindFirstChild("HumanoidRootPart")
+
+        task.spawn(function()
+            local OldPos = Root.CFrame
+            local OldFPDH = workspace.FallenPartsDestroyHeight
+
+            workspace.FallenPartsDestroyHeight = -50000 
+
+            -- ✨ เปลี่ยนมุมกล้องไปดู BOT
+            if BotHum then
+                workspace.CurrentCamera.CameraSubject = BotHum
+            elseif LowerTorso then
+                workspace.CurrentCamera.CameraSubject = LowerTorso
+            end
+
+            -- 🌀 ปรับฟิสิกส์
+            Hum.PlatformStand = true
+            local BV = Instance.new("BodyVelocity")
+            BV.Parent = Root
+            BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            BV.Velocity = Vector3.new(0, 0, 0) 
+
+            local StartTime = tick()
+            local Connection
+            local HasFlung = false
+
+            Connection = game:GetService("RunService").Heartbeat:Connect(function()
+                -- ถ้าเวลาเกิน 3 วิ หรือ BOT หายไปแล้ว
+                if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent or HasFlung then
+                    if Connection then Connection:Disconnect() end
+                    return
+                end
+
+                -- 🎯 เล็งเป้าสลับไปมาระหว่าง LowerTorso และ UpperTorso
+                local targetList = {}
+                if LowerTorso then table.insert(targetList, LowerTorso) end
+                if UpperTorso then table.insert(targetList, UpperTorso) end
+
+                local TargetPart = nil
+                if #targetList > 0 then
+                    TargetPart = targetList[math.random(1, #targetList)]
+                else
+                    TargetPart = FallbackPart 
+                end
+
+                if not TargetPart then return end
+
+                -- [[ 🔥 ANTI-VOID LOGIC: เช็คว่า BOT ปลิวหรือยัง ]]
+                if TargetPart.AssemblyLinearVelocity.Magnitude > 200 then
+                    HasFlung = true
+                    return
+                end
+
+                -- Noclip 100%
+                for _, part in pairs(Character:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+
+                local ChaosRot = CFrame.Angles(
+                    math.rad(math.random(-36000, 36000)), 
+                    math.rad(math.random(-36000, 36000)), 
+                    math.rad(math.random(-36000, 36000))
+                )
+
+                local FrontOffset = CFrame.new(
+                    math.random(-5, 5) / 10,  
+                    math.random(-5, 5) / 10,  
+                    5                        
+                )
+
+                -- วาร์ปดักหน้าชิ้นส่วนที่เล็งไว้
+                Root.CFrame = TargetPart.CFrame * FrontOffset * ChaosRot
+
+                -- ยัดแรงฟิสิกส์ระดับสูงสุด
+                Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
+                Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
+            end)
+
+            task.wait(3)
+
+            -- 🧹 Cleanup ล้างค่าทั้งหมด
+            if Connection then Connection:Disconnect() end
+            if BV then BV:Destroy() end
+            Hum.PlatformStand = false
+
+            -- ✨ คืนมุมกล้องกลับมาที่เรา
+            workspace.CurrentCamera.CameraSubject = Hum
+            workspace.FallenPartsDestroyHeight = OldFPDH
+
+            -- วาร์ปกลับมาที่เดิมตอนก่อนกดปุ่ม
+            Root.CFrame = OldPos
+            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+
+            -- 🔄 Rejoin
+            local RS = game:GetService("ReplicatedStorage")
+            local Ev = RS:FindFirstChild("Events")
+            if Ev then
+                if Ev:FindFirstChild("Leave") then Ev.Leave:FireServer() end
+                task.wait(0.1)
+                if Ev:FindFirstChild("Join") then Ev.Join:FireServer() end
+            end
+        end)
+    end
+})
+
+local EmoteScriptData = ""
+
+Tabs.Misc2:AddInput("EmoteInputBox", {
+    Title = "Emote Script",
+    Default = "",
+    Placeholder = " i think you don't know what script?",
+    Numeric = false,
+    Finished = false,
+    Callback = function(Value)
+        EmoteScriptData = Value
+    end
+})
+
+Tabs.Misc2:AddButton({
+    Title = "Run Emote",
+    Callback = function()
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            local Player = Players.LocalPlayer
+            local Character = Player.Character or Player.CharacterAdded:Wait()
+
+            if not Character then return end
+            if EmoteScriptData == "" then 
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Warning", 
+                    Text = "Please paste script first!", 
+                    Duration = 3
+                })
+                return 
+            end
+
+            pcall(function()
+                local events = ReplicatedStorage:WaitForChild("Events", 3)
+                if events then
+                    local modelAnim = events:WaitForChild("ModelAnimation", 3)
+                    if modelAnim then
+
+                        local executedCount = 0
+
+                        -- [[ ลูปหาชิ้นส่วนและส่ง "ชื่อ" ไปให้ Server ทีละชื่อ ]]
+                        for _, part in ipairs(Character:GetDescendants()) do
+                            -- กรองเอาเฉพาะ Part, MeshPart หรือ UnionOperation
+                            if part:IsA("BasePart") or part.ClassName == "UnionOperation" then
+
+                                local args = {
+                                    [1] = 0,
+                                    [2] = EmoteScriptData,
+                                    [3] = part.Name,   -- 🔥 หมัดเด็ด! ส่ง "ชื่อ (String)" ไปเหมือนในคลิปเป๊ะๆ
+                                    [4] = Character
+                                }
+
+                                -- ยิงข้อมูลเข้า Server
+                                modelAnim:FireServer(unpack(args))
+                                executedCount = executedCount + 1
+
+                                task.wait() -- ใส่หน่วงเวลานิดนึงกันเกมเตะเพราะส่งข้อมูลรัวไป
+                            end
+                        end
+
+                        -- แจ้งเตือนเมื่อยิงครบทุกชิ้น
+                        game:GetService("StarterGui"):SetCore("SendNotification", {
+                            Title = "Success", 
+                            Text = "Emote fired on " .. executedCount .. " parts!", 
+                            Duration = 3
+                        })
+
+                    end
+                end
+            end)
+        end)
+    end
+})
+
+local Misc = Tabs.Misc2
 local ToolList = {}
 local ToolNames = {"Press Refresh"}
 
@@ -419,69 +1457,6 @@ Misc:AddButton({
     end
 })
 
--- [[ 1. สร้างปุ่ม Toggle ในหน้า Misc ]]
-local AutoSpamToggle = Tabs.Misc:AddToggle("AutoSpam", {
-    Title = "Spam Interact Door Everything",
-Description = "Troll Spam Door", 
-    Default = false
-})
-
--- [[ 2. ตัวระบบทำงาน (Logic) ]]
-task.spawn(function()
-    -- ดึง Remote มาเก็บไว้ก่อน
-    local success, interactRemote = pcall(function()
-        return game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Interact")
-    end)
-
-    while true do
-        -- เช็คทั้งตัวแปร success และค่า Toggle
-        if success and AutoSpamToggle.Value then
-            pcall(function()
-                local map = workspace:FindFirstChild("Map")
-                if map then
-                    -- วนหา Interacts ทุกห้อง
-                    for _, room in pairs(map:GetChildren()) do
-                        local interacts = room:FindFirstChild("Interacts")
-                        if interacts then
-                            for _, obj in pairs(interacts:GetChildren()) do
-                                -- ถ้ากดปิดปุ่ม ให้หยุดวนลูปทันที
-                                if not AutoSpamToggle.Value then break end
-                                interactRemote:FireServer(obj)
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-        task.wait(0.5) -- ความเร็วมาตรฐาน ไม่ทำให้เครื่องค้าง
-    end
-end)
-
-    local AttackToggle = Tabs.Misc:AddToggle("AttackBtnSwitch", {Title = "Attack Button", Default = false })
-    AttackToggle:OnChanged(function()
-        if AttackToggle.Value then
-            if not attackGui then
-                attackGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-                local btn = Instance.new("TextButton", attackGui)
-                local c = Instance.new("UICorner", btn)
-                btn.Size = UDim2.new(0, 120, 0, 50)
-                btn.Position = UDim2.new(0.5, -60, 0.8, 0)
-                btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-                btn.Text = "ATTACK"
-                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                btn.Font = Enum.Font.SourceSansBold
-                btn.TextSize = 20
-                btn.Draggable = true
-                c.CornerRadius = UDim.new(0, 12)
-                btn.MouseButton1Click:Connect(function() game:GetService("ReplicatedStorage").Events.Attack:FireServer() end)
-            end
-            attackGui.Enabled = true
-        else
-            if attackGui then attackGui.Enabled = false end
-        end
-    end)
-end
-
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
 do
     -- ตารางข้อมูลใหม่: {ชื่อที่โชว์บนปุ่ม, คำอธิบาย (Official Name + Cheese), ID Pastebin}
@@ -525,12 +1500,33 @@ end
 
 -- [[ 6. UPDATE TAB ]]
 do
-    Tabs.Update:AddParagraph({ 
-        Title = "Update Log v3.0", 
-        Content = "+ New UI Redesign\n+ Removed unnecessary menus and broken buttons\n+ Improved Main Tab layout\n+ Added Visual menu (Player & Bot, Items ESP)\n+ Anti Trap with Hide/Restore logic\n+ General system optimizations and improvements\n+ And More" 
+Tabs.Update:AddParagraph({ 
+        Title = "Update Log v3.5 | 3/26/2026", 
+        Content = "--- Add New Tab Misc2\n--- Add Toggle Esp (Player Slots, Trap, Puzzles)\n--- Add Execute Emote And More" 
     })
 
-    Tabs.Update:AddButton({ Title = "You In This Version", Callback = function()  end })
+Tabs.Update:AddButton({ Title = "You In This Version", Callback = function()  end })
+
+    Tabs.Update:AddParagraph({ 
+        Title = "Update Log v3.0 | 3/21/2026", 
+        Content = "--- New UI Redesign\n--- Removed unnecessary menus and broken buttons\n--- Removed menu Guis\n--- Improved Main Tab layout\n--- Added Visual menu (Player & Bot, Items, Trap, Puzzles ESP)\n--- Anti Trap with Hide/Restore logic\n--- General system optimizations and improvements\n--- And More" 
+    })
+
+Tabs.Update:AddButton({ Title = "Cannot Go To Version v3.0", Callback = function()  end })
+
+Tabs.Update:AddParagraph({ 
+        Title = "Update Log v2.0 | ?/?/2024", 
+        Content = "--- Op?\n--- New Function\n--- Close/Open Gui\n--- Delete Remote Spy\n--- New Theme and Change Themes in Credit" 
+    })
+
+Tabs.Update:AddButton({ Title = "want to try version v2.0?", Callback = function() loadstring(game:HttpGet("https://pastebin.com/raw/fPANNEz7"))() end })
+
+Tabs.Update:AddParagraph({ 
+        Title = "Update Log v1.0 | ?/?/2023", 
+        Content = "--- Fixed Mouse\n--- New Function\n--- New LocalPlayer\n--- +Hide And Seek\n--- Delete Toggles" 
+    })
+
+Tabs.Update:AddButton({ Title = "want to try version v1.0? (Not Recommend)", Callback = function() loadstring(game:HttpGet('https://pastebin.com/raw/MSE3iQSj'))() end })
 end
 
 -- [[ 7. SETTINGS ]]
