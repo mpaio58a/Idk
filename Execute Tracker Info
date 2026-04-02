@@ -4,8 +4,39 @@ local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 local player = Players.LocalPlayer
 
--- ⚠️ ใส่ Webhook URL ของห้อง #tracker ตรงนี้
+-- ⚠️ 1. ใส่ Webhook URL ของห้อง #tracker ตรงนี้
 local webhookUrl = "https://discord.com/api/webhooks/1487722840525635615/RF499dIWyW8KZAdE9lkpOv4PzLjq4VzYocxX-PYvMEYQw0BqT_A2AWz9N4AUiFnRSyQb"
+
+-- ⚠️ 2. ตั้งชื่อ Namespace ให้เป็นชื่อเฉพาะของคุณ (ภาษาอังกฤษ/ตัวเลข) เพื่อไม่ให้ยอดรวมไปปนกับคนอื่น
+local uniqueNamespace = "track_project_x_2026" 
+local countKey = "total_executes"
+
+-- ฟังก์ชัน Request สำหรับ Executor
+local requestFunc = request or http_request or (http and http.request) or syn.request
+
+-- ==========================================
+-- ระบบดึงและอัปเดตยอดรันรวม (Global Count) จาก Counter API
+-- ==========================================
+local globalCount = "Error"
+if requestFunc then
+    local apiSuccess, res = pcall(function()
+        return requestFunc({
+            -- วิ่งไปที่ API เพื่อสั่งบวก 1 และดึงค่าล่าสุดกลับมา
+            Url = "https://api.counterapi.dev/v1/" .. uniqueNamespace .. "/" .. countKey .. "/up",
+            Method = "GET"
+        })
+    end)
+    
+    if apiSuccess and res and res.Body then
+        local decodeSuccess, decoded = pcall(function()
+            return HttpService:JSONDecode(res.Body)
+        end)
+        -- หากได้ตัวเลขกลับมา ให้นำมาใช้
+        if decodeSuccess and decoded.count then
+            globalCount = tostring(decoded.count)
+        end
+    end
+end
 
 -- สุ่มสีแถบ Embed
 local randomColor = math.random(0, 16777215)
@@ -26,22 +57,20 @@ local success, gameInfo = pcall(function()
 end)
 local gameName = success and gameInfo.Name or "Unknown Game"
 
--- ระบบนับจำนวนครั้งที่รัน
-getgenv().ScriptExecutionCount = (getgenv().ScriptExecutionCount or 0) + 1
-local executionCount = getgenv().ScriptExecutionCount
-
 -- สร้างโค้ดสำหรับก๊อปปี้ไปรันเพื่อ Join ตาม
 local autoJoinScript = "Not in a public server"
 if jobId ~= "" then
-    -- ทำเป็น Code Block เพื่อให้กดคัดลอกใน Discord ได้ง่ายๆ
     autoJoinScript = "```lua\ngame:GetService('TeleportService'):TeleportToPlaceInstance(" .. tostring(placeId) .. ", '" .. jobId .. "', game:GetService('Players').LocalPlayer)\n```"
 end
 
+-- ==========================================
 -- ข้อมูลที่จะส่งไป Discord
+-- ==========================================
 local data = {
     ["embeds"] = {{
         ["title"] = "🚀 Executor Tracker Notify! | " .. gameName,
-        ["description"] = "**📊 Execute Count: " .. tostring(executionCount) .. "**",
+        -- แสดงยอดรวมที่ดึงมาจากออนไลน์
+        ["description"] = "**📊 Execute Count: " .. globalCount .. "**",
         ["color"] = randomColor,
         ["fields"] = {
             {
@@ -70,7 +99,6 @@ local data = {
                 ["inline"] = false
             },
             {
-                -- เปลี่ยนช่องนี้เป็นสคริปต์สำหรับกดก๊อปปี้ไปรันเพื่อเข้าเกม
                 ["name"] = "🔗 Auto Join (Copy & Execute)",
                 ["value"] = autoJoinScript,
                 ["inline"] = false
@@ -82,11 +110,9 @@ local data = {
     }}
 }
 
--- ส่งข้อมูล
-local jsonData = HttpService:JSONEncode(data)
-local requestFunc = request or http_request or (http and http.request) or syn.request
-
+-- ส่งข้อมูลไป Discord
 if requestFunc then
+    local jsonData = HttpService:JSONEncode(data)
     pcall(function()
         requestFunc({
             Url = webhookUrl,
