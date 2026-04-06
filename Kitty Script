@@ -53,8 +53,9 @@ _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 
 -- [[ 1. จัดลำดับ Tab ใหม่ (เรียงตามนี้ Gamemode จะอยู่ใต้ Main ทันที) ]]
 local Tabs = {
+    Info = Window:AddTab({ Title = "Info", Icon = "info" }),
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- ย้ายมาไว้ตรงนี้
+    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }),
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Misc2 = Window:AddTab({ Title = "Misc 2", Icon = "wand" }),
