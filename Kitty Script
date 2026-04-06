@@ -63,6 +63,157 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local player = Players.LocalPlayer
+
+-- ⚠️ ใส่ Webhook URL สำหรับรับ Feedback ตรงนี้
+local feedbackWebhookUrl = "https://discord.com/api/webhooks/1490745678475956225/lDJbavGd5vxstYCi58EIShmU3YLNmLSZVxvLd7gMqhh96XuI828bgXXHlORQqKJC7pzw"
+
+-- ==========================================
+-- ฟังก์ชันคำนวณเวลา USA (EST: UTC-5)
+-- ==========================================
+local function getUSATime()
+    local utcNow = os.time()
+    local estTime = utcNow - (5 * 3600)
+    local dateTable = os.date("!*t", estTime)
+    
+    local ampm = dateTable.hour >= 12 and "PM" or "AM"
+    local displayHour = dateTable.hour % 12
+    if displayHour == 0 then displayHour = 12 end
+    
+    return string.format("%02d:%02d:%02d %s | %d/%d/%04d", 
+        displayHour, dateTable.min, dateTable.sec, ampm, 
+        dateTable.month, dateTable.day, dateTable.year)
+end
+
+-- ดึงชื่อ Executor และชื่อเกม
+local identify = identifyexecutor or getexecutorname or function() return "Unknown Executor" end
+local executorName = identify()
+local playerNameDisplay = player.DisplayName .. " | @" .. player.Name
+
+local success, gameInfo = pcall(function()
+    return MarketplaceService:GetProductInfo(game.PlaceId)
+end)
+local gameName = success and gameInfo.Name or "Unknown Game"
+
+-- ==========================================
+-- ส่วนของ Info (เวลาเดินตลอดเวลา)
+-- ==========================================
+local infoParagraph = Tabs.Info:AddParagraph({
+    Title = "User Information",
+    Content = "Name: " .. playerNameDisplay .. "\nExecutor: " .. executorName .. "\nTime: " .. getUSATime()
+})
+
+task.spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            infoParagraph:SetDesc("Name: " .. playerNameDisplay .. "\nExecutor: " .. executorName .. "\nTime: " .. getUSATime())
+        end)
+    end
+end)
+
+-- ==========================================
+-- หมวดหมู่: Feedback
+-- ==========================================
+Tabs.Info:AddSection("Feedback")
+
+Tabs.Info:AddParagraph({
+    Title = "Notice",
+    Content = "Found a bug or have an idea? Feel free to send feedback! Please keep it realistic."
+})
+
+local feedbackMessage = ""
+local FeedbackInput = Tabs.Info:AddInput("FeedbackInput", {
+    Title = "Feedback",
+    Default = "",
+    Placeholder = "Type Messages Here",
+    Numeric = false,
+    Finished = false,
+    Callback = function(Value)
+        feedbackMessage = Value
+    end
+})
+
+Tabs.Info:AddButton({
+    Title = "Submit",
+    Description = "Send your message to the developer",
+    Callback = function()
+        local finalMessage = feedbackMessage:match("^%s*(.-)%s*$")
+        
+        if finalMessage == "" then
+            Fluent:Notify({
+                Title = "Fail",
+                Content = "Pls Type Message -_-",
+                Duration = 3
+            })
+        else
+            Fluent:Notify({
+                Title = "Success",
+                Content = "Thanks For Feedback ;)",
+                Duration = 3
+            })
+            
+            -- สร้างข้อมูลแบบ Embed จัดเรียงใหม่ตามที่ต้องการ
+            local data = {
+                ["embeds"] = {{
+                    ["title"] = "📩 Feedback System", -- เปลี่ยนชื่อหัวข้อแล้ว
+                    ["color"] = math.random(0, 16777215),
+                    ["fields"] = {
+                        {
+                            ["name"] = "👤 Username",
+                            ["value"] = player.Name,
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "🆔 User ID",
+                            ["value"] = tostring(player.UserId),
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "🛠️ Executor",
+                            ["value"] = executorName,
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "🎮 Game",
+                            ["value"] = gameName,
+                            ["inline"] = false
+                        },
+                        {
+                            -- ย้าย Message มาไว้ด้านล่าง Game
+                            ["name"] = "📝 Message",
+                            ["value"] = finalMessage,
+                            ["inline"] = false
+                        }
+                    },
+                    ["footer"] = {
+                        ["text"] = "Feedback System • " .. getUSATime()
+                    }
+                }}
+            }
+            
+            local jsonData = HttpService:JSONEncode(data)
+            local requestFunc = request or http_request or (http and http.request) or syn.request
+            
+            if requestFunc then
+                pcall(function()
+                    requestFunc({
+                        Url = feedbackWebhookUrl,
+                        Method = "POST",
+                        Headers = {["Content-Type"] = "application/json"},
+                        Body = jsonData
+                    })
+                end)
+            end
+            
+            feedbackMessage = ""
+            FeedbackInput:SetValue("")
+        end
+    end
+})
+
 -- [[ 2. ฟังก์ชันช่วยรัน Remote (ลดความเสี่ยงสคริปต์หยุดทำงาน) ]]
 local function RunHNS(mode)
     pcall(function()
