@@ -87,6 +87,27 @@ local TrapColor = Visual:AddColorpicker("TrapColor", {Title = "Trap Color", Defa
 local PuzzleEspToggle = Visual:AddToggle("PuzzleEsp", {Title = "Puzzle ESP", Default = false})
 local PuzzleColor = Visual:AddColorpicker("PuzzleColor", {Title = "Puzzle Color", Default = Color3.fromRGB(0, 200, 255)})
 
+-- 🔥 เพิ่มปุ่ม Hide Color ตรงนี้
+local HideColorToggle = Visual:AddToggle("HideColorToggle", {Title = "Hide Color Settings", Default = false})
+
+-- ฟังก์ชันทำงานเมื่อกดปุ่ม Hide Color
+HideColorToggle:OnChanged(function()
+    local isVisible = not HideColorToggle.Value -- ถ้าเปิดปุ่ม Hide = ไม่โชว์สี
+    
+    -- รวมตัวแปรเลือกสีทั้งหมดไว้ใน Table
+    local allColorPickers = {BotColor, PlayerColor, SlotColor, ItemColor, TrapColor, PuzzleColor}
+    
+    for _, picker in ipairs(allColorPickers) do
+        -- ใช้ pcall เผื่อป้องกัน Error กรณี Fluent UI บางเวอร์ชันโครงสร้างต่างกัน
+        pcall(function()
+            -- ซ่อนตัว UI ของ Colorpicker โดยตรง
+            if picker.Instance then 
+                picker.Instance.Visible = isVisible 
+            end
+        end)
+    end
+end)
+
 -- ==========================================
 -- [[ 2. ESP Settings (ตั้งค่าการแสดงผล) ]]
 -- ==========================================
@@ -137,12 +158,12 @@ local function CreateESP(target, color, espName, displayText)
             end
         end
 
-        -- 🔴 1. Highlight ESP (อิงตาม Toggle)
+-- 🔴 1. Highlight ESP (อิงตาม Toggle)
         local hl = target:FindFirstChild(espName .. "_HL") or Instance.new("Highlight")
         hl.Name = espName .. "_HL"
         hl.FillColor = color
         hl.FillTransparency = 0.5
-        hl.OutlineColor = color
+        hl.OutlineColor = Color3.fromRGB(255, 255, 255) -- 🔥 ล็อกเป็นขอบสีขาวตรงนี้เลยครับ
         hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         hl.Enabled = HighlightToggle.Value
         hl.Parent = target
