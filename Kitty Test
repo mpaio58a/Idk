@@ -87,22 +87,33 @@ local TrapColor = Visual:AddColorpicker("TrapColor", {Title = "Trap Color", Defa
 local PuzzleEspToggle = Visual:AddToggle("PuzzleEsp", {Title = "Puzzle ESP", Default = false})
 local PuzzleColor = Visual:AddColorpicker("PuzzleColor", {Title = "Puzzle Color", Default = Color3.fromRGB(0, 200, 255)})
 
--- 🔥 เพิ่มปุ่ม Hide Color ตรงนี้
+-- 🔥 ปุ่ม Hide Color Settings
 local HideColorToggle = Visual:AddToggle("HideColorToggle", {Title = "Hide Color Settings", Default = false})
 
--- ฟังก์ชันทำงานเมื่อกดปุ่ม Hide Color
 HideColorToggle:OnChanged(function()
-    local isVisible = not HideColorToggle.Value -- ถ้าเปิดปุ่ม Hide = ไม่โชว์สี
+    local isVisible = not HideColorToggle.Value -- ถ้าเปิดปุ่ม Hide (true) = บังคับซ่อน (false)
     
-    -- รวมตัวแปรเลือกสีทั้งหมดไว้ใน Table
     local allColorPickers = {BotColor, PlayerColor, SlotColor, ItemColor, TrapColor, PuzzleColor}
     
     for _, picker in ipairs(allColorPickers) do
-        -- ใช้ pcall เผื่อป้องกัน Error กรณี Fluent UI บางเวอร์ชันโครงสร้างต่างกัน
         pcall(function()
-            -- ซ่อนตัว UI ของ Colorpicker โดยตรง
-            if picker.Instance then 
-                picker.Instance.Visible = isVisible 
+            -- 1. ลองใช้คำสั่งซ่อนมาตรฐานของ Lib (ถ้ามี)
+            if not isVisible and type(picker.Hide) == "function" then picker:Hide() end
+            if isVisible and type(picker.Show) == "function" then picker:Show() end
+
+            -- 2. ดักจับตัวแปร GUI (ครอบคลุม Fluent หลายๆ เวอร์ชัน)
+            if picker.Frame then picker.Frame.Visible = isVisible end
+            if picker.Instance then picker.Instance.Visible = isVisible end
+            if picker.Container then picker.Container.Visible = isVisible end
+
+            -- 3. หมัดเด็ด: ค้นหา Object UI ใน Table โดยตรงแล้วสั่งซ่อน
+            if type(picker) == "table" then
+                for _, v in pairs(picker) do
+                    -- เช็คว่าชิ้นส่วนนี้เป็น UI ของเกมหรือไม่ ถ้าใช่ สั่งซ่อนเลย
+                    if typeof(v) == "Instance" and v:IsA("GuiObject") then
+                        v.Visible = isVisible
+                    end
+                end
             end
         end)
     end
