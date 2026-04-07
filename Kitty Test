@@ -63,7 +63,6 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
-
 local LocalPlayer = game.Players.LocalPlayer
 local Visual = Tabs.Visual
 
@@ -86,38 +85,6 @@ local TrapColor = Visual:AddColorpicker("TrapColor", {Title = "Trap Color", Defa
 
 local PuzzleEspToggle = Visual:AddToggle("PuzzleEsp", {Title = "Puzzle ESP", Default = false})
 local PuzzleColor = Visual:AddColorpicker("PuzzleColor", {Title = "Puzzle Color", Default = Color3.fromRGB(0, 200, 255)})
-
--- 🔥 ปุ่ม Hide Color Settings
-local HideColorToggle = Visual:AddToggle("HideColorToggle", {Title = "Hide Color Settings", Default = false})
-
-HideColorToggle:OnChanged(function()
-    local isVisible = not HideColorToggle.Value -- ถ้าเปิดปุ่ม Hide (true) = บังคับซ่อน (false)
-    
-    local allColorPickers = {BotColor, PlayerColor, SlotColor, ItemColor, TrapColor, PuzzleColor}
-    
-    for _, picker in ipairs(allColorPickers) do
-        pcall(function()
-            -- 1. ลองใช้คำสั่งซ่อนมาตรฐานของ Lib (ถ้ามี)
-            if not isVisible and type(picker.Hide) == "function" then picker:Hide() end
-            if isVisible and type(picker.Show) == "function" then picker:Show() end
-
-            -- 2. ดักจับตัวแปร GUI (ครอบคลุม Fluent หลายๆ เวอร์ชัน)
-            if picker.Frame then picker.Frame.Visible = isVisible end
-            if picker.Instance then picker.Instance.Visible = isVisible end
-            if picker.Container then picker.Container.Visible = isVisible end
-
-            -- 3. หมัดเด็ด: ค้นหา Object UI ใน Table โดยตรงแล้วสั่งซ่อน
-            if type(picker) == "table" then
-                for _, v in pairs(picker) do
-                    -- เช็คว่าชิ้นส่วนนี้เป็น UI ของเกมหรือไม่ ถ้าใช่ สั่งซ่อนเลย
-                    if typeof(v) == "Instance" and v:IsA("GuiObject") then
-                        v.Visible = isVisible
-                    end
-                end
-            end
-        end)
-    end
-end)
 
 -- ==========================================
 -- [[ 2. ESP Settings (ตั้งค่าการแสดงผล) ]]
@@ -223,16 +190,8 @@ local function CreateESP(target, color, espName, displayText)
             -- 🟦 3. Box ESP
             local boxBg = root:FindFirstChild(espName .. "_BoxBG") or Instance.new("BillboardGui")
             boxBg.Name = espName .. "_BoxBG"
-            
-            -- 🔥 แยกขนาดกล่อง: คน, แมว(บอท) และ สิ่งของ
-            if espName == "ESP_Player" then
-                boxBg.Size = UDim2.new(4, 0, 5.5, 0) -- ไซส์คน (ผอมสูง)
-            elseif espName == "ESP_Bot" then
-                boxBg.Size = UDim2.new(3, 0, 3, 0) -- ไซส์แมว (กว้างxสูง ปรับให้เล็กลง)
-            else
-                boxBg.Size = UDim2.new(2, 0, 2, 0) -- ไซส์สิ่งของ/ไอเทม (เล็กๆ)
-            end
-            
+            -- ปรับขนาดกล่องให้เหมาะกับ คน หรือ สิ่งของ
+            boxBg.Size = (espName == "ESP_Player") and UDim2.new(4, 0, 5.5, 0) or UDim2.new(2, 0, 2, 0)
             boxBg.AlwaysOnTop = true
             boxBg.ExtentsOffset = Vector3.new(0, 0, 0) -- ให้อยู่กลางลำตัว
             boxBg.Enabled = BoxToggle.Value
@@ -277,7 +236,7 @@ local function RemoveESP(espName)
     end)
 end
 
-PlayerEspToggle:OnChanged(function() if not PlayerEspToggle.Value then RemoveESP("ESP_Player") RemoveESP("ESP_Bot") end end)
+PlayerEspToggle:OnChanged(function() if not PlayerEspToggle.Value then RemoveESP("ESP_Player") end end)
 SlotEspToggle:OnChanged(function() if not SlotEspToggle.Value then pcall(function() for _, v in ipairs(workspace:GetDescendants()) do if v.Name == "ESP_Slot_BG" then v:Destroy() end end end) end end)
 ItemEspToggle:OnChanged(function() if not ItemEspToggle.Value then RemoveESP("ESP_Item") end end)
 TrapEspToggle:OnChanged(function() if not TrapEspToggle.Value then RemoveESP("ESP_Trap") end end)
@@ -300,7 +259,7 @@ task.spawn(function()
                         -- เลือกสีตามสถานะ (มีอาวุธ = แดง, ไม่มี = เขียว)
                         local espColor = isKiller and BotColor.Value or PlayerColor.Value
                         
-                        CreateESP(bot, espColor, "ESP_Bot", bot.Name)
+                        CreateESP(plr.Character, espColor, "ESP_Player", plr.Name)
                     end
                 end
 
