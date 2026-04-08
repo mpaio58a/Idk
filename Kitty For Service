@@ -1009,6 +1009,8 @@ AttackToggle:OnChanged(function()
     end
 end)
 
+Misc2:AddSection("Emotes")
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
@@ -1131,6 +1133,8 @@ local function playEmote()
         end
     end
 end
+
+Misc2:AddSection("Objects")
 
 -- =========================================================
 -- ส่วนนี้คือส่วนที่คุณต้องแก้ชื่อ Tab ให้ตรงกับของตุณ
