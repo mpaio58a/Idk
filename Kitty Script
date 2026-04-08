@@ -1318,7 +1318,7 @@ Tabs.Misc2:AddButton({
 -- ส่วนตั้งค่าข้อมูล Object และ Body Parts
 -- =========================================================
 
--- Map ชื่อไอเทมเข้ากับ UUID เพื่อให้ตอนเลือกใน Dropdown ดูง่ายขึ้น
+-- Map ชื่อไอเทมเข้ากับ UUID
 local ItemNameToUUID = {
     ["Kitty11 Burger"] = [[Kd`+`çoIlIlIIIllIIll333999ççççç4817859dfjnTA]],
     ["Mouse12 Cheese"] = [[sssssIlIlIlIIlllIIIIlIIIIAAAA9931117395dSSSlw]],
@@ -1376,16 +1376,22 @@ local uuidDropdownOptions = {"All"}
 for name, _ in pairs(ItemNameToUUID) do
     table.insert(uuidDropdownOptions, name)
 end
-table.sort(uuidDropdownOptions) -- เรียงตามตัวอักษรเพื่อหาของง่ายขึ้น
+table.sort(uuidDropdownOptions) -- เรียงตามตัวอักษร
 
--- ลิสต์ Body Parts 
-local bodyPartsList = {
+-- ลิสต์ Body Parts พื้นฐาน
+local baseBodyPartsList = {
     "Head", "HumanoidRootPart", "UpperTorso", "LowerTorso", "Neck",
     "LeftEar", "LeftEye", "LeftEyebrow", "RightEar", "RightEye", "RightEyebrow",
     "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand",
     "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "LeftTLeg", "RightUpperLeg", "RightLowerLeg", "RightFoot", "RightTLeg",
     "tailA", "tailB", "tailC", "tailD"
 }
+
+-- สร้างลิสต์สำหรับ Dropdown Body Parts (เอา "All" ไว้บนสุด)
+local bodyPartsDropdownOptions = {"All"}
+for _, part in ipairs(baseBodyPartsList) do
+    table.insert(bodyPartsDropdownOptions, part)
+end
 
 local selectedCustomUUIDs = {}
 local selectedCustomParts = {}
@@ -1403,13 +1409,13 @@ local UUIDSelect = Tabs.Misc2:AddDropdown("UUIDSelect", {
 })
 
 UUIDSelect:OnChanged(function(Value)
-    selectedCustomUUIDs = Value -- เก็บค่าที่ผู้ใช้ติ๊กถูกไว้ (จะเป็นตาราง { ["All"] = true, ["Mouse12 Cheese"] = true, ... })
+    selectedCustomUUIDs = Value 
 end)
 
 -- 2. Dropdown: เลือก Body Parts
 local PartSelect = Tabs.Misc2:AddDropdown("PartSelect", {
     Title = "Select Body Parts",
-    Values = bodyPartsList,
+    Values = bodyPartsDropdownOptions,
     Multi = true,
     Default = {},
 })
@@ -1429,13 +1435,12 @@ local function fireObjectAction(actionType)
     local uuidsToFire = {}
     local partsToFire = {}
 
-    -- เช็คว่าถ้าติ๊กช่อง "All" ให้ดึง UUID มาทั้งหมด
+    -- เช็ค UUID ว่าเลือก All ไหม
     if selectedCustomUUIDs["All"] then
         for _, uuid in pairs(ItemNameToUUID) do
             table.insert(uuidsToFire, uuid)
         end
     else
-        -- ถ้าไม่ได้ติ๊ก All ให้ดึงเฉพาะอันที่ติ๊ก
         for name, isSelected in pairs(selectedCustomUUIDs) do
             if isSelected and ItemNameToUUID[name] then
                 table.insert(uuidsToFire, ItemNameToUUID[name])
@@ -1443,32 +1448,48 @@ local function fireObjectAction(actionType)
         end
     end
 
-    -- ดึง Body Parts ที่เลือกมา
-    for partName, isSelected in pairs(selectedCustomParts) do
-        if isSelected then
-            table.insert(partsToFire, partName)
+    -- เช็ค Body Parts ว่าเลือก All ไหม
+    if selectedCustomParts["All"] then
+        for _, part in ipairs(baseBodyPartsList) do
+            table.insert(partsToFire, part)
+        end
+    else
+        for partName, isSelected in pairs(selectedCustomParts) do
+            if isSelected and partName ~= "All" then
+                table.insert(partsToFire, partName)
+            end
         end
     end
 
-    -- ป้องกันการยิง Event ถ้าไม่ได้เลือกอะไรเลย
     if #uuidsToFire == 0 or #partsToFire == 0 then
-        warn("Please select at least one Object and one Body Part!")
+        -- แจ้งเตือนแบบ Fluent ถ้าลืมเลือก
+        Fluent:Notify({
+            Title = "Warning",
+            Content = "select body part first",
+            Duration = 3
+        })
         return
     end
 
-    -- ลูปยิง Remote ทะลวงตามของและส่วนร่างกายที่เลือก
+    local count = 0
     for _, uuid in ipairs(uuidsToFire) do
         for _, part in ipairs(partsToFire) do
-            -- actionType: 0 = Add, 1 = Remove
             modelAnimRemote:FireServer(actionType, uuid, part, char)
+            count = count + 1
         end
     end
+
+    local actionName = actionType == 0 and "Added" or "Removed"
+    Fluent:Notify({
+        Title = "Success",
+        Content = actionName .. " " .. count .. " objects!",
+        Duration = 3
+    })
 end
 
 -- 3. ปุ่ม: Add Object (ยิงเลข 0)
 Tabs.Misc2:AddButton({
     Title = "Add Object",
-    Description = "ใส่ของที่เลือกลงในส่วนร่างกาย (Action 0)",
     Callback = function()
         fireObjectAction(0)
     end
@@ -1477,7 +1498,6 @@ Tabs.Misc2:AddButton({
 -- 4. ปุ่ม: Remove Object (ยิงเลข 1)
 Tabs.Misc2:AddButton({
     Title = "Remove Object",
-    Description = "ถอดของที่เลือกออกจากส่วนร่างกาย (Action 1)",
     Callback = function()
         fireObjectAction(1)
     end
