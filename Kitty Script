@@ -873,6 +873,148 @@ AntiTrapToggle:OnChanged(function()
     end
     end)
 
+--// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
+Tabs.Misc2:AddButton({ 
+    Title = "Fling Kitty Bot (Walk Only)",
+    Description = "Don't Get Fling Try Again but Don't Spam",
+    Callback = function()
+        local Player = game:GetService("Players").LocalPlayer
+        local Character = Player.Character
+        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+        local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
+
+        -- 🔍 ค้นหา BOT
+        local Bot = workspace:FindFirstChild("BOT") 
+        if not (Bot and Bot:IsA("Model")) then
+            -- วนลูปหาถ้าไม่เจอหน้าแรก
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "BOT" and v:IsA("Model") then 
+                    Bot = v 
+                    break 
+                end
+            end
+        end
+
+        if not Bot or not Root or not Hum then
+            -- 💬 แจ้งเตือนเฉพาะตอนหาบอทไม่เจอ
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Error",
+                Text = "Not Found Bot",
+                Duration = 3
+            })
+            return 
+        end
+
+        -- 🎯 เตรียมหาชิ้นส่วนของ BOT
+        local BotHum = Bot:FindFirstChildOfClass("Humanoid")
+        local LowerTorso = Bot:FindFirstChild("LowerTorso")
+        local UpperTorso = Bot:FindFirstChild("UpperTorso")
+        local FallbackPart = Bot:FindFirstChild("HumanoidRootPart")
+
+        task.spawn(function()
+            local OldPos = Root.CFrame
+            local OldFPDH = workspace.FallenPartsDestroyHeight
+
+            workspace.FallenPartsDestroyHeight = -50000 
+
+            -- ✨ เปลี่ยนมุมกล้องไปดู BOT
+            if BotHum then
+                workspace.CurrentCamera.CameraSubject = BotHum
+            elseif LowerTorso then
+                workspace.CurrentCamera.CameraSubject = LowerTorso
+            end
+
+            -- 🌀 ปรับฟิสิกส์
+            Hum.PlatformStand = true
+            local BV = Instance.new("BodyVelocity")
+            BV.Parent = Root
+            BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            BV.Velocity = Vector3.new(0, 0, 0) 
+
+            local StartTime = tick()
+            local Connection
+            local HasFlung = false
+
+            Connection = game:GetService("RunService").Heartbeat:Connect(function()
+                -- ถ้าเวลาเกิน 3 วิ หรือ BOT หายไปแล้ว
+                if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent or HasFlung then
+                    if Connection then Connection:Disconnect() end
+                    return
+                end
+
+                -- 🎯 เล็งเป้าสลับไปมาระหว่าง LowerTorso และ UpperTorso
+                local targetList = {}
+                if LowerTorso then table.insert(targetList, LowerTorso) end
+                if UpperTorso then table.insert(targetList, UpperTorso) end
+
+                local TargetPart = nil
+                if #targetList > 0 then
+                    TargetPart = targetList[math.random(1, #targetList)]
+                else
+                    TargetPart = FallbackPart 
+                end
+
+                if not TargetPart then return end
+
+                -- [[ 🔥 ANTI-VOID LOGIC: เช็คว่า BOT ปลิวหรือยัง ]]
+                if TargetPart.AssemblyLinearVelocity.Magnitude > 200 then
+                    HasFlung = true
+                    return
+                end
+
+                -- Noclip 100%
+                for _, part in pairs(Character:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+
+                local ChaosRot = CFrame.Angles(
+                    math.rad(math.random(-36000, 36000)), 
+                    math.rad(math.random(-36000, 36000)), 
+                    math.rad(math.random(-36000, 36000))
+                )
+
+                local FrontOffset = CFrame.new(
+                    math.random(-5, 5) / 10,  
+                    math.random(-5, 5) / 10,  
+                    5                        
+                )
+
+                -- วาร์ปดักหน้าชิ้นส่วนที่เล็งไว้
+                Root.CFrame = TargetPart.CFrame * FrontOffset * ChaosRot
+
+                -- ยัดแรงฟิสิกส์ระดับสูงสุด
+                Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
+                Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
+            end)
+
+            task.wait(3)
+
+            -- 🧹 Cleanup ล้างค่าทั้งหมด
+            if Connection then Connection:Disconnect() end
+            if BV then BV:Destroy() end
+            Hum.PlatformStand = false
+
+            -- ✨ คืนมุมกล้องกลับมาที่เรา
+            workspace.CurrentCamera.CameraSubject = Hum
+            workspace.FallenPartsDestroyHeight = OldFPDH
+
+            -- วาร์ปกลับมาที่เดิมตอนก่อนกดปุ่ม
+            Root.CFrame = OldPos
+            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+
+            -- 🔄 Rejoin
+            local RS = game:GetService("ReplicatedStorage")
+            local Ev = RS:FindFirstChild("Events")
+            if Ev then
+                if Ev:FindFirstChild("Leave") then Ev.Leave:FireServer() end
+                task.wait(0.1)
+                if Ev:FindFirstChild("Join") then Ev.Join:FireServer() end
+            end
+        end)
+    end
+})
+
 -- Anti Logic
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -1172,147 +1314,6 @@ Tabs.Misc2:AddButton({
     end
 })
 
---// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
-Tabs.Misc2:AddButton({ 
-    Title = "Fling Kitty Bot",
-    Description = "Don't Get Fling Try Again but Don't Spam",
-    Callback = function()
-        local Player = game:GetService("Players").LocalPlayer
-        local Character = Player.Character
-        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-        local Hum = Character and Character:FindFirstChildOfClass("Humanoid")
-
-        -- 🔍 ค้นหา BOT
-        local Bot = workspace:FindFirstChild("BOT") 
-        if not (Bot and Bot:IsA("Model")) then
-            -- วนลูปหาถ้าไม่เจอหน้าแรก
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "BOT" and v:IsA("Model") then 
-                    Bot = v 
-                    break 
-                end
-            end
-        end
-
-        if not Bot or not Root or not Hum then
-            -- 💬 แจ้งเตือนเฉพาะตอนหาบอทไม่เจอ
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "Error",
-                Text = "Not Found Bot",
-                Duration = 3
-            })
-            return 
-        end
-
-        -- 🎯 เตรียมหาชิ้นส่วนของ BOT
-        local BotHum = Bot:FindFirstChildOfClass("Humanoid")
-        local LowerTorso = Bot:FindFirstChild("LowerTorso")
-        local UpperTorso = Bot:FindFirstChild("UpperTorso")
-        local FallbackPart = Bot:FindFirstChild("HumanoidRootPart")
-
-        task.spawn(function()
-            local OldPos = Root.CFrame
-            local OldFPDH = workspace.FallenPartsDestroyHeight
-
-            workspace.FallenPartsDestroyHeight = -50000 
-
-            -- ✨ เปลี่ยนมุมกล้องไปดู BOT
-            if BotHum then
-                workspace.CurrentCamera.CameraSubject = BotHum
-            elseif LowerTorso then
-                workspace.CurrentCamera.CameraSubject = LowerTorso
-            end
-
-            -- 🌀 ปรับฟิสิกส์
-            Hum.PlatformStand = true
-            local BV = Instance.new("BodyVelocity")
-            BV.Parent = Root
-            BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            BV.Velocity = Vector3.new(0, 0, 0) 
-
-            local StartTime = tick()
-            local Connection
-            local HasFlung = false
-
-            Connection = game:GetService("RunService").Heartbeat:Connect(function()
-                -- ถ้าเวลาเกิน 3 วิ หรือ BOT หายไปแล้ว
-                if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent or HasFlung then
-                    if Connection then Connection:Disconnect() end
-                    return
-                end
-
-                -- 🎯 เล็งเป้าสลับไปมาระหว่าง LowerTorso และ UpperTorso
-                local targetList = {}
-                if LowerTorso then table.insert(targetList, LowerTorso) end
-                if UpperTorso then table.insert(targetList, UpperTorso) end
-
-                local TargetPart = nil
-                if #targetList > 0 then
-                    TargetPart = targetList[math.random(1, #targetList)]
-                else
-                    TargetPart = FallbackPart 
-                end
-
-                if not TargetPart then return end
-
-                -- [[ 🔥 ANTI-VOID LOGIC: เช็คว่า BOT ปลิวหรือยัง ]]
-                if TargetPart.AssemblyLinearVelocity.Magnitude > 200 then
-                    HasFlung = true
-                    return
-                end
-
-                -- Noclip 100%
-                for _, part in pairs(Character:GetDescendants()) do
-                    if part:IsA("BasePart") then part.CanCollide = false end
-                end
-
-                local ChaosRot = CFrame.Angles(
-                    math.rad(math.random(-36000, 36000)), 
-                    math.rad(math.random(-36000, 36000)), 
-                    math.rad(math.random(-36000, 36000))
-                )
-
-                local FrontOffset = CFrame.new(
-                    math.random(-5, 5) / 10,  
-                    math.random(-5, 5) / 10,  
-                    5                        
-                )
-
-                -- วาร์ปดักหน้าชิ้นส่วนที่เล็งไว้
-                Root.CFrame = TargetPart.CFrame * FrontOffset * ChaosRot
-
-                -- ยัดแรงฟิสิกส์ระดับสูงสุด
-                Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
-                Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
-            end)
-
-            task.wait(3)
-
-            -- 🧹 Cleanup ล้างค่าทั้งหมด
-            if Connection then Connection:Disconnect() end
-            if BV then BV:Destroy() end
-            Hum.PlatformStand = false
-
-            -- ✨ คืนมุมกล้องกลับมาที่เรา
-            workspace.CurrentCamera.CameraSubject = Hum
-            workspace.FallenPartsDestroyHeight = OldFPDH
-
-            -- วาร์ปกลับมาที่เดิมตอนก่อนกดปุ่ม
-            Root.CFrame = OldPos
-            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-
-            -- 🔄 Rejoin
-            local RS = game:GetService("ReplicatedStorage")
-            local Ev = RS:FindFirstChild("Events")
-            if Ev then
-                if Ev:FindFirstChild("Leave") then Ev.Leave:FireServer() end
-                task.wait(0.1)
-                if Ev:FindFirstChild("Join") then Ev.Join:FireServer() end
-            end
-        end)
-    end
-})
 
 -- =========================================================
 -- ส่วนตั้งค่าข้อมูล Object และ Body Parts
