@@ -1503,6 +1503,35 @@ Tabs.Misc2:AddButton({
     end
 })
 
+-- ปุ่ม: Remove ALL Objects (ล้างบาง)
+Tabs.Misc2:AddButton({
+    Title = "Remove ALL Objects",
+    Callback = function()
+        local char = Players.LocalPlayer.Character
+        if not char then return end
+
+        local _, modelAnimRemote = getRemotes()
+        if not modelAnimRemote then return end
+
+        local count = 0
+        -- ลูปเอา UUID ทั้งหมดที่มี
+        for _, uuid in pairs(ItemNameToUUID) do
+            -- ลูปเอา Body Parts ทั้งหมดที่มี
+            for _, part in ipairs(baseBodyPartsList) do
+                -- ยิง Action 1 (Remove)
+                modelAnimRemote:FireServer(1, uuid, part, char)
+                count = count + 1
+            end
+        end
+
+        Fluent:Notify({
+            Title = "Cleared!",
+            Content = "Removed all possible objects (" .. count .. " actions fired).",
+            Duration = 3
+        })
+    end
+})
+
 local Misc = Tabs.Misc2
 local ToolList = {}
 local ToolNames = {"Press Refresh"}
