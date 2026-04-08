@@ -3,7 +3,7 @@ local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/d
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Kitty Script 2026",
+    Title = "Kitty Script 2026 [Soon]",
     SubTitle = "by Askwjwjnsns",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
@@ -53,9 +53,8 @@ _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 
 -- [[ 1. จัดลำดับ Tab ใหม่ (เรียงตามนี้ Gamemode จะอยู่ใต้ Main ทันที) ]]
 local Tabs = {
-    Info = Window:AddTab({ Title = "Info", Icon = "info" }),
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }),
+    Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- ย้ายมาไว้ตรงนี้
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Misc2 = Window:AddTab({ Title = "Misc 2", Icon = "wand" }),
@@ -63,157 +62,6 @@ local Tabs = {
     Update = Window:AddTab({ Title = "Update", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
-
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-local MarketplaceService = game:GetService("MarketplaceService")
-local player = Players.LocalPlayer
-
--- ⚠️ ใส่ Webhook URL สำหรับรับ Feedback ตรงนี้
-local feedbackWebhookUrl = "https://discord.com/api/webhooks/1490745678475956225/lDJbavGd5vxstYCi58EIShmU3YLNmLSZVxvLd7gMqhh96XuI828bgXXHlORQqKJC7pzw"
-
--- ==========================================
--- ฟังก์ชันคำนวณเวลา USA (EST: UTC-5)
--- ==========================================
-local function getUSATime()
-    local utcNow = os.time()
-    local estTime = utcNow - (5 * 3600)
-    local dateTable = os.date("!*t", estTime)
-    
-    local ampm = dateTable.hour >= 12 and "PM" or "AM"
-    local displayHour = dateTable.hour % 12
-    if displayHour == 0 then displayHour = 12 end
-    
-    return string.format("%02d:%02d:%02d %s | %d/%d/%04d", 
-        displayHour, dateTable.min, dateTable.sec, ampm, 
-        dateTable.month, dateTable.day, dateTable.year)
-end
-
--- ดึงชื่อ Executor และชื่อเกม
-local identify = identifyexecutor or getexecutorname or function() return "Unknown Executor" end
-local executorName = identify()
-local playerNameDisplay = player.DisplayName .. " | @" .. player.Name
-
-local success, gameInfo = pcall(function()
-    return MarketplaceService:GetProductInfo(game.PlaceId)
-end)
-local gameName = success and gameInfo.Name or "Unknown Game"
-
--- ==========================================
--- ส่วนของ Info (เวลาเดินตลอดเวลา)
--- ==========================================
-local infoParagraph = Tabs.Info:AddParagraph({
-    Title = "User Information",
-    Content = "Name: " .. playerNameDisplay .. "\nExecutor: " .. executorName .. "\nTime: " .. getUSATime()
-})
-
-task.spawn(function()
-    while task.wait(1) do
-        pcall(function()
-            infoParagraph:SetDesc("Name: " .. playerNameDisplay .. "\nExecutor: " .. executorName .. "\nTime: " .. getUSATime())
-        end)
-    end
-end)
-
--- ==========================================
--- หมวดหมู่: Feedback
--- ==========================================
-Tabs.Info:AddSection("Feedback")
-
-Tabs.Info:AddParagraph({
-    Title = "Notice",
-    Content = "Found a bug or have an idea? Feel free to send feedback! Please keep it realistic."
-})
-
-local feedbackMessage = ""
-local FeedbackInput = Tabs.Info:AddInput("FeedbackInput", {
-    Title = "Feedback",
-    Default = "",
-    Placeholder = "Type Messages Here",
-    Numeric = false,
-    Finished = false,
-    Callback = function(Value)
-        feedbackMessage = Value
-    end
-})
-
-Tabs.Info:AddButton({
-    Title = "Submit",
-    Description = "Send your message to the developer",
-    Callback = function()
-        local finalMessage = feedbackMessage:match("^%s*(.-)%s*$")
-        
-        if finalMessage == "" then
-            Fluent:Notify({
-                Title = "Fail",
-                Content = "Pls Type Message -_-",
-                Duration = 3
-            })
-        else
-            Fluent:Notify({
-                Title = "Success",
-                Content = "Thanks For Feedback ;)",
-                Duration = 3
-            })
-            
-            -- สร้างข้อมูลแบบ Embed จัดเรียงใหม่ตามที่ต้องการ
-            local data = {
-                ["embeds"] = {{
-                    ["title"] = "📩 Feedback System", -- เปลี่ยนชื่อหัวข้อแล้ว
-                    ["color"] = math.random(0, 16777215),
-                    ["fields"] = {
-                        {
-                            ["name"] = "👤 Username",
-                            ["value"] = player.Name,
-                            ["inline"] = true
-                        },
-                        {
-                            ["name"] = "🆔 User ID",
-                            ["value"] = tostring(player.UserId),
-                            ["inline"] = true
-                        },
-                        {
-                            ["name"] = "🛠️ Executor",
-                            ["value"] = executorName,
-                            ["inline"] = true
-                        },
-                        {
-                            ["name"] = "🎮 Game",
-                            ["value"] = gameName,
-                            ["inline"] = false
-                        },
-                        {
-                            -- ย้าย Message มาไว้ด้านล่าง Game
-                            ["name"] = "📝 Message",
-                            ["value"] = finalMessage,
-                            ["inline"] = false
-                        }
-                    },
-                    ["footer"] = {
-                        ["text"] = "Feedback System • " .. getUSATime()
-                    }
-                }}
-            }
-            
-            local jsonData = HttpService:JSONEncode(data)
-            local requestFunc = request or http_request or (http and http.request) or syn.request
-            
-            if requestFunc then
-                pcall(function()
-                    requestFunc({
-                        Url = feedbackWebhookUrl,
-                        Method = "POST",
-                        Headers = {["Content-Type"] = "application/json"},
-                        Body = jsonData
-                    })
-                end)
-            end
-            
-            feedbackMessage = ""
-            FeedbackInput:SetValue("")
-        end
-    end
-})
 
 -- [[ 2. ฟังก์ชันช่วยรัน Remote (ลดความเสี่ยงสคริปต์หยุดทำงาน) ]]
 local function RunHNS(mode)
@@ -265,7 +113,7 @@ Players.PlayerRemoving:Connect(UpdatePlayerList)
 --// ⚙️ ฟังก์ชันจัดการฟิสิกส์และการสลับกล้อง (วนลูปใช้)
 local function DoPhysicsFling(TargetPlayer)
     if not TargetPlayer or not TargetPlayer.Character then return end
-    
+
     local TargetRoot = TargetPlayer.Character:FindFirstChild("HumanoidRootPart")
     local TargetHum = TargetPlayer.Character:FindFirstChildOfClass("Humanoid")
 
@@ -331,7 +179,7 @@ local function DoPhysicsFling(TargetPlayer)
     if Connection then Connection:Disconnect() end
     if BV then BV:Destroy() end
     Hum.PlatformStand = false
-    
+
     workspace.CurrentCamera.CameraSubject = Hum
     workspace.FallenPartsDestroyHeight = OldFPDH
 
@@ -691,7 +539,7 @@ end)
 task.spawn(function()
     local function GetSlotText(entity)
         local slotsFolder = entity:FindFirstChild("Slots", true) or entity:FindFirstChild("slots", true)
-        
+
         if not slotsFolder then
             local plr = game.Players:GetPlayerFromCharacter(entity)
             if plr then slotsFolder = plr:FindFirstChild("Slots", true) or plr:FindFirstChild("slots", true) end
@@ -712,7 +560,7 @@ task.spawn(function()
                     elseif rawValue ~= nil then
                         val = tostring(rawValue)
                     end
-                    
+
                     if val == "" or val == "nil" or val:match("^%s*$") then val = "None" end
                     table.insert(slotsData, "Slot " .. i .. " : " .. val)
                 end
@@ -739,7 +587,7 @@ task.spawn(function()
 
     local function UpdateSlotESP(target, text)
         if not target or not target.Parent then return end
-        
+
         local root = target:FindFirstChild("HumanoidRootPart") or target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")
         if not root then return end
 
@@ -747,10 +595,10 @@ task.spawn(function()
         bg.Name = "ESP_Slot_BG"
         bg.Size = UDim2.new(0, 300, 0, 70) 
         bg.AlwaysOnTop = true
-        
+
         bg.ExtentsOffsetWorldSpace = Vector3.new(0, -4.5, 0)
         bg.StudsOffset = Vector3.new(0, 0, 0) 
-        
+
         local txt = bg:FindFirstChild("NameLabel") or Instance.new("TextLabel")
         txt.Name = "NameLabel"
         txt.Size = UDim2.new(1, 0, 1, 0)
@@ -761,10 +609,10 @@ task.spawn(function()
         txt.TextSize = 14
         txt.TextWrapped = true
         txt.TextStrokeTransparency = 0.6
-        
+
         txt.AnchorPoint = Vector2.new(0.5, 0)
         txt.Position = UDim2.new(0.5, 0, 0, 0)
-        
+
         txt.Parent = bg
         bg.Parent = root
     end
@@ -776,7 +624,7 @@ task.spawn(function()
                 for _, plr in ipairs(game.Players:GetPlayers()) do
                     if plr.Character and plr ~= game.Players.LocalPlayer then
                         local char = plr.Character
-                        
+
                         -- 🔥 เงื่อนไขใหม่: เช็คว่าในตัวมี Weapon ไหม
                         if char:FindFirstChild("Weapon", true) then
                             -- ถ้าเป็นฆาตกร (มี Weapon) ให้ลบป้ายสล็อตทิ้งเลย
@@ -800,7 +648,7 @@ task.spawn(function()
                 if playersFolder then
                     for _, bot in ipairs(playersFolder:GetChildren()) do
                         if bot:IsA("Model") and bot ~= game.Players.LocalPlayer.Character then
-                            
+
                             -- 🔥 เงื่อนไขใหม่: เช็คบอทว่ามี Weapon ไหม
                             if bot:FindFirstChild("Weapon", true) then
                                 local root = bot:FindFirstChild("HumanoidRootPart") or bot.PrimaryPart or bot:FindFirstChildWhichIsA("BasePart")
@@ -814,7 +662,7 @@ task.spawn(function()
                                     if root and root:FindFirstChild("ESP_Slot_BG") then root.ESP_Slot_BG:Destroy() end
                                 end
                             end
-                            
+
                         end
                     end
                 end
@@ -1258,7 +1106,7 @@ local function stopEmote()
         currentTrack:Stop() 
         currentTrack = nil 
     end
-    
+
     local _, modelAnimRemote = getRemotes()
     if activeObject and char and modelAnimRemote then
         modelAnimRemote:FireServer(1, activeObject.uuid, activeObject.part, char)
@@ -1268,23 +1116,23 @@ end
 
 local function playEmote()
     stopEmote()
-    
+
     local emoteName = selectedType .. "Emote" .. selectedNum
     local char = Players.LocalPlayer.Character
     if not char then return end
-    
+
     local playEmoteRemote, modelAnimRemote = getRemotes()
-    
+
     if playEmoteRemote then
         playEmoteRemote:FireServer(emoteName)
     end
-    
+
     local objData = EmoteObjects[emoteName]
     if objData and modelAnimRemote then
         modelAnimRemote:FireServer(0, objData.uuid, objData.part, char)
         activeObject = objData 
     end
-    
+
     local anim = nil
     for _, v in pairs(game:GetDescendants()) do
         if v.Name == emoteName and v:IsA("Animation") then 
@@ -1292,7 +1140,7 @@ local function playEmote()
             break 
         end
     end
-    
+
     if anim then
         local hum = char:FindFirstChildOfClass("Humanoid")
         if hum then
@@ -1346,7 +1194,7 @@ Tabs.Misc2:AddButton({
 --// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot",
-    Description = "Auto-adjust: 0 if still (Ignores Idle) & Swap Upper/Lower Torso",
+    Description = "Don't Get Fling Try Again but Don't Spam",
     Callback = function()
         local Player = game:GetService("Players").LocalPlayer
         local Character = Player.Character
@@ -1356,6 +1204,7 @@ Tabs.Misc2:AddButton({
         -- 🔍 ค้นหา BOT
         local Bot = workspace:FindFirstChild("BOT") 
         if not (Bot and Bot:IsA("Model")) then
+            -- วนลูปหาถ้าไม่เจอหน้าแรก
             for _, v in pairs(workspace:GetDescendants()) do
                 if v.Name == "BOT" and v:IsA("Model") then 
                     Bot = v 
@@ -1365,6 +1214,7 @@ Tabs.Misc2:AddButton({
         end
 
         if not Bot or not Root or not Hum then
+            -- 💬 แจ้งเตือนเฉพาะตอนหาบอทไม่เจอ
             game:GetService("StarterGui"):SetCore("SendNotification", {
                 Title = "Error",
                 Text = "Not Found Bot",
@@ -1373,6 +1223,7 @@ Tabs.Misc2:AddButton({
             return 
         end
 
+        -- 🎯 เตรียมหาชิ้นส่วนของ BOT
         local BotHum = Bot:FindFirstChildOfClass("Humanoid")
         local LowerTorso = Bot:FindFirstChild("LowerTorso")
         local UpperTorso = Bot:FindFirstChild("UpperTorso")
@@ -1381,14 +1232,17 @@ Tabs.Misc2:AddButton({
         task.spawn(function()
             local OldPos = Root.CFrame
             local OldFPDH = workspace.FallenPartsDestroyHeight
+
             workspace.FallenPartsDestroyHeight = -50000 
 
+            -- ✨ เปลี่ยนมุมกล้องไปดู BOT
             if BotHum then
                 workspace.CurrentCamera.CameraSubject = BotHum
             elseif LowerTorso then
                 workspace.CurrentCamera.CameraSubject = LowerTorso
             end
 
+            -- 🌀 ปรับฟิสิกส์
             Hum.PlatformStand = true
             local BV = Instance.new("BodyVelocity")
             BV.Parent = Root
@@ -1398,45 +1252,35 @@ Tabs.Misc2:AddButton({
             local StartTime = tick()
             local Connection
             local HasFlung = false
-            
-            -- [[ ตัวแปรสำหรับเช็คการขยับของบอท ]]
-            local lastBotPos = FallbackPart and FallbackPart.Position or Vector3.new(0,0,0)
-            local stillTimer = 0
 
-            Connection = game:GetService("RunService").Heartbeat:Connect(function(deltaTime)
+            Connection = game:GetService("RunService").Heartbeat:Connect(function()
+                -- ถ้าเวลาเกิน 3 วิ หรือ BOT หายไปแล้ว
                 if tick() - StartTime > 3 or not Bot.Parent or not Character.Parent or HasFlung then
                     if Connection then Connection:Disconnect() end
                     return
                 end
 
-                -- 🎯 เตรียม List ชิ้นส่วนสำหรับสลับไปมา (UpperTorso / LowerTorso)
+                -- 🎯 เล็งเป้าสลับไปมาระหว่าง LowerTorso และ UpperTorso
                 local targetList = {}
                 if LowerTorso then table.insert(targetList, LowerTorso) end
                 if UpperTorso then table.insert(targetList, UpperTorso) end
 
-                -- สุ่มเป้าหมายรัวๆ ทุกเฟรม
-                local TargetPart = (#targetList > 0 and targetList[math.random(1, #targetList)]) or FallbackPart 
-                if not TargetPart then return end
-
-                -- [[ ตรวจสอบการนิ่งของ BOT (มองข้าม Idle Animation) ]]
-                if FallbackPart then
-                    local currentPos = FallbackPart.Position
-                    -- ตัดแกน Y (ความสูง) ออก เพื่อไม่ให้การหายใจ/โยกตัวของบอทมาขัดจังหวะการนับ
-                    local moveDistance = (Vector3.new(currentPos.X, 0, currentPos.Z) - Vector3.new(lastBotPos.X, 0, lastBotPos.Z)).Magnitude
-                    
-                    if moveDistance < 0.15 then  -- ถ้าระยะขยับน้อยมาก (Idle) ถือว่านิ่ง
-                        stillTimer = stillTimer + deltaTime
-                    else
-                        stillTimer = 0 
-                    end
-                    lastBotPos = currentPos
+                local TargetPart = nil
+                if #targetList > 0 then
+                    TargetPart = targetList[math.random(1, #targetList)]
+                else
+                    TargetPart = FallbackPart 
                 end
 
+                if not TargetPart then return end
+
+                -- [[ 🔥 ANTI-VOID LOGIC: เช็คว่า BOT ปลิวหรือยัง ]]
                 if TargetPart.AssemblyLinearVelocity.Magnitude > 200 then
                     HasFlung = true
                     return
                 end
 
+                -- Noclip 100%
                 for _, part in pairs(Character:GetDescendants()) do
                     if part:IsA("BasePart") then part.CanCollide = false end
                 end
@@ -1447,38 +1291,37 @@ Tabs.Misc2:AddButton({
                     math.rad(math.random(-36000, 36000))
                 )
 
-                -- [[ กำหนดระยะ Fling ]]
-                local FinalOffset
-                if stillTimer >= 1 then
-                    -- ถ้านิ่งเกิน 1 วินาที ให้วาร์ปกระแทกตรงกลางเป้าหมายเป๊ะๆ (0,0,0)
-                    FinalOffset = CFrame.new(0, 0, 0)
-                else
-                    -- ถ้าบอทกำลังเดินหนี ให้ใช้ระยะดักหน้า
-                    FinalOffset = CFrame.new(
-                        math.random(-5, 5) / 10,  
-                        math.random(-5, 5) / 10,  
-                        5                        
-                    )
-                end
+                local FrontOffset = CFrame.new(
+                    math.random(-5, 5) / 10,  
+                    math.random(-5, 5) / 10,  
+                    5                        
+                )
 
-                -- นำเป้าหมายที่สลับไปมา (Upper/Lower) มาคูณกับระยะที่ตั้งไว้
-                Root.CFrame = TargetPart.CFrame * FinalOffset * ChaosRot
+                -- วาร์ปดักหน้าชิ้นส่วนที่เล็งไว้
+                Root.CFrame = TargetPart.CFrame * FrontOffset * ChaosRot
+
+                -- ยัดแรงฟิสิกส์ระดับสูงสุด
                 Root.AssemblyLinearVelocity = Vector3.new(9e18, 9e18, 9e18)
                 Root.AssemblyAngularVelocity = Vector3.new(9e18, 9e18, 9e18)
             end)
 
             task.wait(3)
 
+            -- 🧹 Cleanup ล้างค่าทั้งหมด
             if Connection then Connection:Disconnect() end
             if BV then BV:Destroy() end
             Hum.PlatformStand = false
+
+            -- ✨ คืนมุมกล้องกลับมาที่เรา
             workspace.CurrentCamera.CameraSubject = Hum
             workspace.FallenPartsDestroyHeight = OldFPDH
 
+            -- วาร์ปกลับมาที่เดิมตอนก่อนกดปุ่ม
             Root.CFrame = OldPos
             Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
             Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 
+            -- 🔄 Rejoin
             local RS = game:GetService("ReplicatedStorage")
             local Ev = RS:FindFirstChild("Events")
             if Ev then
