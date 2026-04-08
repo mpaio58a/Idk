@@ -874,7 +874,7 @@ AntiTrapToggle:OnChanged(function()
     end)
 
 --// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
-Tabs.Misc2:AddButton({ 
+Tabs.Misc:AddButton({ 
     Title = "Fling Kitty Bot (Walk Only)",
     Description = "Don't Get Fling Try Again but Don't Spam",
     Callback = function()
@@ -1403,7 +1403,7 @@ local selectedCustomParts = {}
 
 -- 1. Dropdown: เลือก UUID Object
 local UUIDSelect = Tabs.Misc2:AddDropdown("UUIDSelect", {
-    Title = "Select Objects (UUID)",
+    Title = "Select Objects",
     Values = uuidDropdownOptions,
     Multi = true,
     Default = {},
