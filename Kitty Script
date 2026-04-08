@@ -1314,77 +1314,172 @@ Tabs.Misc2:AddButton({
     end
 })
 
-local EmoteScriptData = ""
+-- =========================================================
+-- ส่วนตั้งค่าข้อมูล Object และ Body Parts
+-- =========================================================
 
-Tabs.Misc2:AddInput("EmoteInputBox", {
-    Title = "Emote Script",
-    Default = "",
-    Placeholder = " i think you don't know what script?",
-    Numeric = false,
-    Finished = false,
-    Callback = function(Value)
-        EmoteScriptData = Value
+-- Map ชื่อไอเทมเข้ากับ UUID เพื่อให้ตอนเลือกใน Dropdown ดูง่ายขึ้น
+local ItemNameToUUID = {
+    ["Kitty11 Burger"] = [[Kd`+`çoIlIlIIIllIIll333999ççççç4817859dfjnTA]],
+    ["Mouse12 Cheese"] = [[sssssIlIlIlIIlllIIIIlIIIIAAAA9931117395dSSSlw]],
+    ["Kitty12 Pogo Stick"] = [[oisç4omdña´lIlIllIIIIIII``+`+40dkkKSo]],
+    ["Mouse13 Barbell"] = [[sssssIlIlIlIlllIIIIlIIIIAAAA9931117395dSSSlw]],
+    ["Kitty13 Coffee"] = [[34255899999ss541223okfkkllp`´´çllIIIllllIIIIII]],
+    ["Mouse14 No Kitty Sign"] = [[ttIIlllII2886393llIIllllllIIIIIIf´´ññ´ç]],
+    ["Kitty14 Spring Rider"] = [[sksññççççkskskkIIlllIllllIIIIIIIIl99928840ÇÑ]],
+    ["Mouse15 Future Skateboard"] = [[kkiIIIlIIIIllllIlIIl99388800382ddmJJDNj-ñ]],
+    ["Kitty17 Light"] = [[393929b98291c901141allllIIllLllllllIIIIIIIIIIIIIIIIIII]],
+    ["Mouse16 Mini Car"] = [[99482´lkñs783579lllIIIllllllllIIIIIIIIIIIII```´´´]],
+    ["Kitty18 Float Chair"] = [[a93990d390013251clllllllIllIIIIIIIIIlllllI_sillon]],
+    ["Mouse17 Checkmark"] = [[9b12s89llllIIlII3la190﷽_checkmark]],
+    ["Kitty19 Swing"] = [[byol++k8r810a4373´´`´ñÑÑ_columpio]],
+    ["Mouse18 Jetpack"] = [[93266o022b99a1ds0234olllIIIIIIllllIlOO]],
+    ["Kitty20 Checkmark"] = [[9b12s89llllIIlII3la190﷽_checkmark]],
+    ["Mouse19 Boxing"] = [[c9sslllIIIIlllIIi035990a191679c_cosadeboxear]],
+    ["Kitty21 Question Mark"] = [[𒈙⸻0﷽꧅_interrogacion]],
+    ["Mouse20 Trampoline"] = [[85t5969c98528ñ53242allllllIIIIIlIiilLLIiiiii]],
+    ["Kitty23 Tv"] = [[f7adc1f2-55de-4201-a6e9-bf8b6bd5661c_television]],
+    ["Mouse21 Question Mark"] = [[𒈙⸻0﷽꧅_interrogacion]],
+    ["Kitty27 Summer Object"] = [[91391ba9-7bbf-4009-9f8e-962a88901836_sombrilla]],
+    ["Mouse23 balloon"] = [[070ba8e1-e042-46e7-a387-44997666fa4f_globo]],
+    ["Kitty31 Chair"] = [[e0799b10-35d4-4a8a-a574-b49c56397946_sillagamer]],
+    ["Mouse24 Helicopter"] = [[95c33ceb-e20d-40dd-bec0-3ef987fef7a8_helicoptero]],
+    ["Kitty33 Treadmill"] = [[caminadora_27b3cf74-e4e3-4414-b14f-50427df3c96e]],
+    ["Mouse27 Rose"] = [[6927a58d-927f-43f0-883e-c52bf38a5d80_flor]],
+    ["Kitty34 Bed"] = [[cama_9f4ebfe0-b6a1-4ade-a636-76e2c417b98e]],
+    ["Mouse28 Bumper Car"] = [[09499468-4a59-4786-82d7-34e698449173_carritochocon]],
+    ["Kitty35 Broom"] = [[escobaKitty_d1b25fa5-1a98-43c9-8b7e-f54b096d7f47]],
+    ["Mouse34 Treadmill"] = [[mouseCaminadora_27b3cf74-e4e3-4414-b14f-50427df3c96e]],
+    ["Kitty36 Bicycle"] = [[bicicletaKitty_3eb38253-ba16-4489-96e4-285b1e2f35ac]],
+    ["Mouse35 Pumpkin Rider"] = [[99482´lkñs783579lllIIIllllllllIIIIIIIIIIIII```´´´_calabaza]],
+    ["Kitty37 Saxophone"] = [[saxophoneKitty_e1a0394b-c8d2-4817-9a01-37b6982535fd]],
+    ["Mouse36 Broom"] = [[escobaMouse_22152a92-489e-49a8-bf7e-215411654bee]],
+    ["Kitty38 Rose"] = [[florKitty_c2c3159d-213a-426e-ba5e-c79dd507a0ee]],
+    ["Mouse37 Bicycle"] = [[bicicletaMouse_0f256a27-1209-4055-9afc-317c32d481b2]],
+    ["Kitty39 Basketball"] = [[basket_6ea167e0-f018-4373-9b70-20cd46a6349b]],
+    ["Mouse38 Cheese Sign"] = [[cartelQueso_fd245610-9e8a-40e2-b013-75ca8819f4b2]],
+    ["Kitty40 Fish"] = [[fish_9881ae13-5c06-4a3c-8b79-e7d52473e238]],
+    ["Mouse39 Saxophone"] = [[saxophone_1f44b9ff-41a5-40d7-bd84-c9c149de356f]],
+    ["Kitty41 Ball"] = [[football_f7d85b8c-8836-4fdf-8cfb-4fbda9cb535e]],
+    ["Mouse40 Bed"] = [[camaMouse_342d1773-8cb5-48f0-92e5-86ab703a0b19]],
+    ["Kitty42 Deer Rider"] = [[reno_c78c29b7-d7f4-40e7-97be-5a34b6098c49]],
+    ["Mouse41 Airplane"] = [[avioneta_288a21c3-27ee-48ab-8ce4-3a4461e84b53]],
+    ["Kitty43 Barbell"] = [[pesasKitty_b7bbef8a-2a39-44d6-87c2-f6bf5c94efd2]],
+    ["Mouse42 Throne"] = [[trineo_38b6598c-02cb-46f1-aa4b-7db9b4a1b7fa]],
+    ["Mouse44 Summer Object"] = [[sombrillaMouse_2ff69fcd-b853-4155-bf5d-3005220ac28e]],
+    ["Mouse45 Chair"] = [[sillaMouse_d129f58f-2ef0-47cb-92fa-fc667bc0e30c]],
+    ["Mouse46 67"] = [[EMP12345678901234567890_67comun]]
+}
+
+-- สร้างลิสต์สำหรับ Dropdown UUID (เอา "All" ไว้บนสุด)
+local uuidDropdownOptions = {"All"}
+for name, _ in pairs(ItemNameToUUID) do
+    table.insert(uuidDropdownOptions, name)
+end
+table.sort(uuidDropdownOptions) -- เรียงตามตัวอักษรเพื่อหาของง่ายขึ้น
+
+-- ลิสต์ Body Parts 
+local bodyPartsList = {
+    "Head", "HumanoidRootPart", "UpperTorso", "LowerTorso", "Neck",
+    "LeftEar", "LeftEye", "LeftEyebrow", "RightEar", "RightEye", "RightEyebrow",
+    "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand",
+    "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "LeftTLeg", "RightUpperLeg", "RightLowerLeg", "RightFoot", "RightTLeg",
+    "tailA", "tailB", "tailC", "tailD"
+}
+
+local selectedCustomUUIDs = {}
+local selectedCustomParts = {}
+
+-- =========================================================
+-- ส่วนการสร้างเมนู UI (Fluent UI)
+-- =========================================================
+
+-- 1. Dropdown: เลือก UUID Object
+local UUIDSelect = Tabs.Misc2:AddDropdown("UUIDSelect", {
+    Title = "Select Objects (UUID)",
+    Values = uuidDropdownOptions,
+    Multi = true,
+    Default = {},
+})
+
+UUIDSelect:OnChanged(function(Value)
+    selectedCustomUUIDs = Value -- เก็บค่าที่ผู้ใช้ติ๊กถูกไว้ (จะเป็นตาราง { ["All"] = true, ["Mouse12 Cheese"] = true, ... })
+end)
+
+-- 2. Dropdown: เลือก Body Parts
+local PartSelect = Tabs.Misc2:AddDropdown("PartSelect", {
+    Title = "Select Body Parts",
+    Values = bodyPartsList,
+    Multi = true,
+    Default = {},
+})
+
+PartSelect:OnChanged(function(Value)
+    selectedCustomParts = Value
+end)
+
+-- ฟังก์ชันหลักสำหรับ Add/Remove
+local function fireObjectAction(actionType)
+    local char = Players.LocalPlayer.Character
+    if not char then return end
+
+    local _, modelAnimRemote = getRemotes()
+    if not modelAnimRemote then return end
+
+    local uuidsToFire = {}
+    local partsToFire = {}
+
+    -- เช็คว่าถ้าติ๊กช่อง "All" ให้ดึง UUID มาทั้งหมด
+    if selectedCustomUUIDs["All"] then
+        for _, uuid in pairs(ItemNameToUUID) do
+            table.insert(uuidsToFire, uuid)
+        end
+    else
+        -- ถ้าไม่ได้ติ๊ก All ให้ดึงเฉพาะอันที่ติ๊ก
+        for name, isSelected in pairs(selectedCustomUUIDs) do
+            if isSelected and ItemNameToUUID[name] then
+                table.insert(uuidsToFire, ItemNameToUUID[name])
+            end
+        end
+    end
+
+    -- ดึง Body Parts ที่เลือกมา
+    for partName, isSelected in pairs(selectedCustomParts) do
+        if isSelected then
+            table.insert(partsToFire, partName)
+        end
+    end
+
+    -- ป้องกันการยิง Event ถ้าไม่ได้เลือกอะไรเลย
+    if #uuidsToFire == 0 or #partsToFire == 0 then
+        warn("Please select at least one Object and one Body Part!")
+        return
+    end
+
+    -- ลูปยิง Remote ทะลวงตามของและส่วนร่างกายที่เลือก
+    for _, uuid in ipairs(uuidsToFire) do
+        for _, part in ipairs(partsToFire) do
+            -- actionType: 0 = Add, 1 = Remove
+            modelAnimRemote:FireServer(actionType, uuid, part, char)
+        end
+    end
+end
+
+-- 3. ปุ่ม: Add Object (ยิงเลข 0)
+Tabs.Misc2:AddButton({
+    Title = "Add Object",
+    Description = "ใส่ของที่เลือกลงในส่วนร่างกาย (Action 0)",
+    Callback = function()
+        fireObjectAction(0)
     end
 })
 
+-- 4. ปุ่ม: Remove Object (ยิงเลข 1)
 Tabs.Misc2:AddButton({
-    Title = "Run Emote",
+    Title = "Remove Object",
+    Description = "ถอดของที่เลือกออกจากส่วนร่างกาย (Action 1)",
     Callback = function()
-        task.spawn(function()
-            local Players = game:GetService("Players")
-            local ReplicatedStorage = game:GetService("ReplicatedStorage")
-            local Player = Players.LocalPlayer
-            local Character = Player.Character or Player.CharacterAdded:Wait()
-
-            if not Character then return end
-            if EmoteScriptData == "" then 
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Warning", 
-                    Text = "Please paste script first!", 
-                    Duration = 3
-                })
-                return 
-            end
-
-            pcall(function()
-                local events = ReplicatedStorage:WaitForChild("Events", 3)
-                if events then
-                    local modelAnim = events:WaitForChild("ModelAnimation", 3)
-                    if modelAnim then
-
-                        local executedCount = 0
-
-                        -- [[ ลูปหาชิ้นส่วนและส่ง "ชื่อ" ไปให้ Server ทีละชื่อ ]]
-                        for _, part in ipairs(Character:GetDescendants()) do
-                            -- กรองเอาเฉพาะ Part, MeshPart หรือ UnionOperation
-                            if part:IsA("BasePart") or part.ClassName == "UnionOperation" then
-
-                                local args = {
-                                    [1] = 0,
-                                    [2] = EmoteScriptData,
-                                    [3] = part.Name,   -- 🔥 หมัดเด็ด! ส่ง "ชื่อ (String)" ไปเหมือนในคลิปเป๊ะๆ
-                                    [4] = Character
-                                }
-
-                                -- ยิงข้อมูลเข้า Server
-                                modelAnim:FireServer(unpack(args))
-                                executedCount = executedCount + 1
-
-                                task.wait() -- ใส่หน่วงเวลานิดนึงกันเกมเตะเพราะส่งข้อมูลรัวไป
-                            end
-                        end
-
-                        -- แจ้งเตือนเมื่อยิงครบทุกชิ้น
-                        game:GetService("StarterGui"):SetCore("SendNotification", {
-                            Title = "Success", 
-                            Text = "Emote fired on " .. executedCount .. " parts!", 
-                            Duration = 3
-                        })
-
-                    end
-                end
-            end)
-        end)
+        fireObjectAction(1)
     end
 })
 
