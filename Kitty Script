@@ -1151,6 +1151,8 @@ AttackToggle:OnChanged(function()
     end
 end)
 
+local QuincySection = Tabs.Misc2:AddSection("Emotes")
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
@@ -1314,6 +1316,7 @@ Tabs.Misc2:AddButton({
     end
 })
 
+local QuincySection = Tabs.Misc2:AddSection("Objects")
 
 -- =========================================================
 -- ส่วนตั้งค่าข้อมูล Object และ Body Parts
