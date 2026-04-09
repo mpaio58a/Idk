@@ -1132,7 +1132,7 @@ local function playEmote()
     end
 end
 
-Misc2:AddSection("Objects")
+Tabs.Misc2:AddSection("Emotes")
 
 -- =========================================================
 -- ส่วนนี้คือส่วนที่คุณต้องแก้ชื่อ Tab ให้ตรงกับของตุณ
@@ -1255,6 +1255,8 @@ end
 
 local selectedCustomUUIDs = {}
 local selectedCustomParts = {}
+
+Tabs.Misc2:AddSection("Objects")
 
 -- =========================================================
 -- ส่วนการสร้างเมนู UI (Fluent UI)
