@@ -1323,30 +1323,16 @@ local function fireObjectAction(actionType)
         end
     end
 
+    -- ถ้าไม่ได้เลือกอะไรเลยให้หยุดการทำงาน
     if #uuidsToFire == 0 or #partsToFire == 0 then
-        -- แจ้งเตือนแบบ Fluent ถ้าลืมเลือก
-        Fluent:Notify({
-            Title = "Warning",
-            Content = "select body part first",
-            Duration = 3
-        })
         return
     end
 
-    local count = 0
     for _, uuid in ipairs(uuidsToFire) do
         for _, part in ipairs(partsToFire) do
             modelAnimRemote:FireServer(actionType, uuid, part, char)
-            count = count + 1
         end
     end
-
-    local actionName = actionType == 0 and "Added" or "Removed"
-    Fluent:Notify({
-        Title = "Success",
-        Content = actionName .. " " .. count .. " objects!",
-        Duration = 3
-    })
 end
 
 -- 3. ปุ่ม: Add Object (ยิงเลข 0)
@@ -1375,22 +1361,14 @@ Tabs.Misc2:AddButton({
         local _, modelAnimRemote = getRemotes()
         if not modelAnimRemote then return end
 
-        local count = 0
         -- ลูปเอา UUID ทั้งหมดที่มี
         for _, uuid in pairs(ItemNameToUUID) do
             -- ลูปเอา Body Parts ทั้งหมดที่มี
             for _, part in ipairs(baseBodyPartsList) do
                 -- ยิง Action 1 (Remove)
                 modelAnimRemote:FireServer(1, uuid, part, char)
-                count = count + 1
             end
         end
-
-        Fluent:Notify({
-            Title = "Cleared!",
-            Content = "Removed all possible objects (" .. count .. " actions fired).",
-            Duration = 3
-        })
     end
 })
 
