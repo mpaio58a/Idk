@@ -1394,6 +1394,8 @@ Tabs.Misc2:AddButton({
     end
 })
 
+Tabs.Misc2:AddSection("Others")
+
 --// 🔘 ปุ่ม Fling (วางในส่วนของ Tab Misc2)
 Tabs.Misc2:AddButton({ 
     Title = "Fling Kitty Bot (Walk Only)",
