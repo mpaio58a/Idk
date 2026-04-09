@@ -189,7 +189,7 @@ local function DoPhysicsFling(TargetPlayer)
 end
 
 --// 🔘 ปุ่ม Execute Fling 
-Tabs.Gamemode:AddButton({
+Game333mode:AddButton({
     Title = "Fling Target (Hide And Seek Only)",
     Callback = function()
         if not SelectedTarget then
