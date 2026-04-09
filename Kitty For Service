@@ -57,7 +57,7 @@ local Tabs = {
     Gamemode = Window:AddTab({ Title = "Gamemode", Icon = "map" }), -- ย้ายมาไว้ตรงนี้
     Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
-    Misc2 = Window:AddTab({ Title = "Misc 2", Icon = "wand" }),
+    Misc2 = Window:AddTab({ Title = "Misc2", Icon = "wand" }),
     Skins = Window:AddTab({ Title = "Skins Mouse", Icon = "mouse-pointer-2" }),
     Update = Window:AddTab({ Title = "Update", Icon = "info" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
@@ -1008,8 +1008,6 @@ AttackToggle:OnChanged(function()
         end
     end
 end)
-
-Misc2:AddSection("Emotes")
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
