@@ -333,8 +333,8 @@ local Visual = Tabs.Visual
 -- ==========================================
 local PlayerEspToggle = Visual:AddToggle("PlayerEsp", {Title = "Player & Kitty ESP", Default = false})
 -- เปลี่ยนจาก PlayerEspToggle:AddColorpicker เป็น Visual:AddColorpicker
-local BotColor = Visual:AddColorpicker("BotColor", {Title = "Bot Color", Default = Color3.fromRGB(255, 0, 0)})
-local PlayerColor = Visual:AddColorpicker("PlayerColor", {Title = "Player Color", Default = Color3.fromRGB(0, 255, 0)})
+local BotColor = Visual:AddColorpicker("BotColor", {Title = "Bot/Player Kitty Color", Default = Color3.fromRGB(255, 0, 0)})
+local PlayerColor = Visual:AddColorpicker("PlayerColor", {Title = "Player Mouse Color", Default = Color3.fromRGB(0, 255, 0)})
 
 local SlotEspToggle = Visual:AddToggle("SlotEsp", {Title = "Player Slot ESP", Default = false})
 local SlotColor = Visual:AddColorpicker("SlotColor", {Title = "Slot Color", Default = Color3.fromRGB(255, 255, 255)})
