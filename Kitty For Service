@@ -1611,7 +1611,7 @@ end
 do
 Tabs.Update:AddParagraph({ 
         Title = "Update Log v3.6 & 3.7 | 4/9/2026", 
-        Content = "--- Add Free Kitty&Mouse Emotes\n--- Add Set Objects\n--- Add Esp Settings" 
+        Content = "--- Add Free Kitty & Mouse Emotes (All Emotes Support Mouse & Kitty)\n--- Add Set Objects\n--- Add Esp Settings" 
     })
 
 Tabs.Update:AddParagraph({ 
