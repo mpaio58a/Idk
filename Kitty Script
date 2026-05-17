@@ -1591,6 +1591,7 @@ do
     -- ตารางข้อมูลใหม่: {ชื่อที่โชว์บนปุ่ม, คำอธิบาย (Official Name + Cheese), ID Pastebin}
     local SkinsData = {
         {"Great Hair Mouse", "Official Name: Mouse Manirdudes1234 | Cheese: x35000", "SW3R8f7s"},
+        {"Red Eye Kitty", "Official Name: Bad Kitty | Cheese: x0", "AvFDJzuh"},
         {"Red Eye Mouse", "Official Name: Bad Mouse | Cheese: x0", "WyaBLU8N"},
         {"Mouse Penguin", "Official Name: Mouse Penguin | Cheese: x25", "W9gzPLvT"},
         {"Cowboy Event Mouse (Special Sound)", "Official Name: Vaquero | Cheese: x500", "qf2gU6mU"},
