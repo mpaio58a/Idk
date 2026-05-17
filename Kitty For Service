@@ -1610,6 +1610,11 @@ end
 -- [[ 6. UPDATE TAB ]]
 do
 Tabs.Update:AddParagraph({ 
+        Title = "Update Log v3.6 & 3.7 | 4/9/2026", 
+        Content = "--- Add Free Kitty&Mouse Emotes\n--- Add Set Objects\n--- Add Esp Settings" 
+    })
+
+Tabs.Update:AddParagraph({ 
         Title = "Update Log v3.5 | 3/26/2026", 
         Content = "--- Add New Tab Misc2\n--- Add Toggle Esp (Player Slots, Trap, Puzzles)\n--- Add Execute Emote And More" 
     })
