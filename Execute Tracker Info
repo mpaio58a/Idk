@@ -1,75 +1,93 @@
--- บริการที่จำเป็น
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
 local MarketplaceService = game:GetService("MarketplaceService")
+
 local player = Players.LocalPlayer
-
--- ⚠️ 1. ใส่ Webhook URL ของห้อง #tracker ตรงนี้
-local webhookUrl = "https://discord.com/api/webhooks/1487722840525635615/RF499dIWyW8KZAdE9lkpOv4PzLjq4VzYocxX-PYvMEYQw0BqT_A2AWz9N4AUiFnRSyQb"
-
--- ⚠️ 2. ตั้งชื่อ Namespace ให้เป็นชื่อเฉพาะของคุณ (ภาษาอังกฤษ/ตัวเลข) เพื่อไม่ให้ยอดรวมไปปนกับคนอื่น
-local uniqueNamespace = "track_project_x_2026" 
+local webhookUrl = "https://discord.com/api/webhooks/1507838706835394603/RdJVYJojSjFkIBpfS9qcpnwsmRyd_ixYZTzGsBCRC10l08x6cTEqDcVqq1s-PLuCtEFD"
+local uniqueNamespace = "track_project_x_2026"
 local countKey = "total_executes"
 
--- ฟังก์ชัน Request สำหรับ Executor
-local requestFunc = request or http_request or (http and http.request) or syn.request
+local requestFunc = request or http_request or (http and http.request) or syn.request or (fluxus and fluxus.request) or (Krnl and Krnl.request)
 
--- ==========================================
--- ระบบดึงและอัปเดตยอดรันรวม (Global Count) จาก Counter API
--- ==========================================
+local function getDevice()
+    if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+        return GuiService:IsTenFootInterface() and "Console" or "Mobile"
+    elseif UserInputService.KeyboardEnabled then
+        return "Computer"
+    else
+        return "Unknown"
+    end
+end
+
+local function getOS()
+    local platform = UserInputService:GetPlatform()
+    if platform == Enum.Platform.IOS then
+        return "iOS"
+    elseif platform == Enum.Platform.Android then
+        return "Android"
+    elseif platform == Enum.Platform.Windows then
+        return "Windows"
+    elseif platform == Enum.Platform.OSX then
+        return "macOS"
+    end
+    return "Other"
+end
+
+local function getGameName()
+    local success, response = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet("https://games.roproxy.com/v1/games?placeIds=" .. game.PlaceId))
+    end)
+    if success and response and response.data and response.data[1] then
+        return response.data[1].name
+    end
+    local productSuccess, productInfo = pcall(function()
+        return MarketplaceService:GetProductInfo(game.PlaceId)
+    end)
+    return productSuccess and productInfo.Name or "Unknown Game"
+end
+
 local globalCount = "Error"
 if requestFunc then
     local apiSuccess, res = pcall(function()
         return requestFunc({
-            -- วิ่งไปที่ API เพื่อสั่งบวก 1 และดึงค่าล่าสุดกลับมา
             Url = "https://api.counterapi.dev/v1/" .. uniqueNamespace .. "/" .. countKey .. "/up",
             Method = "GET"
         })
     end)
-    
     if apiSuccess and res and res.Body then
         local decodeSuccess, decoded = pcall(function()
             return HttpService:JSONDecode(res.Body)
         end)
-        -- หากได้ตัวเลขกลับมา ให้นำมาใช้
         if decodeSuccess and decoded.count then
             globalCount = tostring(decoded.count)
         end
     end
 end
 
--- สุ่มสีแถบ Embed
 local randomColor = math.random(0, 16777215)
-
--- เช็คชื่อ Executor
 local identify = identifyexecutor or getexecutorname or function() return "Unknown Executor" end
 local executorName = identify()
 
--- ข้อมูลเซิร์ฟเวอร์
 local placeId = game.PlaceId
 local jobId = game.JobId
 local playerCount = #Players:GetPlayers()
 local maxPlayers = Players.MaxPlayers
+local gameName = getGameName()
+local deviceType = getDevice() .. " | " .. getOS()
 
--- ดึงชื่อแมพ
-local success, gameInfo = pcall(function()
-    return MarketplaceService:GetProductInfo(placeId)
-end)
-local gameName = success and gameInfo.Name or "Unknown Game"
+local tick3 = string.char(96):rep(3)
+local tick1 = string.char(96)
 
--- สร้างโค้ดสำหรับก๊อปปี้ไปรันเพื่อ Join ตาม
 local autoJoinScript = "Not in a public server"
 if jobId ~= "" then
-    autoJoinScript = "```lua\ngame:GetService('TeleportService'):TeleportToPlaceInstance(" .. tostring(placeId) .. ", '" .. jobId .. "', game:GetService('Players').LocalPlayer)\n```"
+    autoJoinScript = tick3 .. "lua\ngame:GetService('TeleportService'):TeleportToPlaceInstance(" .. tostring(placeId) .. ", '" .. jobId .. "', game:GetService('Players').LocalPlayer)\n" .. tick3
 end
 
--- ==========================================
--- ข้อมูลที่จะส่งไป Discord
--- ==========================================
 local data = {
     ["embeds"] = {{
         ["title"] = "🚀 Executor Tracker Notify! | " .. gameName,
-        -- แสดงยอดรวมที่ดึงมาจากออนไลน์
         ["description"] = "**📊 Execute Count: " .. globalCount .. "**",
         ["color"] = randomColor,
         ["fields"] = {
@@ -84,6 +102,11 @@ local data = {
                 ["inline"] = true
             },
             {
+                ["name"] = "📱 Device",
+                ["value"] = deviceType,
+                ["inline"] = false
+            },
+            {
                 ["name"] = "🛠️ Executor",
                 ["value"] = executorName,
                 ["inline"] = true
@@ -95,7 +118,7 @@ local data = {
             },
             {
                 ["name"] = "🎮 Game ID (JobId)",
-                ["value"] = jobId ~= "" and "`" .. jobId .. "`" or "Not in a server",
+                ["value"] = jobId ~= "" and tick1 .. jobId .. tick1 or "Not in a server",
                 ["inline"] = false
             },
             {
@@ -110,7 +133,6 @@ local data = {
     }}
 }
 
--- ส่งข้อมูลไป Discord
 if requestFunc then
     local jsonData = HttpService:JSONEncode(data)
     pcall(function()
