@@ -5,7 +5,7 @@ local GuiService = game:GetService("GuiService")
 local MarketplaceService = game:GetService("MarketplaceService")
 
 local player = Players.LocalPlayer
-local webhookUrl = "https://discord.com/api/webhooks/1507838706835394603/RdJVYJojSjFkIBpfS9qcpnwsmRyd_ixYZTzGsBCRC10l08x6cTEqDcVqq1s-PLuCtEFD"
+local webhookUrl = "https://discord.com/api/webhooks/1543303160813322281/5aXZe8iTIWd3B4dKzY1yOnoun7oWtAGssYyRvGgOodM6NZ76Cz8A-6vfBIT8pH5eZfsw"
 local uniqueNamespace = "track_project_x_2026"
 local countKey = "total_executes"
 
