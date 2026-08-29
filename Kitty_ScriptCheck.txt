@@ -1566,6 +1566,18 @@ Misc:AddButton({
     end
 })
 
+Tabs.Misc2:AddSection("Placeholder")
+
+Tabs.Misc2:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
 do
     -- ตารางข้อมูลใหม่: {ชื่อที่โชว์บนปุ่ม, คำอธิบาย (Official Name + Cheese), ID Pastebin}
