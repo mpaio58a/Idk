@@ -281,6 +281,58 @@ Tabs.Gamemode:AddButton({
     end)
 end
 
+Tabs.Gamemode:AddSection("Placeholder")
+
+Tabs.Gamemode:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Gamemode:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Gamemode:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Gamemode:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Gamemode:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
 -- [[ 1. MAIN TAB ]]
 do
     Tabs.Main:AddSlider("WalkSpeed", { Title = "WalkSpeed", Default = 16, Min = 16, Max = 100, Rounding = 0, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end) end })
@@ -772,6 +824,58 @@ task.spawn(function()
     end
 end)
 
+Tabs.Visual:AddSection("Placeholder")
+
+Tabs.Visual:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Visual:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Visual:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Visual:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Visual:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
 -- [[ 3. MISC TAB (With Hide/Restore Anti Trap) ]]
 local attackGui = nil
     Tabs.Misc:AddButton({ Title = "Revive", Callback = function() 
@@ -1008,6 +1112,58 @@ AttackToggle:OnChanged(function()
         end
     end
 end)
+
+Tabs.Misc:AddSection("Placeholder")
+
+Tabs.Misc:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Misc:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Misc:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Misc:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Misc:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -1565,6 +1721,58 @@ Misc:AddButton({
         end
     end
 })
+
+Tabs.Misc2:AddSection("Placeholder")
+
+Tabs.Misc2:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Misc2:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Misc2:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Misc2:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
+
+Tabs.Misc2:AddButton({ Title = "Placeholder",
+Callback = function() 
+               game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "PlaceHolder",
+                Text = "PlaceHolder",
+                Duration = 3
+            })
+            return 
+    end })
 
 -- [[ 4. SKINS TAB (Rename & Ordered by Icon) ]]
 do
