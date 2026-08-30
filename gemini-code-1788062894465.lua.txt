@@ -231,32 +231,67 @@ do
 end
 
 -- [[ VISUAL TAB ]]
-local LocalPlayer = game.Players.LocalPlayer
-local VisualBox = Tabs.Visual:AddLeftGroupbox("ESP")
-local ESPSettingsBox = Tabs.Visual:AddRightGroupbox("ESP Settings")
 
-VisualBox:AddToggle("PlayerEsp", { Text = "Player & Kitty ESP", Default = false })
-VisualBox:AddLabel("Bot/Player Kitty Color"):AddColorPicker("BotColor", { Default = Color3.fromRGB(255, 0, 0) })
-VisualBox:AddLabel("Player Mouse Color"):AddColorPicker("PlayerColor", { Default = Color3.fromRGB(0, 255, 0) })
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
 
-VisualBox:AddToggle("SlotEsp", { Text = "Player Slot ESP", Default = false })
-VisualBox:AddLabel("Slot Color"):AddColorPicker("SlotColor", { Default = Color3.fromRGB(255, 255, 255) })
+local VisualTab = Window:Tabs("Visual")
+local MainESPGroup = VisualTab:AddLeftGroupbox("Main ESP")
+local ESPSettingsGroup = VisualTab:AddRightGroupbox("ESP Settings")
 
-VisualBox:AddToggle("ItemEsp", { Text = "Items ESP", Default = false })
-VisualBox:AddLabel("Item Color"):AddColorPicker("ItemColor", { Default = Color3.fromRGB(255, 255, 255) })
+ESPSettingsGroup:AddToggle('HighlightEsp', { Text = 'Highlight ESP', Default = true })
+ESPSettingsGroup:AddToggle('BoxEsp', { Text = 'Box ESP', Default = false })
+ESPSettingsGroup:AddToggle('NameEsp', { Text = 'Name ESP', Default = true })
+ESPSettingsGroup:AddToggle('DistanceEsp', { Text = 'Distance ESP', Default = false })
 
-VisualBox:AddToggle("TrapEsp", { Text = "Trap ESP", Default = false })
-VisualBox:AddLabel("Trap Color"):AddColorPicker("TrapColor", { Default = Color3.fromRGB(255, 255, 0) })
+MainESPGroup:AddToggle('PlayerEsp', {
+    Text = 'Player & Kitty ESP',
+    Default = false
+}):AddColorPicker('PlayerColor', {
+    Default = Color3.fromRGB(0, 255, 0),
+    Title = 'Player Color'
+}):AddColorPicker('BotColor', {
+    Default = Color3.fromRGB(255, 0, 0),
+    Title = 'Bot Color'
+})
 
-VisualBox:AddToggle("PuzzleEsp", { Text = "Puzzle ESP", Default = false })
-VisualBox:AddLabel("Puzzle Color"):AddColorPicker("PuzzleColor", { Default = Color3.fromRGB(0, 200, 255) })
+MainESPGroup:AddToggle('SlotEsp', {
+    Text = 'Player Slot ESP',
+    Default = false
+}):AddColorPicker('SlotColor', {
+    Default = Color3.fromRGB(255, 255, 255),
+    Title = 'Slot Color'
+})
 
-ESPSettingsBox:AddToggle("HighlightEsp", { Text = "Highlight ESP", Default = true })
-ESPSettingsBox:AddToggle("BoxEsp", { Text = "Box ESP", Default = false })
-ESPSettingsBox:AddToggle("NameEsp", { Text = "Name ESP", Default = true })
-ESPSettingsBox:AddToggle("DistanceEsp", { Text = "Distance ESP", Default = false })
+MainESPGroup:AddToggle('ItemEsp', {
+    Text = 'Items ESP',
+    Default = false
+}):AddColorPicker('ItemColor', {
+    Default = Color3.fromRGB(255, 255, 255),
+    Title = 'Item Color'
+})
+
+MainESPGroup:AddToggle('TrapEsp', {
+    Text = 'Trap ESP',
+    Default = false
+}):AddColorPicker('TrapColor', {
+    Default = Color3.fromRGB(255, 255, 0),
+    Title = 'Trap Color'
+})
+
+MainESPGroup:AddToggle('PuzzleEsp', {
+    Text = 'Puzzle ESP',
+    Default = false
+}):AddColorPicker('PuzzleColor', {
+    Default = Color3.fromRGB(0, 200, 255),
+    Title = 'Puzzle Color'
+})
 
 local FolderCache = {}
+local ActiveESPs = {}
+
 local function GetTargetFolder(name)
     if FolderCache[name] and FolderCache[name].Parent then return FolderCache[name] end
     local f = workspace:FindFirstChild(name) or (workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild(name))
@@ -265,38 +300,42 @@ local function GetTargetFolder(name)
     return f
 end
 
-local RunService = game:GetService("RunService")
-local ActiveESPs = {}
-
-local function CreateESP(target, color, espName, displayText)
-    if not target or not target.Parent then return end
-    pcall(function()
-        local function HandleTransparency(part)
-            if part:IsA("BasePart") then
-                if part.Name == "HumanoidRootPart" then return end
-                if part.Name == "Handle" and part.Transparency >= 1 then return end
-                if part.Transparency >= 1 then
-                    local ancestorModel = part:FindFirstAncestorWhichIsA("Model")
-                    if ancestorModel and ancestorModel:FindFirstChildOfClass("Humanoid") then return end
-                end
-                if part:GetAttribute("OrigTrans_" .. espName) == nil then part:SetAttribute("OrigTrans_" .. espName, part.Transparency) end
-                part.Transparency = 0 
-            end
+local function HandleTransparency(part, espName)
+    if part:IsA("BasePart") then
+        if part.Name == "HumanoidRootPart" then return end
+        if part.Name == "Handle" and part.Transparency >= 1 then return end
+        if part.Transparency >= 1 then
+            local ancestorModel = part:FindFirstAncestorWhichIsA("Model")
+            if ancestorModel and ancestorModel:FindFirstChildOfClass("Humanoid") then return end
         end
 
+        if part:GetAttribute("OrigTrans_" .. espName) == nil then
+            part:SetAttribute("OrigTrans_" .. espName, part.Transparency)
+        end
+        part.Transparency = 0 
+    end
+end
+
+local function CreateESP(target, colorKey, espName, displayText)
+    if not target or not target.Parent then return end
+
+    pcall(function()
         if espName == "ESP_Puzzle" then
-            if target:IsA("BasePart") then HandleTransparency(target)
+            if target:IsA("BasePart") then 
+                HandleTransparency(target, espName)
             elseif target:IsA("Model") then
-                for _, v in ipairs(target:GetDescendants()) do HandleTransparency(v) end
+                for _, v in ipairs(target:GetDescendants()) do HandleTransparency(v, espName) end
             end
         end
 
         local root = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head") or target:FindFirstChildWhichIsA("BasePart", true)) or (target:IsA("BasePart") and target)
 
         if root then
+            local currentColor = Options[colorKey].Value
+
             local hl = target:FindFirstChild(espName .. "_HL") or Instance.new("Highlight")
             hl.Name = espName .. "_HL"
-            hl.FillColor = color
+            hl.FillColor = currentColor
             hl.FillTransparency = 0.5
             hl.OutlineColor = Color3.fromRGB(255, 255, 255)
             hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
@@ -313,7 +352,7 @@ local function CreateESP(target, color, espName, displayText)
             txt.Name = "NameLabel"
             txt.Size = UDim2.new(1, 0, 1, 0)
             txt.BackgroundTransparency = 1
-            txt.TextColor3 = color
+            txt.TextColor3 = currentColor
             txt.Font = Enum.Font.SourceSansBold
             txt.TextSize = 14
             txt.TextStrokeTransparency = 0
@@ -322,13 +361,8 @@ local function CreateESP(target, color, espName, displayText)
 
             local boxBg = root:FindFirstChild(espName .. "_BoxBG") or Instance.new("BillboardGui")
             boxBg.Name = espName .. "_BoxBG"
-            if espName == "ESP_Player" then
-                boxBg.Size = UDim2.new(4, 0, 5.5, 0)
-                boxBg.ExtentsOffset = Vector3.new(0, -0.2, 0)
-            else
-                boxBg.Size = UDim2.new(2, 0, 2, 0)
-                boxBg.ExtentsOffset = Vector3.new(0, 0, 0)
-            end
+            boxBg.Size = (espName == "ESP_Player") and UDim2.new(4, 0, 5.5, 0) or UDim2.new(2, 0, 2, 0)
+            boxBg.ExtentsOffset = (espName == "ESP_Player") and Vector3.new(0, -0.2, 0) or Vector3.new(0, 0, 0)
             boxBg.AlwaysOnTop = true
             boxBg.Enabled = Toggles.BoxEsp.Value
 
@@ -339,12 +373,20 @@ local function CreateESP(target, color, espName, displayText)
             boxFrame.Parent = boxBg
 
             local stroke = boxFrame:FindFirstChild("UIStroke") or Instance.new("UIStroke")
-            stroke.Color = color
+            stroke.Color = currentColor
             stroke.Thickness = 1.5
             stroke.Parent = boxFrame
             boxBg.Parent = root
 
-            ActiveESPs[target] = { Root = root, NameLabel = txt, BaseName = displayText or target.Name }
+            ActiveESPs[target] = {
+                Root = root,
+                NameLabel = txt,
+                Highlight = hl,
+                Stroke = stroke,
+                BoxBg = boxBg,
+                BaseName = displayText or target.Name,
+                ColorKey = colorKey
+            }
         end
     end)
 end
@@ -354,25 +396,39 @@ RunService.RenderStepped:Connect(function()
     local myPos = LocalPlayer.Character.HumanoidRootPart.Position
 
     for target, data in pairs(ActiveESPs) do
-        if not target or not target.Parent or not data.Root or not data.Root.Parent or not data.NameLabel.Parent then
+        if not target or not target.Parent or not data.Root or not data.Root.Parent then
             ActiveESPs[target] = nil
             continue
         end
+
         local dist = math.floor((myPos - data.Root.Position).Magnitude)
         local finalText = ""
+
         if Toggles.NameEsp.Value then finalText = data.BaseName end
         if Toggles.DistanceEsp.Value then
-            if finalText ~= "" then finalText = finalText .. " [" .. tostring(dist) .. "m]" else finalText = "[" .. tostring(dist) .. "m]" end
+            finalText = finalText ~= "" and (finalText .. " [" .. tostring(dist) .. "m]") or ("[" .. tostring(dist) .. "m]")
         end
+
         data.NameLabel.Text = finalText
         data.NameLabel.Visible = (Toggles.NameEsp.Value or Toggles.DistanceEsp.Value)
+
+        local currentColor = Options[data.ColorKey].Value
+        if data.Highlight then 
+            data.Highlight.FillColor = currentColor 
+            data.Highlight.Enabled = Toggles.HighlightEsp.Value
+        end
+        if data.NameLabel then data.NameLabel.TextColor3 = currentColor end
+        if data.Stroke then data.Stroke.Color = currentColor end
+        if data.BoxBg then data.BoxBg.Enabled = Toggles.BoxEsp.Value end
     end
 end)
 
 local function RemoveESP(espName)
     pcall(function()
         for _, v in ipairs(workspace:GetDescendants()) do
-            if v.Name == (espName .. "_HL") or v.Name == (espName .. "_BG") or v.Name == (espName .. "_BoxBG") then v:Destroy() end
+            if v.Name == (espName .. "_HL") or v.Name == (espName .. "_BG") or v.Name == (espName .. "_BoxBG") then
+                v:Destroy()
+            end
             if v:IsA("BasePart") then
                 local origTrans = v:GetAttribute("OrigTrans_" .. espName)
                 if origTrans ~= nil then
@@ -392,22 +448,23 @@ Toggles.PuzzleEsp:OnChanged(function() if not Toggles.PuzzleEsp.Value then Remov
 
 task.spawn(function()
     while task.wait(1) do
-        if Toggles.PlayerEsp and Toggles.PlayerEsp.Value then
+        if Toggles.PlayerEsp.Value then
             pcall(function()
                 for _, plr in ipairs(game.Players:GetPlayers()) do
                     if plr.Character and plr ~= LocalPlayer then
                         local isKiller = plr.Character:FindFirstChild("Weapon", true)
-                        local espColor = isKiller and Options.BotColor.Value or Options.PlayerColor.Value
-                        CreateESP(plr.Character, espColor, "ESP_Player", plr.Name)
+                        local cKey = isKiller and "BotColor" or "PlayerColor"
+                        CreateESP(plr.Character, cKey, "ESP_Player", plr.Name)
                     end
                 end
+
                 local playersFolder = GetTargetFolder("Players")
                 if playersFolder then
                     for _, bot in ipairs(playersFolder:GetChildren()) do
                         if bot:IsA("Model") and bot ~= LocalPlayer.Character then
                             local isKiller = bot:FindFirstChild("Weapon", true)
-                            local espColor = isKiller and Options.BotColor.Value or Options.PlayerColor.Value
-                            CreateESP(bot, espColor, "ESP_Player", bot.Name)
+                            local cKey = isKiller and "BotColor" or "PlayerColor"
+                            CreateESP(bot, cKey, "ESP_Player", bot.Name)
                         end
                     end
                 end
@@ -440,14 +497,17 @@ task.spawn(function()
             end
         end
         if #slotsData == 0 then return nil end
+
         local line1, line2 = {}, {}
         for i, text in ipairs(slotsData) do
             if i <= 2 then table.insert(line1, text) else table.insert(line2, text) end
         end
+
         local finalText = table.concat(line1, "   ")
         if #line2 > 0 then finalText = finalText .. "\n" .. table.concat(line2, "   ") end
         local equippedTool = entity:FindFirstChildOfClass("Tool")
         if equippedTool then finalText = finalText .. "\n[ Holding : " .. equippedTool.Name .. " ]" end
+
         return finalText
     end
 
@@ -467,14 +527,13 @@ task.spawn(function()
         txt.Size = UDim2.new(1, 0, 1, 0)
         txt.BackgroundTransparency = 1
         txt.Text = text
-        txt.TextColor3 = Options.SlotColor.Value 
+        txt.TextColor3 = Options.SlotColor.Value
         txt.Font = Enum.Font.SourceSansBold
         txt.TextSize = 14
         txt.TextWrapped = true
         txt.TextStrokeTransparency = 0.6
         txt.AnchorPoint = Vector2.new(0.5, 0)
         txt.Position = UDim2.new(0.5, 0, 0, 0)
-
         txt.Parent = bg
         bg.Parent = root
     end
@@ -493,6 +552,7 @@ task.spawn(function()
                         end
                     end
                 end
+
                 local playersFolder = GetTargetFolder("Players")
                 if playersFolder then
                     for _, bot in ipairs(playersFolder:GetChildren()) do
@@ -514,13 +574,13 @@ end)
 
 task.spawn(function()
     while task.wait(1) do
-        if Toggles.ItemEsp and Toggles.ItemEsp.Value then
+        if Toggles.ItemEsp.Value then
             pcall(function()
                 local targetFolder = GetTargetFolder("Tools") or GetTargetFolder("Items")
                 if targetFolder then
                     for _, item in ipairs(targetFolder:GetChildren()) do
                         if item:IsA("Model") or item:IsA("Tool") or item:IsA("BasePart") then
-                            CreateESP(item, Options.ItemColor.Value, "ESP_Item", item.Name)
+                            CreateESP(item, "ItemColor", "ESP_Item", item.Name)
                         end
                     end
                 end
@@ -531,13 +591,13 @@ end)
 
 task.spawn(function()
     while task.wait(1) do
-        if Toggles.TrapEsp and Toggles.TrapEsp.Value then
+        if Toggles.TrapEsp.Value then
             pcall(function()
                 local trapsFolder = GetTargetFolder("Traps")
                 if trapsFolder then
                     for _, trap in ipairs(trapsFolder:GetChildren()) do
                         if trap:IsA("Model") or trap:IsA("BasePart") then
-                            CreateESP(trap, Options.TrapColor.Value, "ESP_Trap", "Trap")
+                            CreateESP(trap, "TrapColor", "ESP_Trap", "Trap")
                         end
                     end
                 end
@@ -548,29 +608,9 @@ end)
 
 task.spawn(function()
     local validStatuses = {["PuzzlePut"] = true, ["PuzzleLocked"] = true, ["RecipePuzzle"] = true, ["PuzzleExtractor"] = true, ["PuzzleInfinite"] = true}
-    local valueConnections = {}
-
-    local function RemoveSpecificESP(model, espName)
-        pcall(function()
-            if model:FindFirstChild(espName .. "_HL") then model[espName .. "_HL"]:Destroy() end
-            local root = model:IsA("Model") and (model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)) or model
-            if root and root:FindFirstChild(espName .. "_BG") then root[espName .. "_BG"]:Destroy() end
-            if root and root:FindFirstChild(espName .. "_BoxBG") then root[espName .. "_BoxBG"]:Destroy() end
-            local function RestoreTrans(part)
-                if part:IsA("BasePart") then
-                    local orig = part:GetAttribute("OrigTrans_" .. espName)
-                    if orig then part.Transparency = orig part:SetAttribute("OrigTrans_" .. espName, nil) end
-                end
-            end
-            if model:IsA("BasePart") then RestoreTrans(model)
-            elseif model:IsA("Model") then
-                for _, p in ipairs(model:GetDescendants()) do RestoreTrans(p) end
-            end
-        end)
-    end
 
     while true do
-        if Toggles.PuzzleEsp and Toggles.PuzzleEsp.Value then
+        if Toggles.PuzzleEsp.Value then
             pcall(function()
                 for _, obj in ipairs(workspace:GetDescendants()) do
                     if not Toggles.PuzzleEsp.Value then break end
@@ -578,17 +618,7 @@ task.spawn(function()
                         local model = obj:FindFirstAncestorWhichIsA("Model") or obj.Parent
                         if model and (model:IsA("Model") or model:IsA("BasePart")) then
                             if validStatuses[obj.Value] then
-                                CreateESP(model, Options.PuzzleColor.Value, "ESP_Puzzle", model.Name)
-                                if not valueConnections[obj] then
-                                    valueConnections[obj] = obj:GetPropertyChangedSignal("Value"):Connect(function()
-                                        if not validStatuses[obj.Value] or not Toggles.PuzzleEsp.Value then
-                                            RemoveSpecificESP(model, "ESP_Puzzle")
-                                            if valueConnections[obj] then valueConnections[obj]:Disconnect() valueConnections[obj] = nil end
-                                        end
-                                    end)
-                                end
-                            else
-                                RemoveSpecificESP(model, "ESP_Puzzle")
+                                CreateESP(model, "PuzzleColor", "ESP_Puzzle", model.Name)
                             end
                         end
                     end
