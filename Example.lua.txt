@@ -118,6 +118,39 @@ LeftGroupBox:AddToggle("MyToggle", {
 		end,
 	})
 
+-- เพิ่ม Rainbow Loop Handling ให้กับ ColorPicker Object
+function Funcs:AddRainbowOption(ColorPickerObj)
+    local RainbowToggle = Instance.new("TextButton")
+    RainbowToggle.Name = "RainbowToggle"
+    RainbowToggle.Size = UDim2.new(1, -10, 0, 20)
+    RainbowToggle.Position = UDim2.new(0, 5, 1, -25) -- วางไว้ต่อจาก Copy/Paste Color ด้านล่างสุด
+    RainbowToggle.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    RainbowToggle.Text = "Rainbow: OFF"
+    RainbowToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    RainbowToggle.Parent = ColorPickerObj.Container -- ใส่ลงใน Pop-up Container ของ ColorPicker
+
+    local Enabled = false
+    local Connection
+
+    RainbowToggle.MouseButton1Click:Connect(function()
+        Enabled = not Enabled
+        RainbowToggle.Text = Enabled and "Rainbow: ON" or "Rainbow: OFF"
+
+        if Enabled then
+            Connection = game:GetService("RunService").RenderStepped:Connect(function()
+                local Hue = (tick() % 5) / 5 -- เปลี่ยนสีวนครบ loop ทุกๆ 5 วินาที
+                local RainbowColor = Color3.fromHSV(Hue, 1, 1)
+                ColorPickerObj:SetValueRGB(RainbowColor)
+            end)
+        else
+            if Connection then
+                Connection:Disconnect()
+                Connection = nil
+            end
+        end
+    end)
+end
+
 -- Fetching a toggle object for later use:
 -- Toggles.MyToggle.Value
 
