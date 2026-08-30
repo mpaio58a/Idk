@@ -237,9 +237,8 @@ local RunService = game:GetService("RunService")
 local workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local VisualTab = Window:Tabs("Visual")
-local MainESPGroup = VisualTab:AddLeftGroupbox("Main ESP")
-local ESPSettingsGroup = VisualTab:AddRightGroupbox("ESP Settings")
+local MainESPGroup = Visual:AddLeftGroupbox("Main ESP")
+local ESPSettingsGroup = Visual:AddRightGroupbox("ESP Settings")
 
 ESPSettingsGroup:AddToggle('HighlightEsp', { Text = 'Highlight ESP', Default = true })
 ESPSettingsGroup:AddToggle('BoxEsp', { Text = 'Box ESP', Default = false })
