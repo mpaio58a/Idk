@@ -237,7 +237,6 @@ local RunService = game:GetService("RunService")
 local workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local VisualTab = Tabs.Visual
 local MainESPGroup = Tabs.Visual:AddLeftGroupbox("Main ESP")
 local ESPSettingsGroup = Tabs.Visual:AddRightGroupbox("ESP Settings")
 
