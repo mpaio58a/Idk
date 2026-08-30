@@ -237,7 +237,7 @@ local RunService = game:GetService("RunService")
 local workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-
+-- [[ VISUAL TAB UI ]]
 local MainESPGroup = Tabs.Visual:AddLeftGroupbox("Main ESP")
 local ESPSettingsGroup = Tabs.Visual:AddRightGroupbox("ESP Settings")
 local ColorControlsGroup = Tabs.Visual:AddRightGroupbox("Color Controls")
@@ -299,6 +299,15 @@ local TargetESPMap = {
     ["Puzzle Esp"]         = {"PuzzleColor"}
 }
 
+local DefaultColorsMap = {
+    PlayerColor = Color3.fromRGB(0, 255, 0),
+    BotColor    = Color3.fromRGB(255, 0, 0),
+    SlotColor   = Color3.fromRGB(255, 255, 255),
+    ItemColor   = Color3.fromRGB(255, 255, 255),
+    TrapColor   = Color3.fromRGB(255, 255, 0),
+    PuzzleColor = Color3.fromRGB(0, 200, 255)
+}
+
 ColorControlsGroup:AddDropdown("ESPColorTargetSelect", {
     Values = {"Player & Kitty Esp", "Player Slot Esp", "Item Esp", "Trap Esp", "Puzzle Esp"},
     Default = 1,
@@ -316,6 +325,22 @@ ColorControlsGroup:AddButton({
                     if Options[optionKey] then
                         local randomColor = Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255))
                         Options[optionKey]:SetValueRGB(randomColor)
+                    end
+                end
+            end
+        end
+    end
+})
+
+ColorControlsGroup:AddButton({
+    Text = "Default Color",
+    Func = function()
+        local selectedTargets = Options.ESPColorTargetSelect.Value
+        for targetName, isSelected in pairs(selectedTargets) do
+            if isSelected and TargetESPMap[targetName] then
+                for _, optionKey in ipairs(TargetESPMap[targetName]) do
+                    if Options[optionKey] and DefaultColorsMap[optionKey] then
+                        Options[optionKey]:SetValueRGB(DefaultColorsMap[optionKey])
                     end
                 end
             end
@@ -350,162 +375,130 @@ task.spawn(function()
     end
 end)
 
-local FolderCache = {}
-local ActiveESPs = {}
+-- [[ ESP FUNCTION LOGIC ]]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+local ESP_Storage = {}
 
-local function GetTargetFolder(name)
-    if FolderCache[name] and FolderCache[name].Parent then return FolderCache[name] end
-    local f = workspace:FindFirstChild(name) or (workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild(name))
-    if not f then f = workspace:FindFirstChild(name, true) end
-    FolderCache[name] = f
-    return f
-end
-
-local function HandleTransparency(part, espName)
-    if part:IsA("BasePart") then
-        if part.Name == "HumanoidRootPart" then return end
-        if part.Name == "Handle" and part.Transparency >= 1 then return end
-        if part.Transparency >= 1 then
-            local ancestorModel = part:FindFirstAncestorWhichIsA("Model")
-            if ancestorModel and ancestorModel:FindFirstChildOfClass("Humanoid") then return end
+local function ClearESP(obj)
+    if ESP_Storage[obj] then
+        for _, v in pairs(ESP_Storage[obj]) do
+            if typeof(v) == "Instance" then
+                v:Destroy()
+            end
         end
-
-        if part:GetAttribute("OrigTrans_" .. espName) == nil then
-            part:SetAttribute("OrigTrans_" .. espName, part.Transparency)
-        end
-        part.Transparency = 0 
+        ESP_Storage[obj] = nil
     end
 end
 
-local function CreateESP(target, colorKey, espName, displayText)
-    if not target or not target.Parent then return end
+local function CreateESP(obj, text, color)
+    if not obj or (not obj:IsA("Model") and not obj:IsA("BasePart")) then return end
+    
+    ClearESP(obj)
+    ESP_Storage[obj] = {}
 
-    pcall(function()
-        if espName == "ESP_Puzzle" then
-            if target:IsA("BasePart") then 
-                HandleTransparency(target, espName)
-            elseif target:IsA("Model") then
-                for _, v in ipairs(target:GetDescendants()) do HandleTransparency(v, espName) end
+    local root = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")) or obj
+    if not root then return end
+
+    if Toggles.HighlightEsp and Toggles.HighlightEsp.Value then
+        local hl = Instance.new("Highlight")
+        hl.Name = "ESPHighlight"
+        hl.Adornee = obj
+        hl.FillColor = color
+        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+        hl.FillTransparency = 0.5
+        hl.OutlineTransparency = 0
+        hl.Parent = root
+        table.insert(ESP_Storage[obj], hl)
+    end
+
+    if (Toggles.NameEsp and Toggles.NameEsp.Value) or (Toggles.DistanceEsp and Toggles.DistanceEsp.Value) then
+        local bb = Instance.new("BillboardGui")
+        bb.Name = "ESPBillboard"
+        bb.Adornee = root
+        bb.Size = UDim2.new(0, 200, 0, 50)
+        bb.StudsOffset = Vector3.new(0, 3, 0)
+        bb.AlwaysOnTop = true
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = color
+        label.TextStrokeTransparency = 0
+        label.TextSize = 14
+        label.Font = Enum.Font.SourceSansBold
+        label.Parent = bb
+
+        bb.Parent = root
+        table.insert(ESP_Storage[obj], bb)
+
+        task.spawn(function()
+            while bb and bb.Parent and ESP_Storage[obj] do
+                local displayText = ""
+                if Toggles.NameEsp and Toggles.NameEsp.Value then
+                    displayText = text
+                end
+                if Toggles.DistanceEsp and Toggles.DistanceEsp.Value and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local dist = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - root.Position).Magnitude)
+                    displayText = displayText ~= "" and (displayText .. " [" .. tostring(dist) .. "m]") or ("[" .. tostring(dist) .. "m]")
+                end
+                label.Text = displayText
+                task.wait(0.2)
             end
-        end
-
-        local root = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head") or target:FindFirstChildWhichIsA("BasePart", true)) or (target:IsA("BasePart") and target)
-
-        if root then
-            local currentColor = Options[colorKey].Value
-
-            local hl = target:FindFirstChild(espName .. "_HL") or Instance.new("Highlight")
-            hl.Name = espName .. "_HL"
-            hl.FillColor = currentColor
-            hl.FillTransparency = 0.5
-            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-            hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-            hl.Enabled = Toggles.HighlightEsp.Value
-            hl.Parent = target
-
-            local bg = root:FindFirstChild(espName .. "_BG") or Instance.new("BillboardGui")
-            bg.Name = espName .. "_BG"
-            bg.Size = UDim2.new(0, 200, 0, 40)
-            bg.AlwaysOnTop = true
-            bg.ExtentsOffset = (espName == "ESP_Player") and Vector3.new(0, 3.5, 0) or Vector3.new(0, 2, 0)
-
-            local txt = bg:FindFirstChild("NameLabel") or Instance.new("TextLabel")
-            txt.Name = "NameLabel"
-            txt.Size = UDim2.new(1, 0, 1, 0)
-            txt.BackgroundTransparency = 1
-            txt.TextColor3 = currentColor
-            txt.Font = Enum.Font.SourceSansBold
-            txt.TextSize = 14
-            txt.TextStrokeTransparency = 0
-            txt.Parent = bg
-            bg.Parent = root
-
-            local boxBg = root:FindFirstChild(espName .. "_BoxBG") or Instance.new("BillboardGui")
-            boxBg.Name = espName .. "_BoxBG"
-            boxBg.Size = (espName == "ESP_Player") and UDim2.new(4, 0, 5.5, 0) or UDim2.new(2, 0, 2, 0)
-            boxBg.ExtentsOffset = (espName == "ESP_Player") and Vector3.new(0, -0.2, 0) or Vector3.new(0, 0, 0)
-            boxBg.AlwaysOnTop = true
-            boxBg.Enabled = Toggles.BoxEsp.Value
-
-            local boxFrame = boxBg:FindFirstChild("BoxFrame") or Instance.new("Frame")
-            boxFrame.Name = "BoxFrame"
-            boxFrame.Size = UDim2.new(1, 0, 1, 0)
-            boxFrame.BackgroundTransparency = 1
-            boxFrame.Parent = boxBg
-
-            local stroke = boxFrame:FindFirstChild("UIStroke") or Instance.new("UIStroke")
-            stroke.Color = currentColor
-            stroke.Thickness = 1.5
-            stroke.Parent = boxFrame
-            boxBg.Parent = root
-
-            ActiveESPs[target] = {
-                Root = root,
-                NameLabel = txt,
-                Highlight = hl,
-                Stroke = stroke,
-                BoxBg = boxBg,
-                BaseName = displayText or target.Name,
-                ColorKey = colorKey
-            }
-        end
-    end)
+        end)
+    end
 end
 
 RunService.RenderStepped:Connect(function()
-    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
-    local myPos = LocalPlayer.Character.HumanoidRootPart.Position
-
-    for target, data in pairs(ActiveESPs) do
-        if not target or not target.Parent or not data.Root or not data.Root.Parent then
-            ActiveESPs[target] = nil
-            continue
+    if Toggles.PlayerEsp and Toggles.PlayerEsp.Value then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                CreateESP(p.Character, p.Name, Options.PlayerColor.Value)
+            end
         end
-
-        local dist = math.floor((myPos - data.Root.Position).Magnitude)
-        local finalText = ""
-
-        if Toggles.NameEsp.Value then finalText = data.BaseName end
-        if Toggles.DistanceEsp.Value then
-            finalText = finalText ~= "" and (finalText .. " [" .. tostring(dist) .. "m]") or ("[" .. tostring(dist) .. "m]")
+        
+        for _, obj in pairs(Workspace:GetChildren()) do
+            if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(obj) then
+                CreateESP(obj, obj.Name, Options.BotColor.Value)
+            end
         end
-
-        data.NameLabel.Text = finalText
-        data.NameLabel.Visible = (Toggles.NameEsp.Value or Toggles.DistanceEsp.Value)
-
-        local currentColor = Options[data.ColorKey].Value
-        if data.Highlight then 
-            data.Highlight.FillColor = currentColor 
-            data.Highlight.Enabled = Toggles.HighlightEsp.Value
+    else
+        for p, _ in pairs(ESP_Storage) do
+            if p:IsA("Model") and p:FindFirstChild("Humanoid") then
+                ClearESP(p)
+            end
         end
-        if data.NameLabel then data.NameLabel.TextColor3 = currentColor end
-        if data.Stroke then data.Stroke.Color = currentColor end
-        if data.BoxBg then data.BoxBg.Enabled = Toggles.BoxEsp.Value end
+    end
+
+    if Toggles.ItemEsp and Toggles.ItemEsp.Value then
+        local itemsFolder = Workspace:FindFirstChild("Items") or Workspace:FindFirstChild("Tools")
+        if itemsFolder then
+            for _, item in pairs(itemsFolder:GetChildren()) do
+                CreateESP(item, item.Name, Options.ItemColor.Value)
+            end
+        end
+    end
+
+    if Toggles.TrapEsp and Toggles.TrapEsp.Value then
+        local trapsFolder = Workspace:FindFirstChild("Traps")
+        if trapsFolder then
+            for _, trap in pairs(trapsFolder:GetChildren()) do
+                CreateESP(trap, trap.Name, Options.TrapColor.Value)
+            end
+        end
+    end
+
+    if Toggles.PuzzleEsp and Toggles.PuzzleEsp.Value then
+        local puzzlesFolder = Workspace:FindFirstChild("Puzzles") or Workspace:FindFirstChild("Doors")
+        if puzzlesFolder then
+            for _, puzzle in pairs(puzzlesFolder:GetChildren()) do
+                CreateESP(puzzle, puzzle.Name, Options.PuzzleColor.Value)
+            end
+        end
     end
 end)
-
-local function RemoveESP(espName)
-    pcall(function()
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v.Name == (espName .. "_HL") or v.Name == (espName .. "_BG") or v.Name == (espName .. "_BoxBG") then
-                v:Destroy()
-            end
-            if v:IsA("BasePart") then
-                local origTrans = v:GetAttribute("OrigTrans_" .. espName)
-                if origTrans ~= nil then
-                    v.Transparency = origTrans
-                    v:SetAttribute("OrigTrans_" .. espName, nil)
-                end
-            end
-        end
-    end)
-end
-
-Toggles.PlayerEsp:OnChanged(function() if not Toggles.PlayerEsp.Value then RemoveESP("ESP_Player") end end)
-Toggles.SlotEsp:OnChanged(function() if not Toggles.SlotEsp.Value then pcall(function() for _, v in ipairs(workspace:GetDescendants()) do if v.Name == "ESP_Slot_BG" then v:Destroy() end end end) end end)
-Toggles.ItemEsp:OnChanged(function() if not Toggles.ItemEsp.Value then RemoveESP("ESP_Item") end end)
-Toggles.TrapEsp:OnChanged(function() if not Toggles.TrapEsp.Value then RemoveESP("ESP_Trap") end end)
-Toggles.PuzzleEsp:OnChanged(function() if not Toggles.PuzzleEsp.Value then RemoveESP("ESP_Puzzle") end end)
 
 task.spawn(function()
     while task.wait(1) do
