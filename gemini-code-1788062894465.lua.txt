@@ -1402,3 +1402,38 @@ SaveManager:BuildConfigSection(Tabs["UI Settings"])
 ThemeManager:ApplyToTab(Tabs["UI Settings"])
 
 SaveManager:LoadAutoloadConfig()
+
+local coreGui = game:GetService("CoreGui")
+local targetName = "Obsidian"
+local cornerRadiusValue = 10
+local gothamFont = Font.new(
+    "rbxasset://fonts/families/GothamSSm.json",
+    Enum.FontWeight.Regular,
+    Enum.FontStyle.Normal
+)
+
+local function modifyUI(instance)
+    for _, element in pairs(instance:GetDescendants()) do
+        if element:IsA("Frame") or element:IsA("TextButton") or element:IsA("TextBox") or element:IsA("ScrollingFrame") or element:IsA("ImageLabel") then
+            local corner = element:FindFirstChildOfClass("UICorner")
+            
+            if not corner then
+                corner = Instance.new("UICorner")
+                corner.Parent = element
+            end
+            
+            corner.CornerRadius = UDim.new(0, cornerRadiusValue)
+        end
+        
+        if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
+            element.FontFace = gothamFont
+        end
+    end
+end
+
+for _, descendant in pairs(coreGui:GetDescendants()) do
+    if descendant:IsA("ScreenGui") and descendant.Name == targetName then
+        modifyUI(descendant)
+        break
+    end
+end
