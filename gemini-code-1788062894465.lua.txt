@@ -299,6 +299,15 @@ local TargetESPMap = {
     ["Puzzle Esp"]         = {"PuzzleColor"}
 }
 
+local DefaultColorsMap = {
+    PlayerColor = Color3.fromRGB(0, 255, 0),
+    BotColor    = Color3.fromRGB(255, 0, 0),
+    SlotColor   = Color3.fromRGB(255, 255, 255),
+    ItemColor   = Color3.fromRGB(255, 255, 255),
+    TrapColor   = Color3.fromRGB(255, 255, 0),
+    PuzzleColor = Color3.fromRGB(0, 200, 255)
+}
+
 ColorControlsGroup:AddDropdown("ESPColorTargetSelect", {
     Values = {"Player & Kitty Esp", "Player Slot Esp", "Item Esp", "Trap Esp", "Puzzle Esp"},
     Default = 1,
@@ -316,6 +325,22 @@ ColorControlsGroup:AddButton({
                     if Options[optionKey] then
                         local randomColor = Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255))
                         Options[optionKey]:SetValueRGB(randomColor)
+                    end
+                end
+            end
+        end
+    end
+})
+
+ColorControlsGroup:AddButton({
+    Text = "Default Color",
+    Func = function()
+        local selectedTargets = Options.ESPColorTargetSelect.Value
+        for targetName, isSelected in pairs(selectedTargets) do
+            if isSelected and TargetESPMap[targetName] then
+                for _, optionKey in ipairs(TargetESPMap[targetName]) do
+                    if Options[optionKey] and DefaultColorsMap[optionKey] then
+                        Options[optionKey]:SetValueRGB(DefaultColorsMap[optionKey])
                     end
                 end
             end
