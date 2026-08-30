@@ -237,14 +237,14 @@ local RunService = game:GetService("RunService")
 local workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local MainESPGroup = Tabs.Visual:AddLeftGroupbox("Main ESP")[span_0](start_span)[span_0](end_span)
-local ESPSettingsGroup = Tabs.Visual:AddRightGroupbox("ESP Settings")[span_1](start_span)[span_1](end_span)
-local ColorControlsGroup = Tabs.Visual:AddRightGroupbox("Color Controls")
+local VisualTab = Window:Tabs("Visual")
+local MainESPGroup = VisualTab:AddLeftGroupbox("Main ESP")
+local ESPSettingsGroup = VisualTab:AddRightGroupbox("ESP Settings")
 
-ESPSettingsGroup:AddToggle('HighlightEsp', { Text = 'Highlight ESP', Default = true })[span_2](start_span)[span_2](end_span)
-ESPSettingsGroup:AddToggle('BoxEsp', { Text = 'Box ESP', Default = false })[span_3](start_span)[span_3](end_span)
-ESPSettingsGroup:AddToggle('NameEsp', { Text = 'Name ESP', Default = true })[span_4](start_span)[span_4](end_span)
-ESPSettingsGroup:AddToggle('DistanceEsp', { Text = 'Distance ESP', Default = false })[span_5](start_span)[span_5](end_span)
+ESPSettingsGroup:AddToggle('HighlightEsp', { Text = 'Highlight ESP', Default = true })
+ESPSettingsGroup:AddToggle('BoxEsp', { Text = 'Box ESP', Default = false })
+ESPSettingsGroup:AddToggle('NameEsp', { Text = 'Name ESP', Default = true })
+ESPSettingsGroup:AddToggle('DistanceEsp', { Text = 'Distance ESP', Default = false })
 
 MainESPGroup:AddToggle('PlayerEsp', {
     Text = 'Player & Kitty ESP',
@@ -255,7 +255,7 @@ MainESPGroup:AddToggle('PlayerEsp', {
 }):AddColorPicker('BotColor', {
     Default = Color3.fromRGB(255, 0, 0),
     Title = 'Bot Color'
-})[span_6](start_span)[span_6](end_span)
+})
 
 MainESPGroup:AddToggle('SlotEsp', {
     Text = 'Player Slot ESP',
@@ -263,7 +263,7 @@ MainESPGroup:AddToggle('SlotEsp', {
 }):AddColorPicker('SlotColor', {
     Default = Color3.fromRGB(255, 255, 255),
     Title = 'Slot Color'
-})[span_7](start_span)[span_7](end_span)
+})
 
 MainESPGroup:AddToggle('ItemEsp', {
     Text = 'Items ESP',
@@ -271,7 +271,7 @@ MainESPGroup:AddToggle('ItemEsp', {
 }):AddColorPicker('ItemColor', {
     Default = Color3.fromRGB(255, 255, 255),
     Title = 'Item Color'
-})[span_8](start_span)[span_8](end_span)
+})
 
 MainESPGroup:AddToggle('TrapEsp', {
     Text = 'Trap ESP',
@@ -279,7 +279,7 @@ MainESPGroup:AddToggle('TrapEsp', {
 }):AddColorPicker('TrapColor', {
     Default = Color3.fromRGB(255, 255, 0),
     Title = 'Trap Color'
-})[span_9](start_span)[span_9](end_span)
+})
 
 MainESPGroup:AddToggle('PuzzleEsp', {
     Text = 'Puzzle ESP',
@@ -287,68 +287,6 @@ MainESPGroup:AddToggle('PuzzleEsp', {
 }):AddColorPicker('PuzzleColor', {
     Default = Color3.fromRGB(0, 200, 255),
     Title = 'Puzzle Color'
-})[span_10](start_span)[span_10](end_span)
-
--- [[ Color Controls Groupbox Logic ]]
-local TargetESPMap = {
-    ["Player & Kitty Esp"] = {"PlayerColor", "BotColor"},
-    ["Player Slot Esp"]    = {"SlotColor"},
-    ["Item Esp"]           = {"ItemColor"},
-    ["Trap Esp"]           = {"TrapColor"},
-    ["Puzzle Esp"]         = {"PuzzleColor"}
-}
-
-ColorControlsGroup:AddDropdown("ESPColorTargetSelect", {
-    Values = {"Player & Kitty Esp", "Player Slot Esp", "Item Esp", "Trap Esp", "Puzzle Esp"},
-    Default = 1,
-    Multi = true,
-    Text = "Select ESP Targets"
-})
-
-ColorControlsGroup:AddButton({
-    Text = "Random Color",
-    Func = function()
-        local selectedTargets = Options.ESPColorTargetSelect.Value
-        for targetName, isSelected in pairs(selectedTargets) do
-            if isSelected and TargetESPMap[targetName] then
-                for _, optionKey in ipairs(TargetESPMap[targetName]) do
-                    if Options[optionKey] then
-                        local randomColor = Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255))
-                        Options[optionKey]:SetValueRGB(randomColor)
-                    end
-                end
-            end
-        end
-    end
-})
-
-ColorControlsGroup:AddToggle("RainbowColorToggle", {
-    Text = "Rainbow Color",
-    Default = false
-})
-
-task.spawn(function()
-    local hue = 0
-    while true do
-        if Toggles.RainbowColorToggle and Toggles.RainbowColorToggle.Value then
-            hue = (hue + 0.01) % 1
-            local rainbowColor = Color3.fromHSV(hue, 1, 1)
-            local selectedTargets = Options.ESPColorTargetSelect.Value
-            
-            for targetName, isSelected in pairs(selectedTargets) do
-                if isSelected and TargetESPMap[targetName] then
-                    for _, optionKey in ipairs(TargetESPMap[targetName]) do
-                        if Options[optionKey] then
-                            Options[optionKey]:SetValueRGB(rainbowColor)
-                        end
-                    end
-                end
-            end
-        end
-        task.wait(0.05)
-    end
-end)
-
 })
 
 local FolderCache = {}
