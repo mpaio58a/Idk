@@ -613,7 +613,7 @@ task.spawn(function()
         txt.Size = UDim2.new(1, 0, 1, 0)
         txt.BackgroundTransparency = 1
         txt.Text = text
-        txt.TextColor3 = Options.SlotColor.Value
+        -- เราเอาการตั้งค่า txt.TextColor3 ตรงนี้ออก เพื่อไปรันแบบ Real-time ด้านล่างแทน
         txt.Font = Enum.Font.SourceSansBold
         txt.TextSize = 14
         txt.TextWrapped = true
@@ -624,6 +624,39 @@ task.spawn(function()
         bg.Parent = root
     end
 
+    -- [ เพิ่มใหม่ ] อัปเดตสีแบบ Real-time (ทำงานตามเฟรมเรต ทำให้สีเลื่อนแบบลื่นไหล ไม่กระตุก)
+    RunService.RenderStepped:Connect(function()
+        if Toggles.SlotEsp and Toggles.SlotEsp.Value then
+            local currentColor = Options.SlotColor.Value
+            
+            -- อัปเดตสีของ Player
+            for _, plr in ipairs(game.Players:GetPlayers()) do
+                if plr.Character and plr ~= LocalPlayer then
+                    local root = plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character.PrimaryPart
+                    if root and root:FindFirstChild("ESP_Slot_BG") then
+                        local txt = root.ESP_Slot_BG:FindFirstChild("NameLabel")
+                        if txt then txt.TextColor3 = currentColor end
+                    end
+                end
+            end
+            
+            -- อัปเดตสีของ Bots
+            local playersFolder = GetTargetFolder("Players")
+            if playersFolder then
+                for _, bot in ipairs(playersFolder:GetChildren()) do
+                    if bot:IsA("Model") and bot ~= LocalPlayer.Character then
+                        local root = bot:FindFirstChild("HumanoidRootPart") or bot.PrimaryPart
+                        if root and root:FindFirstChild("ESP_Slot_BG") then
+                            local txt = root.ESP_Slot_BG:FindFirstChild("NameLabel")
+                            if txt then txt.TextColor3 = currentColor end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
+    -- ลูปดึงข้อความให้ทำงานทุกๆ 1 วินาทีเหมือนเดิม (เพื่อไม่ให้กินทรัพยากรเกมมากเกินไป)
     while task.wait(1) do
         if Toggles.SlotEsp and Toggles.SlotEsp.Value then
             pcall(function()
