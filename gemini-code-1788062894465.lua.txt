@@ -235,6 +235,91 @@ local LocalPlayer = game.Players.LocalPlayer
 local VisualBox = Tabs.Visual:AddLeftGroupbox("ESP")
 local ESPSettingsBox = Tabs.Visual:AddRightGroupbox("ESP Settings")
 
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local ESPSettings = {
+    ObjectsESP = false,
+    HealthColor = false,
+    RainbowColor = false,
+    MainColor = Color3.fromRGB(255, 255, 255)
+}
+
+local ObjectToggle = ESPTab:AddToggle("ObjectESPToggle", {
+    Title = "Objects ESP",
+    Default = false,
+    Callback = function(Value)
+        ESPSettings.ObjectsESP = Value
+    end
+})
+
+local HealthColorToggle = ESPTab:AddToggle("HealthColorToggle", {
+    Title = "Use Health Color",
+    Default = false,
+    Callback = function(Value)
+        ESPSettings.HealthColor = Value
+    end
+})
+
+local ESPColorPicker = ESPTab:AddColorpicker("ESPColorPicker", {
+    Title = "ESP Color",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(Value)
+        if not ESPSettings.RainbowColor then
+            ESPSettings.MainColor = Value
+        end
+    end
+})
+
+local RainbowToggle = ESPTab:AddToggle("RainbowToggle", {
+    Title = "Rainbow Color",
+    Default = false,
+    Callback = function(Value)
+        ESPSettings.RainbowColor = Value
+    end
+})
+
+local function GetHealthColor(health, maxHealth)
+    if health and maxHealth then
+        local healthPercent = math.clamp(health / maxHealth, 0, 1)
+        return Color3.fromHSV(healthPercent * 0.3, 1, 1)
+    end
+    return ESPSettings.MainColor
+end
+
+local function GetCurrentESPColor(health, maxHealth)
+    if ESPSettings.HealthColor then
+        return GetHealthColor(health, maxHealth)
+    end
+    return ESPSettings.MainColor
+end
+
+RunService.RenderStepped:Connect(function()
+    if ESPSettings.RainbowColor then
+        local hue = tick() % 5 / 5
+        local currentRainbow = Color3.fromHSV(hue, 1, 1)
+        ESPSettings.MainColor = currentRainbow
+        
+        ESPColorPicker:SetValue({currentRainbow, 0})
+    end
+end)
+
+local function UpdateObjectsESP()
+    if not ESPSettings.ObjectsESP then return end
+    
+    for _, object in pairs(Workspace:GetChildren()) do
+        if object:IsA("Model") or object:IsA("BasePart") then
+            local currentTargetColor = GetCurrentESPColor() 
+            
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    UpdateObjectsESP()
+end)
+
 VisualBox:AddToggle("PlayerEsp", { Text = "Player & Kitty ESP", Default = false })
 VisualBox:AddLabel("Bot/Player Kitty Color"):AddColorPicker("BotColor", { Default = Color3.fromRGB(255, 0, 0) })
 VisualBox:AddLabel("Player Mouse Color"):AddColorPicker("PlayerColor", { Default = Color3.fromRGB(0, 255, 0) })
