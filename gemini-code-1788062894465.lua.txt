@@ -14,41 +14,6 @@ local Window = Library:CreateWindow({
     ShowCustomCursor = true,
 })
 
--- [[ Toggle Button System (Key: K) ]]
-local ScreenGui = Instance.new("ScreenGui")
-local ToggleButton = Instance.new("TextButton")
-local UICorner = Instance.new("UICorner")
-
-ScreenGui.Name = "ObsidianToggleButton"
-ScreenGui.Parent = game:GetService("CoreGui")
-
-ToggleButton.Name = "ToggleButton"
-ToggleButton.Parent = ScreenGui
-ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-ToggleButton.Position = UDim2.new(0.12, 0, 0.15, 0)
-ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-ToggleButton.Font = Enum.Font.SourceSansBold
-ToggleButton.Text = "K"
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.TextSize = 24
-ToggleButton.Draggable = true
-
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = ToggleButton
-
-ToggleButton.MouseButton1Click:Connect(function()
-    Library:Toggle()
-
-    task.spawn(function()
-        while task.wait(0.5) do
-            if Library.Unloaded then
-                ScreenGui:Destroy() 
-                break
-            end
-        end
-    end)
-end)
-
 -- [[ Global Variable for Anti Trap ]]
 _G.HiddenCenterParts = _G.HiddenCenterParts or {}
 
