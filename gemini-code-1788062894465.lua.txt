@@ -392,6 +392,27 @@ task.spawn(function()
     end
 end)
 
+-- [[ ESP CONFIGURATION ]]
+local ESPConfig = {
+    Highlight = true,
+    HighlightColor = Color3.fromRGB(0, 255, 0),
+    HighlightOutlineColor = Color3.fromRGB(255, 255, 255),
+    HighlightTransparency = 0.5,
+    HighlightOutlineTransparency = 0,
+    
+    Names = true,
+    Distance = true,
+    TextColor = Color3.fromRGB(255, 255, 255),
+    TextSize = 14,
+    
+    Box3D = true,
+    Box3DColor = Color3.fromRGB(0, 255, 0),
+    Box3DThickness = 0.05,
+    Box3DTransparency = 0,
+    
+    MaxDistance = 100000 -- ระยะทางสูงสุดที่จะแสดง ESP (Studs)
+}
+
 local FolderCache = {}
 local ActiveESPs = {}
 
