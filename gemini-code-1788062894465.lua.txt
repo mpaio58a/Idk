@@ -503,53 +503,33 @@ RunService.RenderStepped:Connect(function()
         end
         if data.NameLabel then data.NameLabel.TextColor3 = currentColor end
 
-if data.Stroke then data.Stroke.Color = currentColor end
+        if data.Stroke then data.Stroke.Color = currentColor end
 
-if data.BoxBg then 
-    data.BoxBg.Enabled = Toggles.BoxEsp.Value 
-    
-    if Toggles.BoxEsp.Value then
-        local targetSize = Vector3.new(4, 5.5, 2)
-        local boxCenter = data.Root.Position
+        if data.BoxBg then 
+            data.BoxBg.Enabled = Toggles.BoxEsp.Value 
+            
+            if Toggles.BoxEsp.Value and target and target.Parent then
+                local targetSize = Vector3.new(4, 5.5, 2)
+                local boxCenter = data.Root.Position
 
-        -- ดึงขนาดกรอบที่แท้จริงของโมเดลหรือชิ้นส่วนนั้นๆ
-        if target:IsA("Model") then
-            local cframe, size = target:GetBoundingBox()
-            targetSize = size
-            boxCenter = cframe.Position
-        elseif target:IsA("BasePart") then
-            targetSize = target.Size
-            boxCenter = target.Position
-        end
-        
-        -- หาความกว้างที่ดีที่สุด (เลือกแกนที่กว้างที่สุดระหว่าง X หรือ Z) และคูณ 1.1 เพื่อทำขอบ (Padding)
-        local width = math.max(targetSize.X, targetSize.Z) * 1.1
-        local height = targetSize.Y * 1.1
-
-        -- อัปเดตขนาดกรอบทันที
-        data.BoxBg.Size = UDim2.new(width, 0, height, 0)
-        
-        -- ชดเชยจุดกึ่งกลาง (Offset) ให้ตรงกับจุดศูนย์กลางของโมเดลแบบเป๊ะๆ
-        data.BoxBg.StudsOffsetWorldSpace = boxCenter - data.Root.Position
-    end
-end
-
-local function RemoveESP(espName)
-    pcall(function()
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v.Name == (espName .. "_HL") or v.Name == (espName .. "_BG") or v.Name == (espName .. "_BoxBG") then
-                v:Destroy()
-            end
-            if v:IsA("BasePart") then
-                local origTrans = v:GetAttribute("OrigTrans_" .. espName)
-                if origTrans ~= nil then
-                    v.Transparency = origTrans
-                    v:SetAttribute("OrigTrans_" .. espName, nil)
+                if target:IsA("Model") then
+                    local cframe, size = target:GetBoundingBox()
+                    targetSize = size
+                    boxCenter = cframe.Position
+                elseif target:IsA("BasePart") then
+                    targetSize = target.Size
+                    boxCenter = target.Position
                 end
+                
+                local width = math.max(targetSize.X, targetSize.Z) * 1.1
+                local height = targetSize.Y * 1.1
+
+                data.BoxBg.Size = UDim2.new(width, 0, height, 0)
+                data.BoxBg.StudsOffsetWorldSpace = boxCenter - data.Root.Position
             end
         end
-    end)
-end
+    end
+end)
 
 Toggles.PlayerEsp:OnChanged(function() if not Toggles.PlayerEsp.Value then RemoveESP("ESP_Player") end end)
 Toggles.SlotEsp:OnChanged(function() if not Toggles.SlotEsp.Value then pcall(function() for _, v in ipairs(workspace:GetDescendants()) do if v.Name == "ESP_Slot_BG" then v:Destroy() end end end) end end)
