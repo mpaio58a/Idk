@@ -491,11 +491,9 @@ local function CreateESP(target, colorKey, espName, displayText)
                 Stroke = stroke,
                 BoxBg = boxBg,
                 BaseName = displayText or target.Name,
-                ColorKey = colorKey
-            }
-        end
-    end)
-end
+                ColorKey = colorKey,
+    ESPName = espName -- เพิ่มบรรทัดนี้
+}
 
 RunService.RenderStepped:Connect(function()
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
@@ -504,6 +502,21 @@ RunService.RenderStepped:Connect(function()
     for target, data in pairs(ActiveESPs) do
         if not target or not target.Parent or not data.Root or not data.Root.Parent then
             ActiveESPs[target] = nil
+            continue
+        end
+
+        -- เช็คการเปิด/ปิด ESP แต่ละประเภท
+        local isCategoryActive = true
+        if data.ESPName == "ESP_Player" and not Toggles.PlayerEsp.Value then isCategoryActive = false end
+        if data.ESPName == "ESP_Item" and not Toggles.ItemEsp.Value then isCategoryActive = false end
+        if data.ESPName == "ESP_Trap" and not Toggles.TrapEsp.Value then isCategoryActive = false end
+        if data.ESPName == "ESP_Puzzle" and not Toggles.PuzzleEsp.Value then isCategoryActive = false end
+
+        -- ปิดการแสดงผล Visual ทั้งหมดทันทีถ้า Toggle ถูกปิดอยู่
+        if not isCategoryActive then
+            if data.Highlight then data.Highlight.Enabled = false end
+            if data.NameLabel then data.NameLabel.Visible = false end
+            if data.BoxBg then data.BoxBg.Enabled = false end
             continue
         end
 
