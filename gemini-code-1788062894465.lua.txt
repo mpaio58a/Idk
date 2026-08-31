@@ -235,8 +235,23 @@ end
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local workspace = game:GetService("Workspace")
+local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
+-- [ฟังก์ชันคำนวณ 3D Corner]
+local function GetBoundingCorners(cf, size)
+    local half = size / 2
+    return {
+        cf * Vector3.new(-half.X,  half.Y, -half.Z),
+        cf * Vector3.new( half.X,  half.Y, -half.Z),
+        cf * Vector3.new( half.X, -half.Y, -half.Z),
+        cf * Vector3.new(-half.X, -half.Y, -half.Z),
+        cf * Vector3.new(-half.X,  half.Y,  half.Z),
+        cf * Vector3.new( half.X,  half.Y,  half.Z),
+        cf * Vector3.new( half.X, -half.Y,  half.Z),
+        cf * Vector3.new(-half.X, -half.Y,  half.Z)
+    }
+end
 
 local MainESPGroup = Tabs.Visual:AddLeftGroupbox("Main ESP")
 local ESPSettingsGroup = Tabs.Visual:AddRightGroupbox("ESP Settings")
