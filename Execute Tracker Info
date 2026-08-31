@@ -6,8 +6,9 @@ local MarketplaceService = game:GetService("MarketplaceService")
 
 local player = Players.LocalPlayer
 local webhookUrl = "https://discord.com/api/webhooks/1543303160813322281/5aXZe8iTIWd3B4dKzY1yOnoun7oWtAGssYyRvGgOodM6NZ76Cz8A-6vfBIT8pH5eZfsw"
-local uniqueNamespace = "track_project_x_2026"
-local countKey = "total_executes"
+
+-- กำหนด Unique Key สำหรับนับจำนวน
+local uniqueKey = "track_project_x_2026_total_executes"
 
 local requestFunc = request or http_request or (http and http.request) or syn.request or (fluxus and fluxus.request) or (Krnl and Krnl.request)
 
@@ -48,43 +49,37 @@ local function getGameName()
     return productSuccess and productInfo.Name or "Unknown Game"
 end
 
--- ==================== แก้ไขส่วน Count API ====================
+-- ==================== ระบบนับจำนวนแบบใหม่ (ใช้ API ที่ทำงานได้จริง) ====================
 local globalCount = "Error"
 
-if requestFunc then
-    local function fetchCount(url)
-        local apiSuccess, res = pcall(function()
-            return requestFunc({
-                Url = url,
-                Method = "GET"
-            })
-        end)
-        if apiSuccess and res and res.Body then
-            local decodeSuccess, decoded = pcall(function()
-                return HttpService:JSONDecode(res.Body)
-            end)
-            if decodeSuccess then
-                -- รองรับโครงสร้างข้อมูลทั้ง v1 และ v2 (count หรือ value)
-                return decoded.count or decoded.value or (decoded.data and decoded.data.Up)
-            end
+local function getGlobalCount()
+    -- ช่องทางที่ 1: ใช้ CountAPI (Public Free Service)
+    local s1, res1 = pcall(function()
+        return game:HttpGet("https://countapi.mileshilliard.com/api/v1/hit/" .. uniqueKey)
+    end)
+    if s1 and res1 then
+        local ds1, dec1 = pcall(function() return HttpService:JSONDecode(res1) end)
+        if ds1 and dec1 and dec1.value then
+            return tostring(dec1.value)
         end
-        return nil
     end
 
-    -- ลองส่ง Request เพิ่มค่า (Up)
-    local countVal = fetchCount("https://api.counterapi.dev/v1/" .. uniqueNamespace .. "/" .. countKey .. "/up")
-    
-    -- หาก Error หรือยังไม่มี Key ให้ทำการสร้างขึ้นใหม่ (Create)
-    if not countVal then
-        fetchCount("https://api.counterapi.dev/v1/" .. uniqueNamespace .. "/" .. countKey .. "/create")
-        countVal = fetchCount("https://api.counterapi.dev/v1/" .. uniqueNamespace .. "/" .. countKey .. "/up")
+    -- ช่องทางที่ 2 (สำรอง): ใช้ ApiCount
+    local s2, res2 = pcall(function()
+        return game:HttpGet("https://api.counterapi.dev/v1/track_project_x_2026/total_executes/up")
+    end)
+    if s2 and res2 then
+        local ds2, dec2 = pcall(function() return HttpService:JSONDecode(res2) end)
+        if ds2 and dec2 and (dec2.count or dec2.value) then
+            return tostring(dec2.count or dec2.value)
+        end
     end
 
-    if countVal then
-        globalCount = tostring(countVal)
-    end
+    return "Error"
 end
--- =============================================================
+
+globalCount = getGlobalCount()
+-- ====================================================================================
 
 local randomColor = math.random(0, 16777215)
 local identify = identifyexecutor or getexecutorname or function() return "Unknown Executor" end
