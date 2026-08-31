@@ -247,7 +247,6 @@ ESPSettingsGroup:AddToggle('NameEsp', { Text = 'Name ESP', Default = true })
 ESPSettingsGroup:AddToggle('DistanceEsp', { Text = 'Distance ESP', Default = false })
 ESPSettingsGroup:AddToggle('Box3DEsp', { Text = 'Box 3D ESP', Default = false })
 
-
 MainESPGroup:AddToggle('PlayerEsp', {
     Text = 'Player & Kitty ESP',
     Default = false
@@ -377,26 +376,6 @@ task.spawn(function()
 end)
 
 -- [[ ESP CONFIGURATION ]]
-local ESPConfig = {
-    Highlight = true,
-    HighlightColor = Color3.fromRGB(0, 255, 0),
-    HighlightOutlineColor = Color3.fromRGB(255, 255, 255),
-    HighlightTransparency = 0.5,
-    HighlightOutlineTransparency = 0,
-    
-    Names = true,
-    Distance = true,
-    TextColor = Color3.fromRGB(255, 255, 255),
-    TextSize = 14,
-    
-    Box3D = true,
-    Box3DColor = Color3.fromRGB(0, 255, 0),
-    Box3DThickness = 0.05,
-    Box3DTransparency = 0,
-    
-    MaxDistance = 100000 -- ระยะทางสูงสุดที่จะแสดง ESP (Studs)
-}
-
 local FolderCache = {}
 local ActiveESPs = {}
 
@@ -421,6 +400,18 @@ local function HandleTransparency(part, espName)
             part:SetAttribute("OrigTrans_" .. espName, part.Transparency)
         end
         part.Transparency = 0 
+    end
+end
+
+-- [เพิ่มฟังก์ชัน RemoveESP เพื่อทำการลบ Element ทั้งหมดเมื่อปิด ESP]
+local function RemoveESP(espName)
+    for target, data in pairs(ActiveESPs) do
+        if data.ESPName == espName then
+            if data.Highlight then pcall(function() data.Highlight:Destroy() end) end
+            if data.NameLabel and data.NameLabel.Parent then pcall(function() data.NameLabel.Parent:Destroy() end) end
+            if data.BoxBg then pcall(function() data.BoxBg:Destroy() end) end
+            ActiveESPs[target] = nil
+        end
     end
 end
 
@@ -491,7 +482,8 @@ local function CreateESP(target, colorKey, espName, displayText)
                 Stroke = stroke,
                 BoxBg = boxBg,
                 BaseName = displayText or target.Name,
-                ColorKey = colorKey
+                ColorKey = colorKey,
+                ESPName = espName
             }
         end
     end)
@@ -504,6 +496,20 @@ RunService.RenderStepped:Connect(function()
     for target, data in pairs(ActiveESPs) do
         if not target or not target.Parent or not data.Root or not data.Root.Parent then
             ActiveESPs[target] = nil
+            continue
+        end
+
+        -- เช็คสวิตช์เปิด/ปิดหลักของแต่ละหมวดหมู่
+        local isCategoryActive = true
+        if data.ESPName == "ESP_Player" and not Toggles.PlayerEsp.Value then isCategoryActive = false end
+        if data.ESPName == "ESP_Item" and not Toggles.ItemEsp.Value then isCategoryActive = false end
+        if data.ESPName == "ESP_Trap" and not Toggles.TrapEsp.Value then isCategoryActive = false end
+        if data.ESPName == "ESP_Puzzle" and not Toggles.PuzzleEsp.Value then isCategoryActive = false end
+
+        if not isCategoryActive then
+            if data.Highlight then data.Highlight.Enabled = false end
+            if data.NameLabel then data.NameLabel.Visible = false end
+            if data.BoxBg then data.BoxBg.Enabled = false end
             continue
         end
 
@@ -640,7 +646,6 @@ task.spawn(function()
         txt.Size = UDim2.new(1, 0, 1, 0)
         txt.BackgroundTransparency = 1
         txt.Text = text
-        -- เราเอาการตั้งค่า txt.TextColor3 ตรงนี้ออก เพื่อไปรันแบบ Real-time ด้านล่างแทน
         txt.Font = Enum.Font.SourceSansBold
         txt.TextSize = 14
         txt.TextWrapped = true
@@ -651,12 +656,10 @@ task.spawn(function()
         bg.Parent = root
     end
 
-    -- [ เพิ่มใหม่ ] อัปเดตสีแบบ Real-time (ทำงานตามเฟรมเรต ทำให้สีเลื่อนแบบลื่นไหล ไม่กระตุก)
     RunService.RenderStepped:Connect(function()
         if Toggles.SlotEsp and Toggles.SlotEsp.Value then
             local currentColor = Options.SlotColor.Value
             
-            -- อัปเดตสีของ Player
             for _, plr in ipairs(game.Players:GetPlayers()) do
                 if plr.Character and plr ~= LocalPlayer then
                     local root = plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character.PrimaryPart
@@ -667,7 +670,6 @@ task.spawn(function()
                 end
             end
             
-            -- อัปเดตสีของ Bots
             local playersFolder = GetTargetFolder("Players")
             if playersFolder then
                 for _, bot in ipairs(playersFolder:GetChildren()) do
@@ -683,7 +685,6 @@ task.spawn(function()
         end
     end)
 
-    -- ลูปดึงข้อความให้ทำงานทุกๆ 1 วินาทีเหมือนเดิม (เพื่อไม่ให้กินทรัพยากรเกมมากเกินไป)
     while task.wait(1) do
         if Toggles.SlotEsp and Toggles.SlotEsp.Value then
             pcall(function()
@@ -713,67 +714,6 @@ task.spawn(function()
                         end
                     end
                 end
-            end)
-        end
-    end
-end)
-
-task.spawn(function()
-    while task.wait(1) do
-        if Toggles.ItemEsp.Value then
-            pcall(function()
-                local targetFolder = GetTargetFolder("Tools") or GetTargetFolder("Items")
-                if targetFolder then
-                    for _, item in ipairs(targetFolder:GetChildren()) do
-                        if item:IsA("Model") or item:IsA("Tool") or item:IsA("BasePart") then
-                            CreateESP(item, "ItemColor", "ESP_Item", item.Name)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
-task.spawn(function()
-    while task.wait(1) do
-        if Toggles.TrapEsp.Value then
-            pcall(function()
-                local trapsFolder = GetTargetFolder("Traps")
-                if trapsFolder then
-                    for _, trap in ipairs(trapsFolder:GetChildren()) do
-                        if trap:IsA("Model") or trap:IsA("BasePart") then
-                            CreateESP(trap, "TrapColor", "ESP_Trap", "Trap")
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
-task.spawn(function()
-    local validStatuses = {["PuzzlePut"] = true, ["PuzzleLocked"] = true, ["RecipePuzzle"] = true, ["PuzzleExtractor"] = true, ["PuzzleInfinite"] = true}
-
-    while true do
-        if Toggles.PuzzleEsp.Value then
-            pcall(function()
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    if not Toggles.PuzzleEsp.Value then break end
-                    if obj:IsA("StringValue") and obj.Name == "Status" then
-                        local model = obj:FindFirstAncestorWhichIsA("Model") or obj.Parent
-                        if model and (model:IsA("Model") or model:IsA("BasePart")) then
-                            if validStatuses[obj.Value] then
-                                CreateESP(model, "PuzzleColor", "ESP_Puzzle", model.Name)
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-        task.wait(1.5)
-    end
-end)
 
 -- [[ MISC TAB ]]
 local MiscBox = Tabs.Misc:AddLeftGroupbox("Miscellaneous")
