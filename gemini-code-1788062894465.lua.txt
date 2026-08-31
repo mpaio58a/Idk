@@ -235,23 +235,7 @@ end
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local workspace = game:GetService("Workspace")
-local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
-
--- [ฟังก์ชันคำนวณ 3D Corner]
-local function GetBoundingCorners(cf, size)
-    local half = size / 2
-    return {
-        cf * Vector3.new(-half.X,  half.Y, -half.Z),
-        cf * Vector3.new( half.X,  half.Y, -half.Z),
-        cf * Vector3.new( half.X, -half.Y, -half.Z),
-        cf * Vector3.new(-half.X, -half.Y, -half.Z),
-        cf * Vector3.new(-half.X,  half.Y,  half.Z),
-        cf * Vector3.new( half.X,  half.Y,  half.Z),
-        cf * Vector3.new( half.X, -half.Y,  half.Z),
-        cf * Vector3.new(-half.X, -half.Y,  half.Z)
-    }
-end
 
 local MainESPGroup = Tabs.Visual:AddLeftGroupbox("Main ESP")
 local ESPSettingsGroup = Tabs.Visual:AddRightGroupbox("ESP Settings")
@@ -513,63 +497,6 @@ local function CreateESP(target, colorKey, espName, displayText)
     end)
 end
 
-local function CreateESP(player)
-    if player == LocalPlayer or ActiveESPs[player] then return end
-
-    local character = player.Character
-    if not character then return end
-
-    local espData = {}
-
-    -- 1. Create Highlight
-    local highlight = Instance.new("Highlight")
-    highlight.Name = "ESPHighlight"
-    highlight.FillColor = ESPConfig.HighlightColor
-    highlight.OutlineColor = ESPConfig.HighlightOutlineColor
-    highlight.FillTransparency = ESPConfig.HighlightTransparency
-    highlight.OutlineTransparency = ESPConfig.HighlightOutlineTransparency
-    highlight.Enabled = ESPConfig.Highlight
-    highlight.Adornee = character
-    highlight.Parent = character
-    espData.Highlight = highlight
-
-    -- 2. Create BillboardGui (2D / Text / Distance)
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "ESPBillboard"
-    billboard.AlwaysOnTop = true
-    billboard.Size = UDim2.new(0, 200, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 3, 0)
-    billboard.Adornee = character:FindFirstChild("HumanoidRootPart")
-    billboard.Enabled = ESPConfig.Names or ESPConfig.Distance
-    billboard.Parent = character
-
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Name = "ESPText"
-    nameLabel.Size = UDim2.new(1, 0, 1, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = ESPConfig.TextColor
-    nameLabel.TextSize = ESPConfig.TextSize
-    nameLabel.Font = Enum.Font.SourceSansBold
-    nameLabel.TextStrokeTransparency = 0.5
-    nameLabel.Parent = billboard
-    espData.Billboard = billboard
-    espData.NameLabel = nameLabel
-
-    -- 3. Create Box 3D ESP (เชื่อมต่อระบบ Box 3D)
-    local box3D = Instance.new("SelectionBox")
-    box3D.Name = "ESPBox3D"
-    box3D.Color3 = ESPConfig.Box3DColor
-    box3D.LineThickness = ESPConfig.Box3DThickness
-    box3D.Transparency = ESPConfig.Box3DTransparency
-    box3D.Adornee = character
-    box3D.Visible = ESPConfig.Box3D
-    box3D.Parent = character
-    espData.Box3D = box3D
-
-    -- บันทึกข้อมูลทั้งหมดลง ActiveESPs
-    ActiveESPs[player] = espData
-end
-
 RunService.RenderStepped:Connect(function()
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
     local myPos = LocalPlayer.Character.HumanoidRootPart.Position
@@ -625,80 +552,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
-
-RunService.RenderStepped:Connect(function()
-    for player, espData in pairs(ActiveESPs) do
-        local character = player.Character
-        local hrp = character and character:FindFirstChild("HumanoidRootPart")
-
-        if character and hrp and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local localHrp = LocalPlayer.Character.HumanoidRootPart
-            local distance = (hrp.Position - localHrp.Position).Magnitude
-
-            -- ตรวจสอบว่าอยู่ในระยะ ESPConfig.MaxDistance หรือไม่
-            local inRange = distance <= ESPConfig.MaxDistance
-
-            -- 1. อัปเดต Highlight
-            if espData.Highlight then
-                espData.Highlight.Enabled = ESPConfig.Highlight and inRange
-                espData.Highlight.FillColor = ESPConfig.HighlightColor
-                espData.Highlight.OutlineColor = ESPConfig.HighlightOutlineColor
-            end
-
-            -- 2. อัปเดต Box 3D
-            if espData.Box3D then
-                espData.Box3D.Visible = ESPConfig.Box3D and inRange
-                espData.Box3D.Color3 = ESPConfig.Box3DColor
-                espData.Box3D.Transparency = ESPConfig.Box3DTransparency
-                espData.Box3D.LineThickness = ESPConfig.Box3DThickness
-            end
-
-            -- 3. อัปเดต BillboardGui & Text
-            if espData.Billboard and espData.NameLabel then
-                espData.Billboard.Enabled = (ESPConfig.Names or ESPConfig.Distance) and inRange
-                
-                local text = ""
-                if ESPConfig.Names then
-                    text = player.Name
-                end
-                if ESPConfig.Distance then
-                    text = text ~= "" and (text .. " [" .. math.floor(distance) .. "m]") or (math.floor(distance) .. "m")
-                end
-                
-                espData.NameLabel.Text = text
-                espData.NameLabel.TextColor3 = ESPConfig.TextColor
-            end
-        else
-            -- ซ่อนถ้าหาตัวไม่เจอหรือตาย
-            if espData.Highlight then espData.Highlight.Enabled = false end
-                if espData.Box3D then espData.Box3D.Visible = false end
-            if espData.Billboard then espData.Billboard.Enabled = false end
-        end
-    end
-end)
-
-local function RemoveESP(player)
-    local espData = ActiveESPs[player]
-    if not espData then return end
-
-    -- 1. ลบ Highlight
-    if espData.Highlight then
-        espData.Highlight:Destroy()
-    end
-
-    -- 2. ลบ BillboardGui (Names / Distance)
-    if espData.Billboard then
-        espData.Billboard:Destroy()
-    end
-
-    -- 3. ลบ Box 3D ESP (เพิ่มการลบส่วนนี้)
-    if espData.Box3D then
-        espData.Box3D:Destroy()
-    end
-
-    -- เคลียร์ข้อมูลออกจากตาราง ActiveESPs
-    ActiveESPs[player] = nil
-end
 
 Toggles.PlayerEsp:OnChanged(function() if not Toggles.PlayerEsp.Value then RemoveESP("ESP_Player") end end)
 Toggles.SlotEsp:OnChanged(function() if not Toggles.SlotEsp.Value then pcall(function() for _, v in ipairs(workspace:GetDescendants()) do if v.Name == "ESP_Slot_BG" then v:Destroy() end end end) end end)
