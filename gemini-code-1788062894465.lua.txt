@@ -243,7 +243,7 @@ local ESPSettingsGroup = Tabs.Visual:AddRightGroupbox("ESP Settings")
 local ColorControlsGroup = Tabs.Visual:AddRightGroupbox("Color Controls")
 
 ESPSettingsGroup:AddToggle('HighlightEsp', { Text = 'Highlight ESP', Default = true })
-ESPSettingsGroup:AddToggle('BoxEsp', { Text = 'Box ESP', Default = false })
+ESPSettingsGroup:AddToggle('BoxEsp', { Text = 'Box ESP v2', Default = false })
 ESPSettingsGroup:AddToggle('NameEsp', { Text = 'Name ESP', Default = true })
 ESPSettingsGroup:AddToggle('DistanceEsp', { Text = 'Distance ESP', Default = false })
 
