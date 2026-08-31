@@ -513,7 +513,7 @@ local function CreateESP(target, colorKey, espName, displayText)
     end)
 end
 
-local function CreateESP(player)
+local function CreatePlayerESP(player)
     if player == LocalPlayer or ActiveESPs[player] then return end
 
     local character = player.Character
