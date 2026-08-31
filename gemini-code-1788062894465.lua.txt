@@ -714,7 +714,7 @@ task.spawn(function()
                     if plr.Character and plr ~= LocalPlayer then
                         local isKiller = plr.Character:FindFirstChild("Weapon", true)
                         local cKey = isKiller and "BotColor" or "PlayerColor"
-                        CreateESP(plr.Character, cKey, "ESP_Player", plr.Name)
+                        CreatePlayerESP(plr.Character, cKey, "ESP_Player", plr.Name)
                     end
                 end
 
