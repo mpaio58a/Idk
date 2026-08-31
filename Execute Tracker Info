@@ -48,23 +48,43 @@ local function getGameName()
     return productSuccess and productInfo.Name or "Unknown Game"
 end
 
+-- ==================== แก้ไขส่วน Count API ====================
 local globalCount = "Error"
+
 if requestFunc then
-    local apiSuccess, res = pcall(function()
-        return requestFunc({
-            Url = "https://api.counterapi.dev/v1/" .. uniqueNamespace .. "/" .. countKey .. "/up",
-            Method = "GET"
-        })
-    end)
-    if apiSuccess and res and res.Body then
-        local decodeSuccess, decoded = pcall(function()
-            return HttpService:JSONDecode(res.Body)
+    local function fetchCount(url)
+        local apiSuccess, res = pcall(function()
+            return requestFunc({
+                Url = url,
+                Method = "GET"
+            })
         end)
-        if decodeSuccess and decoded.count then
-            globalCount = tostring(decoded.count)
+        if apiSuccess and res and res.Body then
+            local decodeSuccess, decoded = pcall(function()
+                return HttpService:JSONDecode(res.Body)
+            end)
+            if decodeSuccess then
+                -- รองรับโครงสร้างข้อมูลทั้ง v1 และ v2 (count หรือ value)
+                return decoded.count or decoded.value or (decoded.data and decoded.data.Up)
+            end
         end
+        return nil
+    end
+
+    -- ลองส่ง Request เพิ่มค่า (Up)
+    local countVal = fetchCount("https://api.counterapi.dev/v1/" .. uniqueNamespace .. "/" .. countKey .. "/up")
+    
+    -- หาก Error หรือยังไม่มี Key ให้ทำการสร้างขึ้นใหม่ (Create)
+    if not countVal then
+        fetchCount("https://api.counterapi.dev/v1/" .. uniqueNamespace .. "/" .. countKey .. "/create")
+        countVal = fetchCount("https://api.counterapi.dev/v1/" .. uniqueNamespace .. "/" .. countKey .. "/up")
+    end
+
+    if countVal then
+        globalCount = tostring(countVal)
     end
 end
+-- =============================================================
 
 local randomColor = math.random(0, 16777215)
 local identify = identifyexecutor or getexecutorname or function() return "Unknown Executor" end
