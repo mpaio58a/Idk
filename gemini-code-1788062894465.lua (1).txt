@@ -757,7 +757,7 @@ MiscBox:AddButton({ Text = "Revive", Func = function()
     game:GetService("ReplicatedStorage").Events.Join:FireServer() 
 end })
 
-MiscBox:AddButton({ Text = "Get out of jail", Func = function() 
+MiscBox:AddButton({ Text = "Try Out Jail", Func = function() 
     game:GetService("ReplicatedStorage").Events.Leave:FireServer()
     game:GetService("ReplicatedStorage").Events.Leave:FireServer()     
     task.wait(0.1)
