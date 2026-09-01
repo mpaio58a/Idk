@@ -828,6 +828,61 @@ Toggles.AntiTrap:OnChanged(function()
     end
 end)
 
+-- ==========================================
+-- 1. ฟังก์ชันหลัก (วางไว้นอกสุด หรือบนสุดของโค้ดหลัก)
+-- ==========================================
+local function DoRemoveTraps()
+    local mapFolder = workspace:FindFirstChild("Map")
+    if mapFolder then
+        local trapsFolder = mapFolder:FindFirstChild("Traps")
+        if trapsFolder then
+            for _, trap in ipairs(trapsFolder:GetChildren()) do
+                if trap.Name == "Trap" then
+                    -- เรียก Remote Event ส่งกับดักไปลบ
+                    game:GetService("ReplicatedStorage")
+                        :WaitForChild("Events")
+                        :WaitForChild("RemoveTrap")
+                        :FireServer(trap)
+                end
+            end
+        end
+    end
+end
+
+-- ลูปทำงานเบื้องหลังสำหรับระบบ Auto (รันรอไว้ได้เลย)
+task.spawn(function()
+    while task.wait(0.5) do
+        if Toggles.AutoRemoveTrap and Toggles.AutoRemoveTrap.Value then
+            DoRemoveTraps()
+        end
+    end
+end)
+
+
+-- ==========================================
+-- 2. โค้ดส่วน Remove Trap (ปุ่มกดลบเอง)
+-- [เอาไปใส่ใน Groupbox ที่คุณต้องการ]
+-- ==========================================
+MiscBox:AddButton({
+    Text = "Remove all nearby traps.",
+    Func = function()
+        DoRemoveTraps()
+    end,
+    Tooltip = "Test123",
+    DoubleClick = false
+})
+
+
+-- ==========================================
+-- 3. โค้ดส่วน Auto Remove Trap (สวิตช์เปิด/ปิด)
+-- [เอาไปใส่ใน Groupbox ที่คุณต้องการ]
+-- ==========================================
+MiscBox:AddToggle("AutoRemoveTrap", {
+    Text = "Auto Remove all nearby traps.",
+    Default = false,
+    Tooltip = "Test123",
+})
+
 local AntiLogicCache = {}
 MiscBox:AddToggle("AntiLogic", { Text = "Anti Logic (Break Invisible Wall)", Tooltip = "Not recommended, it's buggy.", Default = false })
 task.spawn(function()
