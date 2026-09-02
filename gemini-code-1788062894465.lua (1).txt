@@ -884,7 +884,7 @@ MiscBox:AddToggle("AutoRemoveTrap", {
 })
 
 local AntiLogicCache = {}
-MiscBox:AddToggle("AntiLogic", { Text = "Anti Logic (Break Invisible Wall)", Tooltip = "Not recommended, it's buggy.", Default = false })
+MiscBox:AddToggle("AntiLogic", { Text = "Disable Invisible Wall", Tooltip = "", Default = false })
 task.spawn(function()
     while true do
         if Toggles.AntiLogic and Toggles.AntiLogic.Value then
