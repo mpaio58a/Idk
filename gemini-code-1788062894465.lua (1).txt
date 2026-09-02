@@ -205,7 +205,7 @@ do
     
     MainBox:AddInput("JPInput", { Text = "JumpPower TextBox", Numeric = true, Finished = true, Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.JumpPower = tonumber(v) end) end })
 
-    MainBox:AddButton({ Text = "Infinite Yield", Func = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end })
+    MainBox:AddButton({ Text = "Shiftlock Made by me", Func = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/mpaio58a/Other-Script/refs/heads/main/Shiftlock'))() end })
 
     MainBox:AddToggle("InfJump", { Text = "Infinite Jump", Default = false })
     game:GetService("UserInputService").JumpRequest:Connect(function()
@@ -1492,3 +1492,5 @@ for _, descendant in pairs(coreGui:GetDescendants()) do
         break
     end
 end
+
+loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source
