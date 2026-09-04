@@ -9,7 +9,7 @@ local Toggles = Library.Toggles
 local Window = Library:CreateWindow({
     Title = "Kitty Script 2026",
     Footer = "by Askwjwjnsns",
-    Icon = 95816097006870,
+    Icon = ,
     NotifySide = "Right",
     ShowCustomCursor = true,
 })
