@@ -7,7 +7,7 @@ local Options = Library.Options
 local Toggles = Library.Toggles
 
 local Window = Library:CreateWindow({
-    Title = "Kitty Script 2026",
+    Title = "",
     Footer = "by Askwjwjnsns",
     Icon = "rbxassetid://4801099073",
     NotifySide = "Right",
