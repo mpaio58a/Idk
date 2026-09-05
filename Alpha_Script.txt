@@ -7,7 +7,7 @@ local Options = Library.Options
 local Toggles = Library.Toggles
 
 local Window = Library:CreateWindow({
-    Title = "Beta Kitty Script",
+    Title = "Progress 25%",
     Footer = "by Askwjwjnsns",
     Icon = "",
     NotifySide = "Right",
