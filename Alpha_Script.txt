@@ -7,7 +7,7 @@ local Options = Library.Options
 local Toggles = Library.Toggles
 
 local Window = Library:CreateWindow({
-    Title = "Progress 25%?",
+    Title = "Progress 25%",
     Footer = "by Askwjwjnsns",
     NotifySide = "Right",
     ShowCustomCursor = true,
