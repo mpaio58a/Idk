@@ -4,7 +4,7 @@ local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.
 
 local Window = Fluent:CreateWindow({
     Title = "Kitty Script [soon]",
-    SubTitle = "by Evil Morty",
+    SubTitle = "Made by 5001_Kitty",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
