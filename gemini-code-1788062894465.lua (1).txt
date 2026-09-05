@@ -1355,18 +1355,18 @@ end
 
 -- [[ UPDATE TAB ]]
 local UpdateBox = Tabs.Update:AddLeftGroupbox("Update Logs")
-UpdateBox:AddLabel("Update Log v3.6 & 3.7 | 4/9/2026\n--- Add Free Kitty & Mouse Emotes\n--- Add Set Objects\n--- Add Esp Settings", true)
+UpdateBox:AddLabel("Update Log v3.6 & 3.7 | 4/9/2026\n+ Add Free Kitty & Mouse Emotes\n+ Add Set Objects\n+ Add Esp Settings", true)
 UpdateBox:AddDivider()
-UpdateBox:AddLabel("Update Log v3.5 | 3/26/2026\n--- Add New Tab Misc2\n--- Add Toggle Esp (Player Slots, Trap, Puzzles)\n--- Add Execute Emote And More", true)
+UpdateBox:AddLabel("Update Log v3.5 | 3/26/2026\n+ Add New Tab Misc2\n+ Add Toggle Esp (Player Slots, Trap, Puzzles)\n+ Add Execute Emote And More", true)
 UpdateBox:AddButton({ Text = "You In This Version", Func = function() end })
 UpdateBox:AddDivider()
-UpdateBox:AddLabel("Update Log v3.0 | 3/21/2026\n--- New UI Redesign\n--- Removed unnecessary menus and broken buttons\n--- Removed menu Guis\n--- Improved Main Tab layout\n--- Added Visual menu (Player & Bot, Items, Trap, Puzzles ESP)\n--- Anti Trap with Hide/Restore logic\n--- General system optimizations and improvements\n--- And More", true)
+UpdateBox:AddLabel("Update Log v3.0 | 3/21/2026\n+ New UI Redesign\n- Removed unnecessary menus and broken buttons\n- Removed menu Guis\n= Improved Main Tab layout\n+ Added Visual menu (Player & Bot, Items, Trap, Puzzles ESP)\n+ Anti Trap with Hide/Restore logic\n= General system optimizations and improvements\n+ And More", true)
 UpdateBox:AddButton({ Text = "Cannot Go To Version v3.0", Func = function() end })
 UpdateBox:AddDivider()
-UpdateBox:AddLabel("Update Log v2.0 | ?/?/2024\n--- Op?\n--- New Function\n--- Close/Open Gui\n--- Delete Remote Spy\n--- New Theme and Change Themes in Credit", true)
+UpdateBox:AddLabel("Update Log v2.0 | ?/?/2024\n? Op?\n+ New Function\n+ Close/Open Gui\n- Delete Remote Spy\n+ New Theme and Change Themes in Credit", true)
 UpdateBox:AddButton({ Text = "want to try version v2.0?", Func = function() loadstring(game:HttpGet("https://pastebin.com/raw/fPANNEz7"))() end })
 UpdateBox:AddDivider()
-UpdateBox:AddLabel("Update Log v1.0 | ?/?/2023\n--- Fixed Mouse\n--- New Function\n--- New LocalPlayer\n--- +Hide And Seek\n--- Delete Toggles", true)
+UpdateBox:AddLabel("Update Log v1.0 | ?/?/2023\n= Fixed Mouse\n+ New Function\n+ New LocalPlayer\n+ +Hide And Seek\n- Delete Toggles", true)
 UpdateBox:AddButton({ Text = "want to try version v1.0? (Not Recommend)", Func = function() loadstring(game:HttpGet('https://pastebin.com/raw/MSE3iQSj'))() end })
 
 -- [[ SETTINGS ]]
