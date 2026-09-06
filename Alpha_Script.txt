@@ -1515,3 +1515,47 @@ task.spawn(function()
         end
     end
 end)
+
+local player = game.Players.LocalPlayer
+
+local wordList = {
+    "TRASH SKINS!",
+    "Progress 25%",
+    "Next Update Is Big Update",
+    "Sorry for change Kitty logo",
+    "Also Try Kitty Script v3.7",
+    "Hello World",
+    "I am Thailand",
+    "Try Collect All My Tips",
+    "I Will Add give tools & delete tools in next update"
+}
+
+-- สุ่มคำ 1 ครั้งเมื่อเริ่มรันสคริปต์
+local currentText = wordList[math.random(1, #wordList)]
+
+-- ลูปอัปเดตข้อความลง UI ทันที
+task.spawn(function()
+    while task.wait() do
+        local main = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("Main")
+        if main and main:FindFirstChild("UI") then
+            local buttonS = main.UI:FindFirstChild("ButtonS")
+            if buttonS then
+                local shop = buttonS:FindFirstChild("Shop")
+                if shop then
+                    local announce = shop:FindFirstChild("Announce")
+                    if announce then
+                        if announce:IsA("TextLabel") and announce.Text ~= currentText then
+                            announce.Text = currentText
+                        end
+                        
+                        local white = announce:FindFirstChild("White")
+                        if white and white:IsA("TextLabel") and white.Text ~= currentText then
+                            white.Text = currentText
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
