@@ -1496,7 +1496,7 @@ local player = game.Players.LocalPlayer
 local assetId = "rbxassetid://136023289157145"
 
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(0) do
         local main = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("Main")
         if main and main:FindFirstChild("UI") then
             local parentLogo = main.UI:FindFirstChild("Logo")
