@@ -1493,41 +1493,9 @@ for _, descendant in pairs(coreGui:GetDescendants()) do
 end
 
 local player = game.Players.LocalPlayer
-local assetId = "rbxassetid://136023289157145"
-
-task.spawn(function()
-    while task.wait() do
-        local main = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("Main")
-        if main and main:FindFirstChild("UI") then
-            local parentLogo = main.UI:FindFirstChild("Logo")
-            if parentLogo then
-                -- เปลี่ยนตัวข้างนอก
-                if (parentLogo:IsA("ImageLabel") or parentLogo:IsA("ImageButton")) and parentLogo.Image ~= assetId then
-                    parentLogo.Image = assetId
-                end
-                
-                -- เปลี่ยนตัวข้างใน
-                local childLogo = parentLogo:FindFirstChild("Logo")
-                if childLogo and (childLogo:IsA("ImageLabel") or childLogo:IsA("ImageButton")) and childLogo.Image ~= assetId then
-                    childLogo.Image = assetId
-                end
-            end
-        end
-    end
-end)
-
-local player = game.Players.LocalPlayer
 
 local wordList = {
-    "TRASH SKINS!",
-    "Progress 25%",
-    "Next Update Is Big Update",
-    "Sorry for change Kitty logo",
-    "Also Try Kitty Script v3.7",
-    "Hello World",
-    "I am Thailand",
-    "Try Collect All My Tips",
-    "I Will Add give tools & delete tools in next update"
+    "Update Every Saturday or Sunday"
 }
 
 -- สุ่มคำ 1 ครั้งเมื่อเริ่มรันสคริปต์
