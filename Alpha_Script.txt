@@ -1495,7 +1495,7 @@ end
 local player = game.Players.LocalPlayer
 
 local wordList = {
-    "Update Every Saturday or Sunday"
+    "U̶p̶d̶a̶t̶e̶ ̶E̶v̶e̶r̶y̶ ̶S̶a̶t̶u̶r̶d̶a̶y̶ ̶o̶r̶ ̶S̶u̶n̶d̶a̶y̶"
 }
 
 -- สุ่มคำ 1 ครั้งเมื่อเริ่มรันสคริปต์
