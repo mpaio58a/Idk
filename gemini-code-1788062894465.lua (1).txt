@@ -1291,14 +1291,33 @@ OthersBox:AddButton({
     end
 })
 
-local ToolList = {}
-local ToolNames = {"Press Refresh"}
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
 
-OthersBox:AddDropdown("ToolDropdown", { Values = ToolNames, Multi = false, Default = 1, Text = "Selected Item" })
-OthersBox:AddButton({ Text = "Refresh Items", Func = function()
-    ToolList = {}
-    ToolNames = {}
+local ToolList = {}
+local ToolNames = {"Loading..."}
+
+OthersBox:AddDropdown("MethodDropdown", { 
+    Values = {"Teleport", "Tween", "Give"}, 
+    Multi = false, 
+    Default = 1, 
+    Text = "Methods" 
+})
+
+OthersBox:AddDropdown("ToolDropdown", { 
+    Values = ToolNames, 
+    Multi = false, 
+    Default = 1, 
+    Text = "Selected Item" 
+})
+
+local function UpdateItems()
+    local newToolList = {}
+    local newToolNames = {}
     local nameCount = {}
+    
     local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
     if tf then
         for _, v in pairs(tf:GetChildren()) do
@@ -1306,21 +1325,61 @@ OthersBox:AddButton({ Text = "Refresh Items", Func = function()
                 local oName = v.Name
                 nameCount[oName] = (nameCount[oName] or 0) + 1
                 local dName = oName .. " [" .. tostring(nameCount[oName]) .. "]"
-                table.insert(ToolNames, dName)
-                ToolList[dName] = v
+                table.insert(newToolNames, dName)
+                newToolList[dName] = v
             end
         end
     end
-    table.sort(ToolNames)
-    Options.ToolDropdown:SetValues(#ToolNames > 0 and ToolNames or {"No Items Found"})
-end })
+    
+    table.sort(newToolNames)
+    
+    if #newToolNames == 0 then
+        newToolNames = {"No Items Found"}
+    end
+    
+    ToolList = newToolList
+    Options.ToolDropdown:SetValues(newToolNames)
+end
 
-OthersBox:AddButton({ Text = "Teleport to Item", Tooltip = "Error Try Refresh Items and Click This Button", Func = function()
+task.spawn(function()
+    while task.wait(3) do
+        UpdateItems()
+    end
+end)
+
+UpdateItems()
+
+OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based on selected Method", Func = function()
     local target = ToolList[Options.ToolDropdown.Value]
-    if target and game.Players.LocalPlayer.Character then
-        local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        local pos = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")) or target
-        if hrp and pos then hrp.CFrame = pos.CFrame + Vector3.new(0, 3, 0) end
+    local method = Options.MethodDropdown.Value
+    
+    if target then
+        if method == "Give" then
+            ReplicatedStorage:WaitForChild("Events"):WaitForChild("GetTool"):FireServer(target)
+        else
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local hrp = char.HumanoidRootPart
+                local pos = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")) or target
+                
+                if pos then
+                    local targetCFrame = pos.CFrame + Vector3.new(0, 3, 0)
+                    
+                    if method == "Teleport" then
+                        hrp.CFrame = targetCFrame
+                        
+                    elseif method == "Tween" then
+                        local distance = (hrp.Position - targetCFrame.Position).Magnitude
+                        local speed = 150 
+                        local tweenTime = distance / speed
+                        local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
+                        
+                        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
+                        tween:Play()
+                    end
+                end
+            end
+        end
     end
 end})
 
