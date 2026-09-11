@@ -1299,93 +1299,89 @@ local LocalPlayer = Players.LocalPlayer
 local ToolList = {}
 local ToolNames = {"Loading..."}
 
--- 1. Search Dropdown (เปลี่ยนจาก Item Dropdown)
-OthersBox:AddDropdown("ToolDropdown", { 
-    Values = ToolNames, 
-    Multi = false, 
-    Default = 1, 
-    Text = "Search Item" 
+LeftGroupBox:AddDropdown("ToolDropdown", {
+    Values = ToolNames,
+    Default = 1,
+    Multi = false,
+    Text = "Search Item",
+    Searchable = true,
 })
 
--- 2. Methods Dropdown (ย้ายมาอยู่ตรงกลาง)
-OthersBox:AddDropdown("MethodDropdown", { 
-    Values = {"Teleport", "Tween", "Give"}, 
-    Multi = false, 
-    Default = 1, 
-    Text = "Methods" 
-})
-
--- ระบบ Auto Refresh ไอเทม
-local function UpdateItems()
-    local newToolList = {}
-    local newToolNames = {}
-    local nameCount = {}
-    
-    local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
-    if tf then
-        for _, v in pairs(tf:GetChildren()) do
-            if v:IsA("Model") or v:IsA("Tool") or v:IsA("BasePart") then
-                local oName = v.Name
-                nameCount[oName] = (nameCount[oName] or 0) + 1
-                local dName = oName .. " [" .. tostring(nameCount[oName]) .. "]"
-                table.insert(newToolNames, dName)
-                newToolList[dName] = v
+LeftGroupBox:AddButton({
+    Text = "Teleport",
+    Func = function()
+        local target = ToolList[Options.ToolDropdown.Value]
+        if not target then return end
+        
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local pos = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")) or target
+            if pos then
+                char.HumanoidRootPart.CFrame = pos.CFrame + Vector3.new(0, 3, 0)
             end
         end
     end
-    
-    table.sort(newToolNames)
-    
-    if #newToolNames == 0 then
-        newToolNames = {"No Items Found"}
+}):AddButton({
+    Text = "Tween",
+    Func = function()
+        local target = ToolList[Options.ToolDropdown.Value]
+        if not target then return end
+        
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            local pos = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")) or target
+            if pos then
+                local targetCFrame = pos.CFrame + Vector3.new(0, 3, 0)
+                local distance = (hrp.Position - targetCFrame.Position).Magnitude
+                local tweenInfo = TweenInfo.new(distance / 150, Enum.EasingStyle.Linear)
+                TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame}):Play()
+            end
+        end
     end
-    
-    ToolList = newToolList
-    Options.ToolDropdown:SetValues(newToolNames)
-end
+}):AddButton({
+    Text = "Give",
+    Func = function()
+        local target = ToolList[Options.ToolDropdown.Value]
+        if target then
+            local args = { target }
+            ReplicatedStorage:WaitForChild("Events"):WaitForChild("GetTool"):FireServer(unpack(args))
+        end
+    end
+})
 
 task.spawn(function()
     while task.wait(3) do
-        UpdateItems()
-    end
-end)
-
-UpdateItems()
-
--- 3. ปุ่ม Execute Action (อยู่ล่างสุด)
-OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based on selected Method", Func = function()
-    local target = ToolList[Options.ToolDropdown.Value]
-    local method = Options.MethodDropdown.Value
-    
-    if target then
-        if method == "Give" then
-            ReplicatedStorage:WaitForChild("Events"):WaitForChild("GetTool"):FireServer(target)
-        else
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                local hrp = char.HumanoidRootPart
-                local pos = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")) or target
-                
-                if pos then
-                    local targetCFrame = pos.CFrame + Vector3.new(0, 3, 0)
-                    
-                    if method == "Teleport" then
-                        hrp.CFrame = targetCFrame
-                        
-                    elseif method == "Tween" then
-                        local distance = (hrp.Position - targetCFrame.Position).Magnitude
-                        local speed = 150 
-                        local tweenTime = distance / speed
-                        local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-                        
-                        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
-                        tween:Play()
-                    end
+        local newToolList = {}
+        local newToolNames = {}
+        local nameCount = {}
+        
+        local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
+        if tf then
+            for _, v in pairs(tf:GetChildren()) do
+                if v:IsA("Model") or v:IsA("Tool") or v:IsA("BasePart") then
+                    local oName = v.Name
+                    nameCount[oName] = (nameCount[oName] or 0) + 1
+                    local dName = oName .. " [" .. tostring(nameCount[oName]) .. "]"
+                    table.insert(newToolNames, dName)
+                    newToolList[dName] = v
                 end
             end
         end
+        
+        table.sort(newToolNames)
+        
+        if #newToolNames == 0 then
+            newToolNames = {"No Items Found"}
+        end
+        
+        ToolList = newToolList
+        
+        if Options.ToolDropdown then
+            Options.ToolDropdown:SetValues(newToolNames)
+        end
     end
-end})
+end)
 
 -- [[ SKINS TAB ]]
 local SkinsBox = Tabs.Skins:AddLeftGroupbox("Skin Actions")
