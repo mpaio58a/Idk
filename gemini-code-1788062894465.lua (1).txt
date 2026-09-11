@@ -1312,8 +1312,7 @@ OthersBox:AddDropdown("ToolDropdown", {
 OthersBox:AddDropdown("MethodDropdown", { 
     Values = {"Teleport", "Tween", "Give"}, 
     Multi = false, 
-    Default = 1, 
-    Text = ""
+    Default = 1 
 })
 
 -- ระบบ Auto Refresh ไอเทม
