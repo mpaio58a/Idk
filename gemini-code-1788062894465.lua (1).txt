@@ -1304,8 +1304,8 @@ OthersBox:AddDropdown("ToolDropdown", {
     Values = ToolNames, 
     Multi = false, 
     Default = 1, 
-    Text = "Selected Item" 
-    Searchable = true,
+    Text = "Selected Item",
+    Searchable = true 
 })
 
 -- 2. Methods Dropdown (ย้ายมาอยู่ตรงกลาง)
@@ -1313,6 +1313,7 @@ OthersBox:AddDropdown("MethodDropdown", {
     Values = {"Teleport", "Tween", "Give"}, 
     Multi = false, 
     Default = 1, 
+    Text = "Methods"
 })
 
 -- ระบบ Auto Refresh ไอเทม
