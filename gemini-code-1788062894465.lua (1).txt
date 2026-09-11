@@ -1299,7 +1299,7 @@ local LocalPlayer = Players.LocalPlayer
 local ToolList = {}
 local ToolNames = {"Loading..."}
 
-LeftGroupBox:AddDropdown("ToolDropdown", {
+OthersBox:AddDropdown("ToolDropdown", {
     Values = ToolNames,
     Default = 1,
     Multi = false,
@@ -1307,7 +1307,7 @@ LeftGroupBox:AddDropdown("ToolDropdown", {
     Searchable = true,
 })
 
-LeftGroupBox:AddButton({
+OthersBox:AddButton({
     Text = "Teleport",
     Func = function()
         local target = ToolList[Options.ToolDropdown.Value]
