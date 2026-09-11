@@ -1299,6 +1299,15 @@ local LocalPlayer = Players.LocalPlayer
 local ToolList = {}
 local ToolNames = {"Loading..."}
 
+-- 1. Search Dropdown (เปลี่ยนจาก Item Dropdown)
+OthersBox:AddDropdown("ToolDropdown", { 
+    Values = ToolNames, 
+    Multi = false, 
+    Default = 1, 
+    Text = "Search Item" 
+})
+
+-- 2. Methods Dropdown (ย้ายมาอยู่ตรงกลาง)
 OthersBox:AddDropdown("MethodDropdown", { 
     Values = {"Teleport", "Tween", "Give"}, 
     Multi = false, 
@@ -1306,13 +1315,7 @@ OthersBox:AddDropdown("MethodDropdown", {
     Text = "Methods" 
 })
 
-OthersBox:AddDropdown("ToolDropdown", { 
-    Values = ToolNames, 
-    Multi = false, 
-    Default = 1, 
-    Text = "Selected Item" 
-})
-
+-- ระบบ Auto Refresh ไอเทม
 local function UpdateItems()
     local newToolList = {}
     local newToolNames = {}
@@ -1349,6 +1352,7 @@ end)
 
 UpdateItems()
 
+-- 3. ปุ่ม Execute Action (อยู่ล่างสุด)
 OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based on selected Method", Func = function()
     local target = ToolList[Options.ToolDropdown.Value]
     local method = Options.MethodDropdown.Value
