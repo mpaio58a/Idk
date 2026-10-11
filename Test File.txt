@@ -1352,37 +1352,51 @@ end)
 
 UpdateItems()
 
--- 3. ปุ่ม Execute Action (อยู่ล่างสุด)
+-- 3. ปุ่ม Execute Action — Give + teleport + return
 OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based on selected Method", Func = function()
     local target = ToolList[Options.ToolDropdown.Value]
     local method = Options.MethodDropdown.Value
-    
-    if target then
-        if method == "Give" then
-            ReplicatedStorage:WaitForChild("Events"):WaitForChild("GetTool"):FireServer(target)
-        else
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                local hrp = char.HumanoidRootPart
-                local pos = target:IsA("Model") and (target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")) or target
-                
-                if pos then
-                    local targetCFrame = pos.CFrame + Vector3.new(0, 3, 0)
-                    
-                    if method == "Teleport" then
-                        hrp.CFrame = targetCFrame
-                        
-                    elseif method == "Tween" then
-                        local distance = (hrp.Position - targetCFrame.Position).Magnitude
-                        local speed = 150 
-                        local tweenTime = distance / speed
-                        local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-                        
-                        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
-                        tween:Play()
-                    end
-                end
-            end
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+    if not target or not hrp then return end
+
+    -- เก็บจุดเดิมก่อนทำอะไร
+    local originCFrame = hrp.CFrame
+
+    -- หา CFrame ของ target
+    local part
+    if target:IsA("Model") then
+        part = target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")
+    elseif target:IsA("BasePart") then
+        part = target
+    end
+    if not part then return end
+    local targetCFrame = part.CFrame + Vector3.new(0, 3, 0)
+
+    -- ให้ของ: วาปไป → fire remote → วาปกลับ
+    if method == "Give" then
+        local events = ReplicatedStorage:WaitForChild("Events", 5)
+        local getTool = events and events:WaitForChild("GetTool", 5)
+        if not getTool then return end
+
+        local oldCFrame = hrp.CFrame
+        hrp.CFrame = targetCFrame
+        task.wait(0.05)  -- ให้ replication ถึง server ก่อนยิง remote
+        getTool:FireServer(target)
+        task.wait(0.05)  -- รอ server รับ remote
+        hrp.CFrame = oldCFrame
+
+    -- Methods อื่นทำงานเหมือนเดิม
+    else
+        if method == "Teleport" then
+            hrp.CFrame = targetCFrame
+
+        elseif method == "Tween" then
+            local distance = (hrp.Position - targetCFrame.Position).Magnitude
+            local tweenTime = distance / 150
+            local tween = TweenService:Create(hrp, TweenInfo.new(tweenTime, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
+            tween:Play()
         end
     end
 end})
