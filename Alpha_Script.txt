@@ -7,7 +7,7 @@ local Options = Library.Options
 local Toggles = Library.Toggles
 
 local Window = Library:CreateWindow({
-    Title = "Progress 25%",
+    Title = "Progress 25% (Fixed)",
     Footer = "Made by 5001_Kitty",
     NotifySide = "Right",
     ShowCustomCursor = true,
@@ -1460,70 +1460,72 @@ SaveManager:LoadAutoloadConfig()
 local coreGui = game:GetService("CoreGui")
 local targetName = "Obsidian"
 local cornerRadiusValue = 10
+
 local gothamFont = Font.new(
     "rbxasset://fonts/families/GothamSSm.json",
     Enum.FontWeight.Regular,
     Enum.FontStyle.Normal
 )
 
+-- Keep original fonts for icon-related elements.
+local function isIconElement(element)
+    local name = element.Name:lower()
+
+    local iconKeywords = {
+        "icon",
+        "logo",
+        "symbol",
+        "glyph",
+        "emoji",
+        "image",
+    }
+
+    for _, keyword in ipairs(iconKeywords) do
+        if name:find(keyword, 1, true) then
+            return true
+        end
+    end
+
+    return element:IsA("ImageLabel")
+        or element:IsA("ImageButton")
+end
+
 local function modifyUI(instance)
-    for _, element in pairs(instance:GetDescendants()) do
-        if element:IsA("Frame") or element:IsA("TextButton") or element:IsA("TextBox") or element:IsA("ScrollingFrame") or element:IsA("ImageLabel") then
+    for _, element in ipairs(instance:GetDescendants()) do
+
+        -- Rounded corners without changing image assets.
+        if element:IsA("Frame")
+            or element:IsA("TextButton")
+            or element:IsA("TextBox")
+            or element:IsA("ScrollingFrame") then
+
             local corner = element:FindFirstChildOfClass("UICorner")
-            
+
             if not corner then
                 corner = Instance.new("UICorner")
                 corner.Parent = element
             end
-            
+
             corner.CornerRadius = UDim.new(0, cornerRadiusValue)
         end
-        
-        if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
-            element.FontFace = gothamFont
+
+        -- Change only ordinary text; preserve icon fonts.
+        if element:IsA("TextLabel")
+            or element:IsA("TextButton")
+            or element:IsA("TextBox") then
+
+            if not isIconElement(element) then
+                element.FontFace = gothamFont
+            end
         end
     end
 end
 
-for _, descendant in pairs(coreGui:GetDescendants()) do
-    if descendant:IsA("ScreenGui") and descendant.Name == targetName then
+for _, descendant in ipairs(coreGui:GetDescendants()) do
+    if descendant:IsA("ScreenGui")
+        and descendant.Name == targetName then
+
         modifyUI(descendant)
         break
     end
 end
-
-local player = game.Players.LocalPlayer
-
-local wordList = {
-    "Delayed update"
-}
-
--- สุ่มคำ 1 ครั้งเมื่อเริ่มรันสคริปต์
-local currentText = wordList[math.random(1, #wordList)]
-
--- ลูปอัปเดตข้อความลง UI ทันที
-task.spawn(function()
-    while task.wait() do
-        local main = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("Main")
-        if main and main:FindFirstChild("UI") then
-            local buttonS = main.UI:FindFirstChild("ButtonS")
-            if buttonS then
-                local shop = buttonS:FindFirstChild("Shop")
-                if shop then
-                    local announce = shop:FindFirstChild("Announce")
-                    if announce then
-                        if announce:IsA("TextLabel") and announce.Text ~= currentText then
-                            announce.Text = currentText
-                        end
-                        
-                        local white = announce:FindFirstChild("White")
-                        if white and white:IsA("TextLabel") and white.Text ~= currentText then
-                            white.Text = currentText
-                        end
-                    end
-                end
-            end
-        end
-    end
-end)
-
