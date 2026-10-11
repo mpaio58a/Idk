@@ -1352,19 +1352,19 @@ end)
 
 UpdateItems()
 
--- 3. ปุ่ม Execute Action — Give + teleport + return
+-- 3. ปุ่ม Execute Action — Give + teleport + return (fixed timing + settle)
 OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based on selected Method", Func = function()
     local target = ToolList[Options.ToolDropdown.Value]
     local method = Options.MethodDropdown.Value
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
 
     if not target or not hrp then return end
 
-    -- เก็บจุดเดิมก่อนทำอะไร
     local originCFrame = hrp.CFrame
 
-    -- หา CFrame ของ target
+    -- หา BasePart ของ target ให้ชัด
     local part
     if target:IsA("Model") then
         part = target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")
@@ -1372,31 +1372,56 @@ OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based o
         part = target
     end
     if not part then return end
-    local targetCFrame = part.CFrame + Vector3.new(0, 3, 0)
 
-    -- ให้ของ: วาปไป → fire remote → วาปกลับ
+    -- ยืนเหนือ tool 3 studs (บนสุดของ part + 3)
+    local targetCFrame = CFrame.new(part.Position + Vector3.new(0, (part.Size.Y / 2) + 3, 0))
+
     if method == "Give" then
         local events = ReplicatedStorage:WaitForChild("Events", 5)
         local getTool = events and events:WaitForChild("GetTool", 5)
         if not getTool then return end
 
-        local oldCFrame = hrp.CFrame
-        hrp.CFrame = targetCFrame
-        task.wait(0.05)  -- ให้ replication ถึง server ก่อนยิง remote
-        getTool:FireServer(target)
-        task.wait(0.05)  -- รอ server รับ remote
-        hrp.CFrame = oldCFrame
+        -- freeze physics ก่อนวาป ลดการ glitch
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Physics) end
 
-    -- Methods อื่นทำงานเหมือนเดิม
+        hrp.CFrame = targetCFrame
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+
+        -- รอ replication ถึง server (นานกว่าเดิม)
+        task.wait(0.2)
+
+        getTool:FireServer(target)
+
+        -- รอ server ประมวลผล remote ก่อนกลับ
+        task.wait(0.3)
+
+        -- กลับจุดเดิม + เคลียร์ velocity/rotation
+        hrp.CFrame = originCFrame
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+
+        -- ให้ humanoid กลับสู่สภาพปกติ (กันกลิ้ง)
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+            task.wait(0.1)
+            hum:ChangeState(Enum.HumanoidStateType.Running)
+        end
+
     else
         if method == "Teleport" then
             hrp.CFrame = targetCFrame
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
 
         elseif method == "Tween" then
             local distance = (hrp.Position - targetCFrame.Position).Magnitude
             local tweenTime = distance / 150
             local tween = TweenService:Create(hrp, TweenInfo.new(tweenTime, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
             tween:Play()
+            tween.Completed:Wait()
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
         end
     end
 end})
