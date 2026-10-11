@@ -7,7 +7,7 @@ local Options = Library.Options
 local Toggles = Library.Toggles
 
 local Window = Library:CreateWindow({
-    Title = "",
+    Title = "a",
     Footer = "by Askwjwjnsns",
     Icon = "rbxassetid://4801099073",
     NotifySide = "Right",
@@ -1316,11 +1316,10 @@ OthersBox:AddDropdown("MethodDropdown", {
 })
 
 -- =========================================================
--- INVENTORY SCAN: หา tool ที่ผู้เล่นอื่นถืออยู่
--- คืน map: [toolInstance] = ownerDisplayName
+-- INVENTORY SCAN: ObjectValue → map [instance] = ownerName
 -- =========================================================
 local function ScanInventories()
-    local heldMap = {}
+    local heldMap = {}  -- [toolInstance] = displayName
 
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
@@ -1328,17 +1327,8 @@ local function ScanInventories()
             local slots = inv and inv:FindFirstChild("Slots")
             if slots then
                 for _, slot in ipairs(slots:GetChildren()) do
-                    -- รองรับ ObjectValue ตรงๆ หรือ ValueBase ที่อยู่ใน folder
-                    local val
-                    if slot:IsA("ObjectValue") then
-                        val = slot.Value
-                    else
-                        local inner = slot:FindFirstChildWhichIsA("ObjectValue")
-                        if inner then val = inner.Value end
-                    end
-
-                    if val and typeof(val) == "Instance" then
-                        heldMap[val] = plr.DisplayName or plr.Name
+                    if slot:IsA("ObjectValue") and slot.Value then
+                        heldMap[slot.Value] = plr.DisplayName or plr.Name
                     end
                 end
             end
@@ -1349,7 +1339,7 @@ local function ScanInventories()
 end
 
 -- =========================================================
--- UPDATE ITEMS: rebuild dropdown + ตัด item ที่ถูกถือไปแล้ว
+-- UPDATE ITEMS: ต่อท้าย [owner] ถ้า instance ตรงกัน
 -- =========================================================
 local function UpdateItems()
     local newToolList = {}
@@ -1362,15 +1352,18 @@ local function UpdateItems()
     if tf then
         for _, v in pairs(tf:GetChildren()) do
             if v:IsA("Model") or v:IsA("Tool") or v:IsA("BasePart") then
-                -- ข้ามถ้าคนอื่นถืออยู่
-                local owner = heldMap[v]
-                if owner then
-                    continue
-                end
-
                 local oName = v.Name
                 nameCount[oName] = (nameCount[oName] or 0) + 1
-                local dName = oName .. " [" .. tostring(nameCount[oName]) .. "]"
+
+                local suffix = " [" .. tostring(nameCount[oName]) .. "]"
+
+                -- match instance ตรง — แม่นแม้ชื่อซ้ำ
+                local owner = heldMap[v]
+                if owner then
+                    suffix = suffix .. " [" .. owner .. "]"
+                end
+
+                local dName = oName .. suffix
                 table.insert(newToolNames, dName)
                 newToolList[dName] = v
             end
@@ -1387,9 +1380,55 @@ local function UpdateItems()
     Options.ToolDropdown:SetValues(newToolNames)
 end
 
-task.spawn(function()
-    while task.wait(3) do
+-- =========================================================
+-- EVENT-DRIVEN REFRESH: ไวทันที ไม่ต้อง poll 3 วิ
+-- =========================================================
+local refreshQueued = false
+local function ScheduleRefresh()
+    if refreshQueued then return end
+    refreshQueued = true
+    task.defer(function()
+        refreshQueued = false
         UpdateItems()
+    end)
+end
+
+local function WatchPlayer(plr)
+    if plr == LocalPlayer then return end
+
+    task.spawn(function()
+        local inv = plr:WaitForChild("Inventory", 10)
+        local slots = inv and inv:WaitForChild("Slots", 10)
+        if not slots then return end
+
+        -- watch slot ปัจจุบัน
+        local function watchSlot(slot)
+            if not slot:IsA("ObjectValue") then return end
+            slot:GetPropertyChangedSignal("Value"):Connect(ScheduleRefresh)
+        end
+
+        for _, slot in ipairs(slots:GetChildren()) do
+            watchSlot(slot)
+        end
+
+        -- slot ใหม่ (gamepass unlock ทีหลัง)
+        slots.ChildAdded:Connect(function(c)
+            watchSlot(c)
+            ScheduleRefresh()
+        end)
+
+        slots.ChildRemoved:Connect(ScheduleRefresh)
+    end)
+end
+
+for _, plr in ipairs(Players:GetPlayers()) do WatchPlayer(plr) end
+Players.PlayerAdded:Connect(WatchPlayer)
+Players.PlayerRemoving:Connect(ScheduleRefresh)
+
+-- fallback poll ช้าๆ กันกรณี event หลุด
+task.spawn(function()
+    while task.wait(5) do
+        ScheduleRefresh()
     end
 end)
 
@@ -1402,19 +1441,15 @@ OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based o
     local target = ToolList[Options.ToolDropdown.Value]
     local method = Options.MethodDropdown.Value
 
-    -- กันเลือก "No Items Found" หรือ item ที่หลุดจาก list ไปแล้ว
-    if not target or not target.Parent then
-        return
-    end
+    if not target or not target.Parent then return end
 
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not target or not hrp then return end
+    if not hrp then return end
 
     local originCFrame = hrp.CFrame
 
-    -- หา BasePart ของ target
     local part
     if target:IsA("Model") then
         part = target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")
@@ -1436,11 +1471,9 @@ OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based o
         hrp.AssemblyLinearVelocity = Vector3.zero
         hrp.AssemblyAngularVelocity = Vector3.zero
 
-        task.wait(0.05)
-
+        task.wait(0.2)
         getTool:FireServer(target)
-
-        task.wait(0.06)
+        task.wait(0.3)
 
         hrp.CFrame = originCFrame
         hrp.AssemblyLinearVelocity = Vector3.zero
