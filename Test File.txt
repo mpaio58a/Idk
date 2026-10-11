@@ -1316,10 +1316,12 @@ OthersBox:AddDropdown("MethodDropdown", {
 })
 
 -- =========================================================
--- INVENTORY SCAN: ObjectValue → map [instance] = ownerName
+-- SLOT SCAN: วน Inventory.Slots ของทุก player
+-- คืน map: [itemName] = ownerDisplayName
 -- =========================================================
-local function ScanInventories()
-    local heldMap = {}  -- [toolInstance] = displayName
+local function ScanSlots()
+    local heldBy = {}   -- [itemName] = owner
+    local heldInst = {} -- [instance] = owner
 
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
@@ -1327,26 +1329,36 @@ local function ScanInventories()
             local slots = inv and inv:FindFirstChild("Slots")
             if slots then
                 for _, slot in ipairs(slots:GetChildren()) do
-                    if slot:IsA("ObjectValue") and slot.Value then
-                        heldMap[slot.Value] = plr.DisplayName or plr.Name
+                    if slot:IsA("ObjectValue") then
+                        local v = slot.Value
+                        if v then
+                            local owner = plr.DisplayName or plr.Name
+                            heldInst[v] = owner
+                            if typeof(v) == "Instance" then
+                                heldBy[v.Name] = owner
+                            elseif typeof(v) == "string" then
+                                heldBy[v] = owner
+                            end
+                        end
+                        -- ถ้า .Value เป็น nil = ว่าง → ข้าม
                     end
                 end
             end
         end
     end
 
-    return heldMap
+    return heldBy, heldInst
 end
 
 -- =========================================================
--- UPDATE ITEMS: ต่อท้าย [owner] ถ้า instance ตรงกัน
+-- UPDATE ITEMS: เอา item ใน workspace มาเทียบกับ slot
 -- =========================================================
 local function UpdateItems()
     local newToolList = {}
     local newToolNames = {}
     local nameCount = {}
 
-    local heldMap = ScanInventories()
+    local heldBy, heldInst = ScanSlots()
 
     local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
     if tf then
@@ -1357,8 +1369,8 @@ local function UpdateItems()
 
                 local suffix = " [" .. tostring(nameCount[oName]) .. "]"
 
-                -- match instance ตรง — แม่นแม้ชื่อซ้ำ
-                local owner = heldMap[v]
+                -- match 2 ทาง: instance ตรงก่อน, ไม่ตรงค่อย match ชื่อ
+                local owner = heldInst[v] or heldBy[oName]
                 if owner then
                     suffix = suffix .. " [" .. owner .. "]"
                 end
@@ -1381,7 +1393,7 @@ local function UpdateItems()
 end
 
 -- =========================================================
--- EVENT-DRIVEN REFRESH: ไวทันที ไม่ต้อง poll 3 วิ
+-- EVENT-DRIVEN REFRESH (ทันทีตอนหยิบ/คืน)
 -- =========================================================
 local refreshQueued = false
 local function ScheduleRefresh()
@@ -1397,26 +1409,18 @@ local function WatchPlayer(plr)
     if plr == LocalPlayer then return end
 
     task.spawn(function()
-        local inv = plr:WaitForChild("Inventory", 10)
-        local slots = inv and inv:WaitForChild("Slots", 10)
+        local inv = plr:WaitForChild("Inventory", 15)
+        local slots = inv and inv:WaitForChild("Slots", 15)
         if not slots then return end
 
-        -- watch slot ปัจจุบัน
         local function watchSlot(slot)
-            if not slot:IsA("ObjectValue") then return end
-            slot:GetPropertyChangedSignal("Value"):Connect(ScheduleRefresh)
+            if slot:IsA("ObjectValue") then
+                slot:GetPropertyChangedSignal("Value"):Connect(ScheduleRefresh)
+            end
         end
 
-        for _, slot in ipairs(slots:GetChildren()) do
-            watchSlot(slot)
-        end
-
-        -- slot ใหม่ (gamepass unlock ทีหลัง)
-        slots.ChildAdded:Connect(function(c)
-            watchSlot(c)
-            ScheduleRefresh()
-        end)
-
+        for _, slot in ipairs(slots:GetChildren()) do watchSlot(slot) end
+        slots.ChildAdded:Connect(function(c) watchSlot(c); ScheduleRefresh() end)
         slots.ChildRemoved:Connect(ScheduleRefresh)
     end)
 end
@@ -1425,11 +1429,9 @@ for _, plr in ipairs(Players:GetPlayers()) do WatchPlayer(plr) end
 Players.PlayerAdded:Connect(WatchPlayer)
 Players.PlayerRemoving:Connect(ScheduleRefresh)
 
--- fallback poll ช้าๆ กันกรณี event หลุด
+-- fallback poll
 task.spawn(function()
-    while task.wait(5) do
-        ScheduleRefresh()
-    end
+    while task.wait(3) do ScheduleRefresh() end
 end)
 
 UpdateItems()
