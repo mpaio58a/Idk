@@ -1299,7 +1299,7 @@ local LocalPlayer = Players.LocalPlayer
 local ToolList = {}
 local ToolNames = {"Loading..."}
 
--- 1. Search Dropdown (เปลี่ยนจาก Item Dropdown)
+-- 1. Search Dropdown
 OthersBox:AddDropdown("ToolDropdown", { 
     Values = ToolNames, 
     Multi = false, 
@@ -1308,23 +1308,66 @@ OthersBox:AddDropdown("ToolDropdown", {
     Searchable = true 
 })
 
--- 2. Methods Dropdown (ย้ายมาอยู่ตรงกลาง)
+-- 2. Methods Dropdown
 OthersBox:AddDropdown("MethodDropdown", { 
     Values = {"Teleport", "Tween", "Give"}, 
     Multi = false, 
     Default = 1 
 })
 
--- ระบบ Auto Refresh ไอเทม
+-- =========================================================
+-- INVENTORY SCAN: หา tool ที่ผู้เล่นอื่นถืออยู่
+-- คืน map: [toolInstance] = ownerDisplayName
+-- =========================================================
+local function ScanInventories()
+    local heldMap = {}
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local inv = plr:FindFirstChild("Inventory")
+            local slots = inv and inv:FindFirstChild("Slots")
+            if slots then
+                for _, slot in ipairs(slots:GetChildren()) do
+                    -- รองรับ ObjectValue ตรงๆ หรือ ValueBase ที่อยู่ใน folder
+                    local val
+                    if slot:IsA("ObjectValue") then
+                        val = slot.Value
+                    else
+                        local inner = slot:FindFirstChildWhichIsA("ObjectValue")
+                        if inner then val = inner.Value end
+                    end
+
+                    if val and typeof(val) == "Instance" then
+                        heldMap[val] = plr.DisplayName or plr.Name
+                    end
+                end
+            end
+        end
+    end
+
+    return heldMap
+end
+
+-- =========================================================
+-- UPDATE ITEMS: rebuild dropdown + ตัด item ที่ถูกถือไปแล้ว
+-- =========================================================
 local function UpdateItems()
     local newToolList = {}
     local newToolNames = {}
     local nameCount = {}
-    
+
+    local heldMap = ScanInventories()
+
     local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
     if tf then
         for _, v in pairs(tf:GetChildren()) do
             if v:IsA("Model") or v:IsA("Tool") or v:IsA("BasePart") then
+                -- ข้ามถ้าคนอื่นถืออยู่
+                local owner = heldMap[v]
+                if owner then
+                    continue
+                end
+
                 local oName = v.Name
                 nameCount[oName] = (nameCount[oName] or 0) + 1
                 local dName = oName .. " [" .. tostring(nameCount[oName]) .. "]"
@@ -1333,13 +1376,13 @@ local function UpdateItems()
             end
         end
     end
-    
+
     table.sort(newToolNames)
-    
+
     if #newToolNames == 0 then
         newToolNames = {"No Items Found"}
     end
-    
+
     ToolList = newToolList
     Options.ToolDropdown:SetValues(newToolNames)
 end
@@ -1352,19 +1395,26 @@ end)
 
 UpdateItems()
 
--- 3. ปุ่ม Execute Action — Give + teleport + return (fixed timing + settle)
+-- =========================================================
+-- EXECUTE ACTION
+-- =========================================================
 OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based on selected Method", Func = function()
     local target = ToolList[Options.ToolDropdown.Value]
     local method = Options.MethodDropdown.Value
+
+    -- กันเลือก "No Items Found" หรือ item ที่หลุดจาก list ไปแล้ว
+    if not target or not target.Parent then
+        return
+    end
+
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
-
     if not target or not hrp then return end
 
     local originCFrame = hrp.CFrame
 
-    -- หา BasePart ของ target ให้ชัด
+    -- หา BasePart ของ target
     local part
     if target:IsA("Model") then
         part = target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")
@@ -1373,7 +1423,6 @@ OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based o
     end
     if not part then return end
 
-    -- ยืนเหนือ tool 3 studs (บนสุดของ part + 3)
     local targetCFrame = CFrame.new(part.Position + Vector3.new(0, (part.Size.Y / 2) + 3, 0))
 
     if method == "Give" then
@@ -1381,27 +1430,22 @@ OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based o
         local getTool = events and events:WaitForChild("GetTool", 5)
         if not getTool then return end
 
-        -- freeze physics ก่อนวาป ลดการ glitch
         if hum then hum:ChangeState(Enum.HumanoidStateType.Physics) end
 
         hrp.CFrame = targetCFrame
         hrp.AssemblyLinearVelocity = Vector3.zero
         hrp.AssemblyAngularVelocity = Vector3.zero
 
-        -- รอ replication ถึง server (นานกว่าเดิม)
-        task.wait(0.2)
+        task.wait(0.05)
 
         getTool:FireServer(target)
 
-        -- รอ server ประมวลผล remote ก่อนกลับ
-        task.wait(0.3)
+        task.wait(0.06)
 
-        -- กลับจุดเดิม + เคลียร์ velocity/rotation
         hrp.CFrame = originCFrame
         hrp.AssemblyLinearVelocity = Vector3.zero
         hrp.AssemblyAngularVelocity = Vector3.zero
 
-        -- ให้ humanoid กลับสู่สภาพปกติ (กันกลิ้ง)
         if hum then
             hum:ChangeState(Enum.HumanoidStateType.GettingUp)
             task.wait(0.1)
