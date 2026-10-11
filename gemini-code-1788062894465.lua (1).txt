@@ -1520,3 +1520,76 @@ SaveManager:BuildConfigSection(Tabs["UI Settings"])
 ThemeManager:ApplyToTab(Tabs["UI Settings"])
 
 SaveManager:LoadAutoloadConfig()
+
+local coreGui = game:GetService("CoreGui")
+local targetName = "Obsidian"
+local cornerRadiusValue = 10
+
+local gothamFont = Font.new(
+    "rbxasset://fonts/families/GothamSSm.json",
+    Enum.FontWeight.Regular,
+    Enum.FontStyle.Normal
+)
+
+-- Keep original fonts for icon-related elements.
+local function isIconElement(element)
+    local name = element.Name:lower()
+
+    local iconKeywords = {
+        "icon",
+        "logo",
+        "symbol",
+        "glyph",
+        "emoji",
+        "image",
+    }
+
+    for _, keyword in ipairs(iconKeywords) do
+        if name:find(keyword, 1, true) then
+            return true
+        end
+    end
+
+    return element:IsA("ImageLabel")
+        or element:IsA("ImageButton")
+end
+
+local function modifyUI(instance)
+    for _, element in ipairs(instance:GetDescendants()) do
+
+        -- Rounded corners without changing image assets.
+        if element:IsA("Frame")
+            or element:IsA("TextButton")
+            or element:IsA("TextBox")
+            or element:IsA("ScrollingFrame") then
+
+            local corner = element:FindFirstChildOfClass("UICorner")
+
+            if not corner then
+                corner = Instance.new("UICorner")
+                corner.Parent = element
+            end
+
+            corner.CornerRadius = UDim.new(0, cornerRadiusValue)
+        end
+
+        -- Change only ordinary text; preserve icon fonts.
+        if element:IsA("TextLabel")
+            or element:IsA("TextButton")
+            or element:IsA("TextBox") then
+
+            if not isIconElement(element) then
+                element.FontFace = gothamFont
+            end
+        end
+    end
+end
+
+for _, descendant in ipairs(coreGui:GetDescendants()) do
+    if descendant:IsA("ScreenGui")
+        and descendant.Name == targetName then
+
+        modifyUI(descendant)
+        break
+    end
+end
