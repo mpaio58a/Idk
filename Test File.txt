@@ -1488,9 +1488,9 @@ OthersBox:AddButton({ Text = "Execute Action", Tooltip = "Perform action based o
         hrp.AssemblyLinearVelocity = Vector3.zero
         hrp.AssemblyAngularVelocity = Vector3.zero
 
-        task.wait(0.2)
+        task.wait(0.05)
         getTool:FireServer(target)
-        task.wait(0.3)
+        task.wait(0.06)
 
         hrp.CFrame = originCFrame
         hrp.AssemblyLinearVelocity = Vector3.zero
