@@ -1617,7 +1617,7 @@ MenuGroup:AddDropdown("DPIDropdown", {
     end,
 })
 
--- Transparency Slider
+-- Transparency Slider (ปรับปรุงใหม่ให้ลบเงา/เลเยอร์ซ้อนทับหายไปพร้อมกัน)
 local CoreGui = game:GetService("CoreGui")
 
 MenuGroup:AddSlider("TransparencySlider", {
@@ -1632,18 +1632,17 @@ MenuGroup:AddSlider("TransparencySlider", {
         
         local gui = CoreGui:FindFirstChild("Obsidian", true)
         if gui then
-            -- ค้นหา Frame หลักชื่อ "Main" ตามโครงสร้างใน Explorer
             local mainFrame = gui:FindFirstChild("Main", true)
             if mainFrame then
-                -- ปรับค่าความโปร่งใสของตัว Main เอง
-                if mainFrame:IsA("GuiObject") then
-                    mainFrame.BackgroundTransparency = clampedValue
-                end
-                
-                -- ปรับค่าความโปร่งใสของ Frame, ScrollingFrame และ Container ข้างในทั้งหมด
+                -- วนลูปปรับทุกองค์ประกอบด้านใน
                 for _, descendant in ipairs(mainFrame:GetDescendants()) do
-                    if descendant:IsA("Frame") or descendant:IsA("ScrollingFrame") then
-                        descendant.BackgroundTransparency = clampedValue
+                    if descendant:IsA("Frame") or descendant:IsA("ScrollingFrame") or descendant:IsA("TextBox") then
+                        -- ถ้าเป็นเลเยอร์เงา (มักจะมีชื่อว่า Shadow หรือมีขนาดใหญ่กว่าปกติเล็กน้อย) ให้ซ่อนหรือปรับให้โปร่งใสตาม
+                        if descendant.Name:lower():find("shadow") then
+                            descendant.BackgroundTransparency = math.clamp(clampedValue + 0.2, 0, 1)
+                        else
+                            descendant.BackgroundTransparency = clampedValue
+                        end
                     end
                 end
             end
