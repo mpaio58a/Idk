@@ -1,4 +1,4 @@
-local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+,local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
@@ -1615,6 +1615,20 @@ MenuGroup:AddDropdown("DPIDropdown", {
         local DPI = tonumber(Value)
         Library:SetDPIScale(DPI)
     end,
+})
+
+MenuGroup:AddSlider("TransparencySlider", {
+    Text = "Transparency",
+    Default = 0,
+    Min = 0,
+    Max = 1,
+    Rounding = 2,
+    Callback = function(value)
+        value = math.clamp(value, 0, 1)
+
+        -- เชื่อมกับระบบ Transparency ของ UI ตรงนี้
+        -- ต้องใช้ API ที่ Library รองรับจริง
+    end
 })
 
 MenuGroup:AddSlider("UICornerSlider", {
