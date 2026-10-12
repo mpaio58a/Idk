@@ -1349,18 +1349,18 @@ local function ScanSlots()
 end
 
 -- =========================================================
--- UPDATE ITEMS: เอา item ใน workspace + ที่ผู้เล่นถืออยู่มารวมกัน
+-- UPDATE ITEMS: แก้ไขให้แสดงชื่อเจ้าของเฉพาะชิ้นที่ถูกถือจริงๆ
 -- =========================================================
 local function UpdateItems()
     local newToolList = {}
     local newToolNames = {}
     local nameCount = {}
 
-    local heldBy, heldInst = ScanSlots()
+    local _, heldInst = ScanSlots() -- ใช้แค่ heldInst (เช็คตามชิ้น Object ตรงกันจริงๆ เท่านั้น)
     local itemsToProcess = {}
     local processedInstances = {}
 
-    -- 1. เก็บไอเทมที่อยู่ใน Workspace (Tools / Items)
+    -- 1. เก็บไอเทมที่อยู่ใน Workspace
     local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
     if tf then
         for _, v in pairs(tf:GetChildren()) do
@@ -1371,8 +1371,8 @@ local function UpdateItems()
         end
     end
 
-    -- 2. เก็บไอเทมที่ผู้เล่นถืออยู่ (ที่ถูกย้ายออกจาก Workspace ไปแล้ว)
-    for inst, owner in pairs(heldInst) do
+    -- 2. เก็บไอเทมที่ผู้เล่นถืออยู่
+    for inst, _ in pairs(heldInst) do
         if typeof(inst) == "Instance" and (inst:IsA("Model") or inst:IsA("Tool") or inst:IsA("BasePart")) and not processedInstances[inst] then
             processedInstances[inst] = true
             table.insert(itemsToProcess, inst)
@@ -1386,8 +1386,8 @@ local function UpdateItems()
 
         local suffix = " [" .. tostring(nameCount[oName]) .. "]"
 
-        -- เช็คเจ้าของจาก instance หรือชื่อ
-        local owner = heldInst[v] or heldBy[oName]
+        -- เช็คเจ้าของเฉพาะ "ชิ้นนั้นจริงๆ" (Instance ตรงกัน) เท่านั้น
+        local owner = heldInst[v]
         if owner then
             suffix = suffix .. " [" .. owner .. "]"
         end
