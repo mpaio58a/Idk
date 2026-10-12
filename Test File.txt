@@ -1617,7 +1617,19 @@ MenuGroup:AddDropdown("DPIDropdown", {
     end,
 })
 
--- Transparency Slider (อยู่ใต้ DPI)
+-- Transparency Slider
+local CoreGui = game:GetService("CoreGui")
+
+local function getMainBackground()
+    local gui = CoreGui:FindFirstChild("Obsidian", true)
+    if not gui then
+        return nil
+    end
+
+    -- เปลี่ยนตรงนี้ให้เป็นชื่อ Frame หลักจริง
+    return gui:FindFirstChild("MainFrame", true)
+end
+
 MenuGroup:AddSlider("TransparencySlider", {
     Text = "Transparency",
     Default = 0,
@@ -1626,24 +1638,11 @@ MenuGroup:AddSlider("TransparencySlider", {
     Rounding = 2,
 
     Callback = function(Value)
-        local coreGui = game:GetService("CoreGui")
+        local background = getMainBackground()
 
-        for _, gui in ipairs(coreGui:GetDescendants()) do
-            if gui:IsA("ScreenGui") and gui.Name == "Obsidian" then
-                for _, element in ipairs(gui:GetDescendants()) do
-                    if element:IsA("Frame")
-                        or element:IsA("TextButton")
-                        or element:IsA("TextBox")
-                        or element:IsA("TextLabel")
-                        or element:IsA("ScrollingFrame") then
-
-                        element.BackgroundTransparency =
-                            math.clamp(Value, 0, 1)
-                    end
-                end
-
-                break
-            end
+        if background and background:IsA("GuiObject") then
+            background.BackgroundTransparency =
+                math.clamp(Value, 0, 1)
         end
     end,
 })
