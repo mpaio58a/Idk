@@ -1339,7 +1339,6 @@ local function ScanSlots()
                                 heldBy[v] = owner
                             end
                         end
-                        -- ถ้า .Value เป็น nil = ว่าง → ข้าม
                     end
                 end
             end
@@ -1350,7 +1349,7 @@ local function ScanSlots()
 end
 
 -- =========================================================
--- UPDATE ITEMS: เอา item ใน workspace มาเทียบกับ slot
+-- UPDATE ITEMS: เอา item ใน workspace + ที่ผู้เล่นถืออยู่มารวมกัน
 -- =========================================================
 local function UpdateItems()
     local newToolList = {}
@@ -1358,27 +1357,44 @@ local function UpdateItems()
     local nameCount = {}
 
     local heldBy, heldInst = ScanSlots()
+    local itemsToProcess = {}
+    local processedInstances = {}
 
+    -- 1. เก็บไอเทมที่อยู่ใน Workspace (Tools / Items)
     local tf = workspace:FindFirstChild("Tools", true) or workspace:FindFirstChild("Items", true)
     if tf then
         for _, v in pairs(tf:GetChildren()) do
-            if v:IsA("Model") or v:IsA("Tool") or v:IsA("BasePart") then
-                local oName = v.Name
-                nameCount[oName] = (nameCount[oName] or 0) + 1
-
-                local suffix = " [" .. tostring(nameCount[oName]) .. "]"
-
-                -- match 2 ทาง: instance ตรงก่อน, ไม่ตรงค่อย match ชื่อ
-                local owner = heldInst[v] or heldBy[oName]
-                if owner then
-                    suffix = suffix .. " [" .. owner .. "]"
-                end
-
-                local dName = oName .. suffix
-                table.insert(newToolNames, dName)
-                newToolList[dName] = v
+            if (v:IsA("Model") or v:IsA("Tool") or v:IsA("BasePart")) and not processedInstances[v] then
+                processedInstances[v] = true
+                table.insert(itemsToProcess, v)
             end
         end
+    end
+
+    -- 2. เก็บไอเทมที่ผู้เล่นถืออยู่ (ที่ถูกย้ายออกจาก Workspace ไปแล้ว)
+    for inst, owner in pairs(heldInst) do
+        if typeof(inst) == "Instance" and (inst:IsA("Model") or inst:IsA("Tool") or inst:IsA("BasePart")) and not processedInstances[inst] then
+            processedInstances[inst] = true
+            table.insert(itemsToProcess, inst)
+        end
+    end
+
+    -- ประมวลผลสร้างชื่อ Dropdown
+    for _, v in ipairs(itemsToProcess) do
+        local oName = v.Name
+        nameCount[oName] = (nameCount[oName] or 0) + 1
+
+        local suffix = " [" .. tostring(nameCount[oName]) .. "]"
+
+        -- เช็คเจ้าของจาก instance หรือชื่อ
+        local owner = heldInst[v] or heldBy[oName]
+        if owner then
+            suffix = suffix .. " [" .. owner .. "]"
+        end
+
+        local dName = oName .. suffix
+        table.insert(newToolNames, dName)
+        newToolList[dName] = v
     end
 
     table.sort(newToolNames)
