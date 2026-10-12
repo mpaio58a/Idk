@@ -605,7 +605,7 @@ task.spawn(function()
         bg.Name = "ESP_Slot_BG"
         bg.Size = UDim2.new(0, 300, 0, 70) 
         bg.AlwaysOnTop = true
-        bg.ExtentsOffsetWorldSpace = Vector3.new(0, -4.5, 0)
+        bg.ExtentsOffset = Vector3.new(0, -4.5, 0)
 
         local txt = bg:FindFirstChild("NameLabel") or Instance.new("TextLabel")
         txt.Name = "NameLabel"
