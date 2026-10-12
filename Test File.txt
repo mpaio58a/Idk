@@ -1617,6 +1617,37 @@ MenuGroup:AddDropdown("DPIDropdown", {
     end,
 })
 
+-- Transparency Slider (อยู่ใต้ DPI)
+MenuGroup:AddSlider("TransparencySlider", {
+    Text = "Transparency",
+    Default = 0,
+    Min = 0,
+    Max = 1,
+    Rounding = 2,
+
+    Callback = function(Value)
+        local coreGui = game:GetService("CoreGui")
+
+        for _, gui in ipairs(coreGui:GetDescendants()) do
+            if gui:IsA("ScreenGui") and gui.Name == "Obsidian" then
+                for _, element in ipairs(gui:GetDescendants()) do
+                    if element:IsA("Frame")
+                        or element:IsA("TextButton")
+                        or element:IsA("TextBox")
+                        or element:IsA("TextLabel")
+                        or element:IsA("ScrollingFrame") then
+
+                        element.BackgroundTransparency =
+                            math.clamp(Value, 0, 1)
+                    end
+                end
+
+                break
+            end
+        end
+    end,
+})
+
 MenuGroup:AddSlider("UICornerSlider", {
     Text = "Corner Radius",
     Default = Library.CornerRadius,
